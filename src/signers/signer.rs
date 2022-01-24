@@ -1,13 +1,11 @@
+use crate::error::BundlrError;
 use bytes::Bytes;
-use crate::{error::BundlrError, index::SignerMap};
 
-pub trait ToPem {
+pub trait ToPem {}
 
-}
-
-pub trait Signer 
+pub trait Signer
 where
-    Self: Sized 
+    Self: Sized,
 {
     const SIG_TYPE: u16;
     const SIG_LENGTH: u16;
@@ -25,9 +23,9 @@ where
     fn pub_key(&self) -> Bytes;
 }
 
-pub trait Verifier 
+pub trait Verifier
 where
-    Self: Sized 
+    Self: Sized,
 {
     fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<bool, BundlrError>;
     // fn from(s: u16) -> Result<Self, BundleError> {
