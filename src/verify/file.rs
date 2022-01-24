@@ -116,9 +116,9 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
             return Err(BundlrError::InvalidSignature);
         };
 
-        id.pop();
         let item = Item {
-            id,
+            tx_id: id,
+            signature: sig.to_vec()
         };
 
         items.push(item);
