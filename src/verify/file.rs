@@ -1,23 +1,30 @@
-use std::{fs::File, io::{Seek, Read, SeekFrom}, ops::Mul, cmp};
-use async_stream::{stream, try_stream};
-use bigint::U256;
-use bytes::{Bytes, BytesMut, BufMut};
-use data_encoding::BASE64URL;
-use tokio::stream;
-use crate::{error::BundlrError, index::{SignerMap, Config}, deep_hash::{deep_hash, DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER}};
-use num_traits::FromPrimitive;
+use super::types::{Header, Item};
 use crate::tags::AvroDecode;
-use super::types::{Item, Header};
+use crate::{
+    deep_hash::{deep_hash, DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER},
+    error::BundlrError,
+    index::{Config, SignerMap},
+};
+use async_stream::try_stream;
+use bigint::U256;
+use bytes::Bytes;
+use data_encoding::BASE64URL;
+use num_traits::FromPrimitive;
+use std::{
+    cmp,
+    fs::File,
+    io::{Read, Seek, SeekFrom},
+};
 
 impl From<std::io::Error> for BundlrError {
-    fn from(e: std::io::Error) -> Self {
+    fn from(_: std::io::Error) -> Self {
         BundlrError::FsError
     }
 }
 
 pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrError> {
     let mut file = File::open(&filename).unwrap();
-  
+
     let bundle_length = U256::from_little_endian(&read_offset(&mut file, 0, 32)?).as_u64();
 
     // NOTE THIS IS UNSAFE BEYOND USIZE LIMIT
@@ -27,11 +34,11 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
     for i in (0..(64 * usize::try_from(bundle_length).unwrap())).step_by(64) {
         let h = Header(
-            U256::from_little_endian(&header_bytes[i..i+32]).as_u64(),
-            BASE64URL.encode(&header_bytes[i+32..i+64])
+            U256::from_little_endian(&header_bytes[i..i + 32]).as_u64(),
+            BASE64URL.encode(&header_bytes[i + 32..i + 64]),
         );
         headers.push(h);
-    };
+    }
 
     let mut offset = 32 + (64 * bundle_length);
     let mut items = Vec::with_capacity(cmp::min(bundle_length as usize, 1000));
@@ -45,38 +52,53 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         let sig_type = u16::from_le_bytes(<[u8; 2]>::try_from(sig_type_b).unwrap());
         let signer: SignerMap = match SignerMap::from_u16(sig_type) {
             Some(s) => s,
-            None => return Err(BundlrError::InvalidSignerType)
+            None => return Err(BundlrError::InvalidSignerType),
         };
-        let Config { pub_length, sig_length } = signer.get_config();
+        let Config {
+            pub_length,
+            sig_length,
+        } = signer.get_config();
 
-        let sig = &buffer[2..2+sig_length];
+        let sig = &buffer[2..2 + sig_length];
 
-        let pub_key = &buffer[2+sig_length..2+sig_length+pub_length];
+        let pub_key = &buffer[2 + sig_length..2 + sig_length + pub_length];
 
-        let target_start = 2+sig_length+pub_length;
-        let target_present = u8::from_le_bytes(<[u8; 1]>::try_from(&buffer[target_start..target_start+1]).unwrap());
+        let target_start = 2 + sig_length + pub_length;
+        let target_present = u8::from_le_bytes(
+            <[u8; 1]>::try_from(&buffer[target_start..target_start + 1]).unwrap(),
+        );
         let target = match target_present {
             0 => &[],
-            1 => &buffer[target_start+1..target_start+33],
-            _ => return Err(BundlrError::InvalidPresenceByte)
+            1 => &buffer[target_start + 1..target_start + 33],
+            _ => return Err(BundlrError::InvalidPresenceByte),
         };
         let anchor_start = target_start + 1 + target.len();
-        let anchor_present = u8::from_le_bytes(<[u8; 1]>::try_from(&buffer[anchor_start..anchor_start+1]).unwrap());
+        let anchor_present = u8::from_le_bytes(
+            <[u8; 1]>::try_from(&buffer[anchor_start..anchor_start + 1]).unwrap(),
+        );
         let anchor = match anchor_present {
             0 => &[],
-            1 => &buffer[anchor_start+1..anchor_start+33],
-            _ => return Err(BundlrError::InvalidPresenceByte)
+            1 => &buffer[anchor_start + 1..anchor_start + 33],
+            _ => return Err(BundlrError::InvalidPresenceByte),
         };
 
         let tags_start = anchor_start + 1 + anchor.len();
-        let number_of_tags = u64::from_le_bytes(<[u8; 8]>::try_from(&buffer[tags_start..tags_start + 8]).unwrap());
+        let number_of_tags =
+            u64::from_le_bytes(<[u8; 8]>::try_from(&buffer[tags_start..tags_start + 8]).unwrap());
 
-        let number_of_tags_bytes = u64::from_le_bytes(<[u8; 8]>::try_from(&buffer[tags_start+8..tags_start+16]).unwrap());
+        let number_of_tags_bytes = u64::from_le_bytes(
+            <[u8; 8]>::try_from(&buffer[tags_start + 8..tags_start + 16]).unwrap(),
+        );
 
         let mut b = buffer.to_vec();
-        let mut tags_bytes = &mut b[tags_start+16..tags_start+16+number_of_tags_bytes as usize];
-        
-        let tags = if number_of_tags_bytes > 0 { tags_bytes.decode()? } else { vec![] };
+        let mut tags_bytes =
+            &mut b[tags_start + 16..tags_start + 16 + number_of_tags_bytes as usize];
+
+        let tags = if number_of_tags_bytes > 0 {
+            tags_bytes.decode()?
+        } else {
+            vec![]
+        };
 
         if number_of_tags != tags.len() as u64 {
             return Err(BundlrError::InvalidTagEncoding);
@@ -96,10 +118,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
             };
         };
 
-        let e_sig_type = sig_type.to_string()
-            .as_bytes()
-            .to_vec();
-
+        let e_sig_type = sig_type.to_string().as_bytes().to_vec();
 
         let message = deep_hash(DeepHashChunk::Chunks(vec![
             DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
@@ -109,17 +128,16 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
             DeepHashChunk::Chunk(target.to_vec().into()),
             DeepHashChunk::Chunk(anchor.to_vec().into()),
             DeepHashChunk::Chunk(tags_bytes.to_vec().into()),
-            DeepHashChunk::Stream(Box::pin(file_stream))
-        ])).await?;
+            DeepHashChunk::Stream(Box::pin(file_stream)),
+        ]))
+        .await?;
 
         if !signer.verify(pub_key, &message, sig)? {
             return Err(BundlrError::InvalidSignature);
         };
 
         id.pop();
-        let item = Item {
-            id,
-        };
+        let item = Item { id };
 
         items.push(item);
 
@@ -134,7 +152,7 @@ fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes, std
     let mut b = Vec::with_capacity(length);
     unsafe { b.set_len(length) };
     file.seek(SeekFrom::Start(offset))?;
-    
+
     b.fill(0);
 
     file.read(&mut b)?;
@@ -149,12 +167,14 @@ mod tests {
         ($e:expr) => {
             tokio_test::block_on($e).unwrap()
         };
-      }
+    }
 
     #[test]
     fn test_verify() {
-        println!("{:?}", aw!(verify_file_bundle("./src/verify/test_bundle".to_string())));
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle("./src/verify/test_bundle".to_string()))
+        );
         assert_eq!(1, 1)
     }
-
 }
