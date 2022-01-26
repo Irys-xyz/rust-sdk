@@ -17,8 +17,8 @@ use std::{
 };
 
 impl From<std::io::Error> for BundlrError {
-    fn from(_: std::io::Error) -> Self {
-        BundlrError::FsError
+    fn from(e: std::io::Error) -> Self {
+        BundlrError::FsError(e.to_string())
     }
 }
 

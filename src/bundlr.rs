@@ -54,13 +54,14 @@ impl<T: Signer> Bundlr<T> {
         match response {
             Ok(r) => {
                 if !r.status().is_success() {
-                    return Err(BundlrError::ResponseError);
+                    let msg = format!("Status: {}", r.status());
+                    return Err(BundlrError::ResponseError(msg));
                 };
                 r.json::<Value>()
                     .await
-                    .map_err(|_| BundlrError::ResponseError)
+                    .map_err(|e| BundlrError::ResponseError(e.to_string()))
             }
-            Err(_) => Err(BundlrError::ResponseError),
+            Err(_) => Err(BundlrError::ResponseError("Unknown Error".to_string())),
         }
     }
 }
