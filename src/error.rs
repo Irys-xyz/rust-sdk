@@ -1,13 +1,28 @@
-use derive_more::{Display, Error};
+use thiserror::Error;
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum BundlrError {
+    #[error("Invalid headers provided.")]
     InvalidHeaders,
+
+    #[error("Invalid signer type used.")]
     InvalidSignerType,
+
+    #[error("Invalid presence byte.")]
     InvalidPresenceByte,
+
+    #[error("No bytes left.")]
     NoBytesLeft,
+
+    #[error("Invalid tag encoding.")]
     InvalidTagEncoding,
-    FsError,
+
+    #[error("File system error: {0}")]
+    FsError(String),
+
+    #[error("Invalid signature.")]
     InvalidSignature,
-    ResponseError
+
+    #[error("Response failed with the following error: {0}")]
+    ResponseError(String),
 }
