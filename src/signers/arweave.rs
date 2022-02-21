@@ -1,34 +1,36 @@
-use std::borrow::Borrow;
-
-use bytes::Bytes;
-use jsonwebkey::JsonWebKey;
-use openssl::{sign, hash::MessageDigest, pkey::{PKey, Private}, rsa::Padding};
-use serde::Serialize;
 use crate::error::BundlrError;
+use bytes::Bytes;
 use data_encoding::BASE64URL;
+use jsonwebkey::JsonWebKey;
+use openssl::{
+    hash::MessageDigest,
+    pkey::{PKey, Private},
+    rsa::Padding,
+    sign,
+};
+use serde::Serialize;
 
 use super::signer::{Signer, Verifier};
 
 #[derive(Serialize)]
 struct JWK {
-    n: String
+    n: String,
 }
 
-pub struct ArweaveSigner { 
-    priv_key: PKey<Private>
+pub struct ArweaveSigner {
+    priv_key: PKey<Private>,
 }
 
+#[allow(unused)]
 impl ArweaveSigner {
     fn new(jwk: JWK) -> ArweaveSigner {
         let n = BASE64URL.decode(jwk.n.as_bytes()).unwrap();
         let s = serde_json::to_string(&jwk).unwrap();
         let key: JsonWebKey = s.parse().unwrap();
         let pem = key.key.to_pem();
-        let priv_key  = PKey::private_key_from_pem(pem.as_bytes()).unwrap();
+        let priv_key = PKey::private_key_from_pem(pem.as_bytes()).unwrap();
 
-        Self {
-            priv_key
-        }
+        Self { priv_key }
     }
 }
 
@@ -43,11 +45,11 @@ impl Signer for ArweaveSigner {
             return Err(BundlrError::NoBytesLeft);
         };
 
-        let mut buf = vec![0;256];
+        let mut buf = vec![0; 256];
         if let Err(_) = signer.sign(buf.as_mut_slice()) {
             return Err(BundlrError::NoBytesLeft);
         };
-        
+
         return Ok(message.into());
     }
 
@@ -63,8 +65,9 @@ impl Verifier for ArweaveSigner {
         if let Err(_) = verifier.update(&message) {
             return Err(BundlrError::NoBytesLeft);
         };
-        
-        verifier.verify(&signature).map_err(|_| BundlrError::NoBytesLeft)
-    }
 
+        verifier
+            .verify(&signature)
+            .map_err(|_| BundlrError::NoBytesLeft)
+    }
 }

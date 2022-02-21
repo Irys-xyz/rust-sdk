@@ -1,23 +1,23 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use std::iter::Copied;
 
 use serde::Deserialize;
 use serde_json::Value;
 
 use crate::error::BundlrError;
-use crate::{signers::signer::Signer, BundlrTx};
 use crate::tags::Tag;
+use crate::{signers::signer::Signer, BundlrTx};
 
+#[allow(unused)]
 pub struct Bundlr<T> {
     url: String,
     chain: String,
     currency: String,
     signer: T,
-    client: reqwest::Client
+    client: reqwest::Client,
 }
 
+#[allow(unused)]
 #[derive(Deserialize)]
 pub struct TxResponse {
     id: String,
@@ -30,7 +30,7 @@ impl<T: Signer> Bundlr<T> {
             chain,
             currency,
             signer,
-            client: reqwest::Client::new()
+            client: reqwest::Client::new(),
         }
     }
 
@@ -43,7 +43,9 @@ impl<T: Signer> Bundlr<T> {
         let mut f = File::create("test_item").unwrap();
         f.write_all(tx.clone().as_ref()).unwrap();
 
-        let response = self.client.post(format!("{}/tx/{}", self.url, self.chain))
+        let response = self
+            .client
+            .post(format!("{}/tx/{}", self.url, self.chain))
             .header("Content-Type", "application/octet-stream")
             .body(tx)
             .send()
@@ -52,11 +54,14 @@ impl<T: Signer> Bundlr<T> {
         match response {
             Ok(r) => {
                 if !r.status().is_success() {
-                    return Err(BundlrError::ResponseError)
+                    let msg = format!("Status: {}", r.status());
+                    return Err(BundlrError::ResponseError(msg));
                 };
-                r.json::<Value>().await.map_err(|_| BundlrError::ResponseError)
-            },
-            Err(_) => Err(BundlrError::ResponseError),
+                r.json::<Value>()
+                    .await
+                    .map_err(|e| BundlrError::ResponseError(e.to_string()))
+            }
+            Err(_) => Err(BundlrError::ResponseError("Unknown Error".to_string())),
         }
     }
 }
