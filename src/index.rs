@@ -1,11 +1,11 @@
 use std::panic;
-
 use data_encoding::BASE64URL;
 use derive_more::Display;
 use jsonwebkey::JsonWebKey;
 use num_derive::FromPrimitive;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use serde::Serialize;
+use secp256k1::Secp256k1;
 
 use crate::error::BundlrError;
 
@@ -13,6 +13,7 @@ use crate::error::BundlrError;
 pub enum SignerMap {
     Arweave = 1,
     Ed25519 = 2,
+    Secp256k1 = 3
 }
 
 pub struct Config {
@@ -42,6 +43,10 @@ impl SignerMap {
                 pub_length: 512,
             },
             SignerMap::Ed25519 => Config {
+                sig_length: 64,
+                pub_length: 32,
+            },
+            SignerMap::Secp256k1 => Config {
                 sig_length: 64,
                 pub_length: 32,
             },
@@ -75,6 +80,17 @@ impl SignerMap {
                 let mut verifier = sign::Verifier::new(MessageDigest::null(), &pkey).unwrap();
                 verifier
                     .verify_oneshot(signature, message)
+                    .map_err(|_| BundlrError::InvalidSignature)
+            }
+            SignerMap::Secp256k1 => {
+                let verifier = Secp256k1::verification_only();
+                let pub_key = secp256k1::PublicKey::from_slice(pk).unwrap();
+                let msg = secp256k1::Message::from_slice(message).unwrap();
+                let sig = secp256k1::ecdsa::Signature::from_compact(signature).unwrap();
+
+                verifier
+                    .verify_ecdsa(&msg, &sig, &pub_key)
+                    .map(|_| true)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
             #[allow(unreachable_patterns)]
