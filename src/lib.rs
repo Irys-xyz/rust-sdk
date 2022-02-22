@@ -18,6 +18,9 @@ pub use transaction::BundlrTx;
 #[cfg(feature = "solana")]
 pub use signers::solana::SolanaSigner;
 
+#[cfg(feature = "ethereum")]
+pub use signers::ethereum::EthereumSigner;
+
 pub use signers::signer::{Signer, Verifier};
 pub use index::JWK;
 pub use bundlr::Bundlr;

@@ -91,8 +91,9 @@ impl BundlrTx {
 #[cfg(test)]
 mod tests {
     use std::{fs::File, io::Write};
-
-    use crate::{tags::Tag, transaction::BundlrTx, SolanaSigner};
+    use crate::{tags::Tag, transaction::BundlrTx};
+    #[cfg(feature = "solana")]
+    use crate::SolanaSigner;
 
     #[allow(unused)]
     macro_rules! aw {
@@ -102,6 +103,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "solana")]
     fn test_x() {
         let signer = SolanaSigner::from_base58("key");
         let data_item = BundlrTx::create_with_tags(
