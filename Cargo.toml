@@ -36,11 +36,11 @@ sha2 = "0.10.0"
 tokio = { version = "1.15.0", features = [ "fs" ]}
 tokio-util = "0.6.9"
 bs58 = "0.4.0"
-ed25519-dalek = { version = "1.0.1", optional = true }
 avro = "0.2.1"
 reqwest = { version = "0.11.9", features = [ "json" ] }
 thiserror = "1.0.30"
-secp256k1 = "0.21.2"
+ed25519-dalek = { version = "1.0.1", optional = true }
+secp256k1 = { version = "0.21.2", optional = true }
 
 [dev-dependencies]
 tokio-test = "*"
@@ -52,3 +52,4 @@ features = ["user-hooks"]
 
 [features]
 solana = ["ed25519-dalek"]
+ethereum = ["secp256k1"]

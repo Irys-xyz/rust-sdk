@@ -5,6 +5,8 @@ use jsonwebkey::JsonWebKey;
 use num_derive::FromPrimitive;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use serde::Serialize;
+
+#[cfg(feature = "ethereum")]
 use secp256k1::Secp256k1;
 
 use crate::error::BundlrError;
@@ -82,6 +84,7 @@ impl SignerMap {
                     .verify_oneshot(signature, message)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
+            #[cfg(feature = "ethereum")]
             SignerMap::Secp256k1 => {
                 let verifier = Secp256k1::verification_only();
                 let pub_key = secp256k1::PublicKey::from_slice(pk).unwrap();
