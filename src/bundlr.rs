@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::Write;
-
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -40,8 +37,6 @@ impl<T: Signer> Bundlr<T> {
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
         let tx = tx.into_inner();
-        let mut f = File::create("test_item").unwrap();
-        f.write_all(tx.clone().as_ref()).unwrap();
 
         let response = self
             .client
