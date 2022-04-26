@@ -90,10 +90,10 @@ impl BundlrTx {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Write};
-    use crate::{tags::Tag, transaction::BundlrTx};
     #[cfg(feature = "solana")]
     use crate::SolanaSigner;
+    use crate::{tags::Tag, transaction::BundlrTx};
+    use std::{fs::File, io::Write};
 
     #[allow(unused)]
     macro_rules! aw {
