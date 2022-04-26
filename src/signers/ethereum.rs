@@ -1,16 +1,16 @@
-use crate::Verifier as VerifierTrait;
 use bytes::Bytes;
-use super::signer::Signer as SignerTrait;
-use secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
+use secp256k1::{ ecdsa::Signature, Secp256k1, Message, SecretKey, PublicKey };
+use crate::{Verifier, Signer};
 
 pub struct EthereumSigner {
     sec_key: SecretKey,
     pub_key: PublicKey
 }
 
-#[allow(unused)]
 impl EthereumSigner {
-    pub fn new(sec_key: SecretKey, pub_key: PublicKey) -> EthereumSigner {
+    pub fn new(sec_key: SecretKey) -> EthereumSigner {
+        let secp = Secp256k1::new();
+        let pub_key = PublicKey::from_secret_key(&secp, &sec_key);
         EthereumSigner { sec_key, pub_key }
     }
 
@@ -21,19 +21,14 @@ impl EthereumSigner {
             .try_into()
             .expect("Couldn't convert base58 key to bytes");
 
-        let secp = Secp256k1::new();
         let sec_key = SecretKey::from_slice(&key[..32])
             .expect("32 bytes, within curve order");
-        let pub_key = PublicKey::from_secret_key(&secp, &sec_key);
 
-        Self {
-            sec_key,
-            pub_key
-        }
+        Self::new(sec_key)
     }
 }
 
-impl SignerTrait for EthereumSigner {
+impl Signer for EthereumSigner {
     const SIG_TYPE: u16 = 3;
     const SIG_LENGTH: u16 = 64;
     const PUB_LENGTH: u16 = 33;
@@ -51,32 +46,58 @@ impl SignerTrait for EthereumSigner {
     }
 }
 
-#[allow(unused)]
-impl VerifierTrait for EthereumSigner {
+impl Verifier for EthereumSigner {
     fn verify(
-        pk: Bytes,
+        public_key: Bytes,
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        todo!()
+        let secp = Secp256k1::new();
+        let pub_key = PublicKey::from_slice(&public_key.to_vec())
+            .expect("public keys must be 33 or 65 bytes, serialized according to SEC 2");
+        let msg = Message::from_slice(&message.to_vec())
+            .expect("messages must be 32 bytes and are expected to be hashes");
+        let sig = Signature::from_compact(&signature.to_vec())
+            .expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
+        
+        match secp.verify_ecdsa(&msg, &sig, &pub_key) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use bytes::Bytes;
+    use secp256k1::SecretKey;
 
-    use crate::{Signer, EthereumSigner};
+    use crate::{EthereumSigner, Signer, Verifier};
 
     #[test]
-    fn test_message_sign() {
-        let msg = &[
-            110u8, 123, 209, 66, 178, 255, 153, 11, 45, 235, 189, 244, 42, 9, 152, 192, 181, 183,
-            40, 140, 216, 194, 141, 222, 128, 251, 237, 133, 207, 198, 131, 71, 242, 117, 246, 186,
-            189, 138, 117, 253, 31, 141, 117, 17, 179, 138, 224, 131,
-        ];
+    fn should_create_signer() {
+        let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
+        EthereumSigner::new(secret_key);
+        
+        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        EthereumSigner::from_base58(base58_secret_key);
+    }
 
-        let signer = EthereumSigner::from_base58("key");
-        dbg!(signer.sign(Bytes::from(&msg[..])).unwrap().to_vec());
+    #[test]
+    fn should_sign_and_verify() {
+        let msg = &[
+            0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe,
+            0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0, 0xcd, 0x91,
+            0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61,
+            0xd5, 0x44, 0x53, 0xcf, 0x6e, 0x82, 0xb4, 0x50,
+        ];
+        let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
+        let signer = EthereumSigner::new(secret_key);
+
+        let sig = signer.sign(Bytes::from(&msg[..])).unwrap();
+        let pub_key = signer.pub_key();
+        let msg = Bytes::from(&msg[..]);
+
+        EthereumSigner::verify(pub_key, msg, sig);
     }
 }
