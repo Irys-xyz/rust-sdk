@@ -1,10 +1,10 @@
-use std::panic;
 use data_encoding::BASE64URL;
 use derive_more::Display;
 use jsonwebkey::JsonWebKey;
 use num_derive::FromPrimitive;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use serde::Serialize;
+use std::panic;
 
 #[cfg(feature = "ethereum")]
 use secp256k1::Secp256k1;
@@ -15,7 +15,7 @@ use crate::error::BundlrError;
 pub enum SignerMap {
     Arweave = 1,
     Ed25519 = 2,
-    Secp256k1 = 3
+    Secp256k1 = 3,
 }
 
 pub struct Config {

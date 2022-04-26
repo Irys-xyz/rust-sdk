@@ -43,7 +43,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     let mut offset = 32 + (64 * bundle_length);
     let mut items = Vec::with_capacity(cmp::min(bundle_length as usize, 1000));
 
-    for Header(size, mut id) in headers {
+    for Header(size, id) in headers {
         // Read 4 KiB - max data-less Bundlr tx
         // We do it all at once to improve performance - by lowering fs ops and doing ops in memory
         let buffer = read_offset(&mut file, offset, 4096)?;
@@ -138,7 +138,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
         let item = Item {
             tx_id: id,
-            signature: sig.to_vec()
+            signature: sig.to_vec(),
         };
 
         items.push(item);
@@ -150,6 +150,8 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 }
 
 // Reads `length` bytes at `offset` within `file`
+#[allow(clippy::uninit_vec)]
+#[allow(clippy::unused_io_amount)]
 fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes, std::io::Error> {
     let mut b = Vec::with_capacity(length);
     unsafe { b.set_len(length) };

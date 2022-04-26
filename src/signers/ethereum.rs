@@ -1,10 +1,10 @@
+use crate::{Signer, Verifier};
 use bytes::Bytes;
-use secp256k1::{ ecdsa::Signature, Secp256k1, Message, SecretKey, PublicKey };
-use crate::{Verifier, Signer};
+use secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey};
 
 pub struct EthereumSigner {
     sec_key: SecretKey,
-    pub_key: PublicKey
+    pub_key: PublicKey,
 }
 
 impl EthereumSigner {
@@ -21,8 +21,7 @@ impl EthereumSigner {
             .try_into()
             .expect("Couldn't convert base58 key to bytes");
 
-        let sec_key = SecretKey::from_slice(&key[..32])
-            .expect("32 bytes, within curve order");
+        let sec_key = SecretKey::from_slice(&key[..32]).expect("32 bytes, within curve order");
 
         Self::new(sec_key)
     }
@@ -59,7 +58,7 @@ impl Verifier for EthereumSigner {
             .expect("messages must be 32 bytes and are expected to be hashes");
         let sig = Signature::from_compact(&signature.to_vec())
             .expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
-        
+
         match secp.verify_ecdsa(&msg, &sig, &pub_key) {
             Ok(_) => Ok(true),
             Err(_) => Ok(false),
@@ -78,7 +77,7 @@ mod tests {
     fn should_create_signer() {
         let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
         EthereumSigner::new(secret_key);
-        
+
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
         EthereumSigner::from_base58(base58_secret_key);
     }
@@ -86,10 +85,9 @@ mod tests {
     #[test]
     fn should_sign_and_verify() {
         let msg = &[
-            0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe,
-            0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0, 0xcd, 0x91,
-            0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61,
-            0xd5, 0x44, 0x53, 0xcf, 0x6e, 0x82, 0xb4, 0x50,
+            0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe, 0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0,
+            0xcd, 0x91, 0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61, 0xd5, 0x44, 0x53, 0xcf,
+            0x6e, 0x82, 0xb4, 0x50,
         ];
         let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
         let signer = EthereumSigner::new(secret_key);
