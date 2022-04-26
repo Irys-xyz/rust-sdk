@@ -105,7 +105,8 @@ mod tests {
     #[test]
     #[cfg(feature = "solana")]
     fn test_x() {
-        let signer = SolanaSigner::from_base58("key");
+        let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = SolanaSigner::from_base58(secret_key);
         let data_item = BundlrTx::create_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
