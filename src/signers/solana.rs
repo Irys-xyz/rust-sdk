@@ -74,7 +74,8 @@ mod tests {
             189, 138, 117, 253, 31, 141, 117, 17, 179, 138, 224, 131,
         ];
 
-        let signer = SolanaSigner::from_base58("key");
+        let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = SolanaSigner::from_base58(secret_key);
         dbg!(signer.sign(Bytes::from(&message[..])).unwrap().to_vec());
     }
 }
