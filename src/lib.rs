@@ -20,6 +20,9 @@ pub use transaction::BundlrTx;
 #[cfg(feature = "ethereum")]
 pub use signers::ethereum::EthereumSigner;
 
+#[cfg(feature = "erc20")]
+pub use signers::erc20::ERC20Signer;
+
 pub use bundlr::Bundlr;
 pub use index::JWK;
 pub use signers::signer::{Signer, Verifier};

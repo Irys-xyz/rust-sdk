@@ -84,7 +84,7 @@ impl SignerMap {
                     .verify_oneshot(signature, message)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
-            #[cfg(feature = "ethereum")]
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => {
                 let verifier = Secp256k1::verification_only();
                 let pub_key = secp256k1::PublicKey::from_slice(pk).unwrap();
