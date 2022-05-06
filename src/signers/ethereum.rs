@@ -96,6 +96,6 @@ mod tests {
         let pub_key = signer.pub_key();
         let msg = Bytes::from(&msg[..]);
 
-        EthereumSigner::verify(pub_key, msg, sig);
+        assert!(EthereumSigner::verify(pub_key, msg, sig).unwrap());
     }
 }
