@@ -1,6 +1,4 @@
 extern crate derive_builder;
-#[cfg(feature = "solana")]
-extern crate ed25519_dalek;
 
 pub mod deep_hash;
 pub mod deep_hash_sync;
@@ -13,9 +11,13 @@ mod transaction;
 mod bundlr;
 pub mod verify;
 
+pub use signers::arweave::ArweaveSigner;
+pub use transaction::BundlrTx;
+
+#[cfg(feature = "solana")]
+extern crate ed25519_dalek;
 #[cfg(feature = "solana")]
 pub use signers::solana::SolanaSigner;
-pub use transaction::BundlrTx;
 
 #[cfg(feature = "ethereum")]
 pub use signers::ethereum::EthereumSigner;
@@ -24,5 +26,4 @@ pub use signers::ethereum::EthereumSigner;
 pub use signers::erc20::ERC20Signer;
 
 pub use bundlr::Bundlr;
-pub use index::JWK;
 pub use signers::signer::{Signer, Verifier};

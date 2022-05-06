@@ -1,9 +1,9 @@
 use data_encoding::BASE64URL;
 use derive_more::Display;
+use jsonwebkey as jwk;
 use jsonwebkey::JsonWebKey;
 use num_derive::FromPrimitive;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
-use serde::Serialize;
 use std::panic;
 
 #[cfg(feature = "ethereum")]
@@ -30,13 +30,6 @@ impl Config {
     }
 }
 
-#[derive(Serialize)]
-pub struct JWK<'a> {
-    pub kty: &'a str,
-    pub e: &'a str,
-    pub n: String,
-}
-
 impl SignerMap {
     pub fn get_config(&self) -> Config {
         match *self {
@@ -60,11 +53,15 @@ impl SignerMap {
     pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<bool, BundlrError> {
         match *self {
             SignerMap::Arweave => {
-                let jwk = JWK {
-                    kty: "RSA",
-                    e: "AQAB",
-                    n: BASE64URL.encode(pk),
-                };
+                let jwt_str = format!(
+                    "{{
+                    \"kty\": \"RSA\",
+                    \"e\": \"AQAB\",
+                    \"n\": {}
+                }}",
+                    BASE64URL.encode(pk)
+                );
+                let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
                 let p = serde_json::to_string(&jwk).unwrap();
                 let key: JsonWebKey = p.parse().unwrap();
 
@@ -76,6 +73,7 @@ impl SignerMap {
                     .verify(signature)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
+            #[cfg(feature = "solana")]
             SignerMap::Ed25519 => {
                 let pkey = PKey::public_key_from_raw_bytes(pk, openssl::pkey::Id::ED25519)
                     .expect("Couldn't create PKey<Public>");
