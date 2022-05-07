@@ -73,7 +73,7 @@ impl SignerMap {
                     .verify(signature)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
-            #[cfg(feature = "solana")]
+            #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => {
                 let pkey = PKey::public_key_from_raw_bytes(pk, openssl::pkey::Id::ED25519)
                     .expect("Couldn't create PKey<Public>");

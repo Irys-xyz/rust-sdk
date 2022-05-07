@@ -1,16 +1,18 @@
-use crate::Verifier;
+use crate::Signer as SignerTrait;
+use crate::Verifier as VerifierTrait;
 
-use super::signer::Signer as SignerTrait;
 use bytes::Bytes;
-use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signer};
+use ed25519_dalek::{
+    Keypair, PublicKey, SecretKey, Signature, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH,
+};
 
 pub struct SolanaSigner {
-    key: Keypair,
+    keypair: Keypair,
 }
 
 impl SolanaSigner {
-    pub fn new(key: Keypair, _public: Vec<u8>) -> SolanaSigner {
-        SolanaSigner { key }
+    pub fn new(keypair: Keypair) -> SolanaSigner {
+        SolanaSigner { keypair }
     }
 
     pub fn from_base58(s: &str) -> Self {
@@ -19,63 +21,70 @@ impl SolanaSigner {
             .as_slice()
             .try_into()
             .expect("Couldn't convert base58 key to bytes");
-        let sc = SecretKey::from_bytes(&key[..32]).unwrap();
-        let pubkey = PublicKey::from_bytes(&key[32..64]).unwrap();
 
         Self {
-            key: Keypair {
-                public: pubkey,
-                secret: sc,
-            },
+            keypair: Keypair::from_bytes(key).unwrap(),
         }
     }
 }
 
 impl SignerTrait for SolanaSigner {
     const SIG_TYPE: u16 = 2;
-
     const SIG_LENGTH: u16 = 64;
-
     const PUB_LENGTH: u16 = 32;
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        Ok(Bytes::copy_from_slice(
-            &self.key.sign(&message[..]).to_bytes(),
-        ))
+        let sig = &self.keypair.sign(message.as_ref());
+        let sig_bytes: [u8; SIGNATURE_LENGTH] = sig.to_bytes();
+        Ok(Bytes::copy_from_slice(&sig_bytes))
     }
 
     fn pub_key(&self) -> bytes::Bytes {
-        Bytes::copy_from_slice(&self.key.public.as_bytes()[..])
+        let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = self.keypair.public.to_bytes();
+        Bytes::copy_from_slice(&public_key_bytes[..])
     }
 }
 
-#[allow(unused)]
-impl Verifier for SolanaSigner {
+impl VerifierTrait for SolanaSigner {
     fn verify(
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        todo!()
+        let public_key = PublicKey::from_bytes(&pk[..]).unwrap();
+        let sig = Signature::from_bytes(&signature[..]).unwrap();
+
+        match public_key.verify(&message[..], &sig) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{Signer, SolanaSigner, Verifier};
     use bytes::Bytes;
-
-    use crate::{Signer, SolanaSigner};
+    use ed25519_dalek::{Keypair, PublicKey, SecretKey, PUBLIC_KEY_LENGTH};
 
     #[test]
-    fn test() {
-        let message = &[
-            110u8, 123, 209, 66, 178, 255, 153, 11, 45, 235, 189, 244, 42, 9, 152, 192, 181, 183,
-            40, 140, 216, 194, 141, 222, 128, 251, 237, 133, 207, 198, 131, 71, 242, 117, 246, 186,
-            189, 138, 117, 253, 31, 141, 117, 17, 179, 138, 224, 131,
-        ];
+    fn should_create_signer() {
+        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        SolanaSigner::from_base58(base58_secret_key);
 
-        let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        let signer = SolanaSigner::from_base58(secret_key);
-        dbg!(signer.sign(Bytes::from(&message[..])).unwrap().to_vec());
+        let keypair = Keypair::from_bytes(&[0xcd; 64]).unwrap();
+        SolanaSigner::new(keypair);
+    }
+
+    #[test]
+    fn should_sign_and_verify() {
+        let keypair = Keypair::from_bytes(&[0xcd; 64]).unwrap();
+        let signer = SolanaSigner::new(keypair);
+
+        let msg = Bytes::from(b"Message".to_vec());
+        let sig = signer.sign(msg.clone()).unwrap();
+        let pub_key = signer.pub_key();
+
+        // assert!(SolanaSigner::verify(pub_key, msg, sig).unwrap());
     }
 }
