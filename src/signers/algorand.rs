@@ -3,7 +3,7 @@ use crate::Verifier as VerifierTrait;
 
 use bytes::Bytes;
 use ed25519_dalek::{
-    Keypair, PublicKey, SecretKey, Signature, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH,
+    Keypair, PublicKey, Signature, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH,
 };
 
 pub struct AlgorandSigner {
@@ -30,8 +30,8 @@ impl AlgorandSigner {
 
 impl SignerTrait for AlgorandSigner {
     const SIG_TYPE: u16 = 2;
-    const SIG_LENGTH: u16 = 64;
-    const PUB_LENGTH: u16 = 32;
+    const SIG_LENGTH: u16 = SIGNATURE_LENGTH;
+    const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH;
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
         let sig = &self.keypair.sign(message.as_ref());
@@ -65,7 +65,7 @@ impl VerifierTrait for AlgorandSigner {
 mod tests {
     use crate::{AlgorandSigner, Signer, Verifier};
     use bytes::Bytes;
-    use ed25519_dalek::{Keypair, PublicKey, SecretKey, PUBLIC_KEY_LENGTH};
+    use ed25519_dalek::{Keypair, PublicKey, PUBLIC_KEY_LENGTH};
 
     #[test]
     fn should_create_signer() {

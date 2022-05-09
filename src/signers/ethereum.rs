@@ -1,6 +1,10 @@
 use crate::{Signer, Verifier};
 use bytes::Bytes;
-use secp256k1::{ecdsa::Signature, Message, PublicKey, Secp256k1, SecretKey};
+use secp256k1::{
+    constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
+    ecdsa::Signature,
+    Message, PublicKey, Secp256k1, SecretKey,
+};
 
 pub struct EthereumSigner {
     sec_key: SecretKey,
@@ -29,8 +33,8 @@ impl EthereumSigner {
 
 impl Signer for EthereumSigner {
     const SIG_TYPE: u16 = 3;
-    const SIG_LENGTH: u16 = 64;
-    const PUB_LENGTH: u16 = 33;
+    const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
+    const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
 
     fn pub_key(&self) -> bytes::Bytes {
         Bytes::copy_from_slice(&self.pub_key.serialize())
@@ -84,17 +88,17 @@ mod tests {
 
     #[test]
     fn should_sign_and_verify() {
-        let msg = &[
+        let msg_bytes = &[
             0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe, 0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0,
             0xcd, 0x91, 0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61, 0xd5, 0x44, 0x53, 0xcf,
             0x6e, 0x82, 0xb4, 0x50,
         ];
+        let msg = Bytes::from(&msg_bytes[..]);
         let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
         let signer = EthereumSigner::new(secret_key);
 
-        let sig = signer.sign(Bytes::from(&msg[..])).unwrap();
+        let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        let msg = Bytes::from(&msg[..]);
 
         assert!(EthereumSigner::verify(pub_key, msg, sig).unwrap());
     }
