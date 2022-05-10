@@ -6,7 +6,10 @@ use num_derive::FromPrimitive;
 use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use std::panic;
 
-#[cfg(feature = "ethereum")]
+#[cfg(any(feature = "solana", feature = "algorand"))]
+use ed25519_dalek::Verifier;
+
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
 use secp256k1::Secp256k1;
 
 use crate::error::BundlrError;
@@ -37,13 +40,15 @@ impl SignerMap {
                 sig_length: 512,
                 pub_length: 512,
             },
+            #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => Config {
-                sig_length: 64,
-                pub_length: 32,
+                sig_length: ed25519_dalek::SIGNATURE_LENGTH,
+                pub_length: ed25519_dalek::PUBLIC_KEY_LENGTH,
             },
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => Config {
-                sig_length: 64,
-                pub_length: 32,
+                sig_length: secp256k1::constants::SCHNORR_SIGNATURE_SIZE,
+                pub_length: secp256k1::constants::SCHNORR_PUBLIC_KEY_SIZE,
             },
             #[allow(unreachable_patterns)]
             _ => panic!("{} get_config not implemented in SignerMap yet", self),
@@ -75,22 +80,37 @@ impl SignerMap {
             }
             #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => {
-                let pkey = PKey::public_key_from_raw_bytes(pk, openssl::pkey::Id::ED25519)
-                    .expect("Couldn't create PKey<Public>");
-                let mut verifier = sign::Verifier::new(MessageDigest::null(), &pkey).unwrap();
-                verifier
-                    .verify_oneshot(signature, message)
+                let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).expect(&format!(
+                    "ED25519 public keys must be {} bytes long",
+                    ed25519_dalek::PUBLIC_KEY_LENGTH
+                ));
+                let sig = ed25519_dalek::Signature::from_bytes(&signature).expect(&format!(
+                    "ED22519 signatures keys must be {} bytes long",
+                    ed25519_dalek::SIGNATURE_LENGTH
+                ));
+                public_key
+                    .verify(message, &sig)
+                    .map(|_| true)
                     .map_err(|_| BundlrError::InvalidSignature)
             }
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => {
                 let verifier = Secp256k1::verification_only();
-                let pub_key = secp256k1::PublicKey::from_slice(pk).unwrap();
-                let msg = secp256k1::Message::from_slice(message).unwrap();
-                let sig = secp256k1::ecdsa::Signature::from_compact(signature).unwrap();
+                let public_key = secp256k1::PublicKey::from_slice(pk).expect(&format!(
+                    "Secp256k1 public keys must be {} bytes long",
+                    secp256k1::constants::SCHNORR_PUBLIC_KEY_SIZE
+                ));
+                let msg = secp256k1::Message::from_slice(message).expect(&format!(
+                    "Secp256k1 messages must be {} bytes long",
+                    secp256k1::constants::MESSAGE_SIZE
+                ));
+                let sig = secp256k1::ecdsa::Signature::from_compact(signature).expect(&format!(
+                    "Secp256k1 signatures must be {} bytes long",
+                    secp256k1::constants::SCHNORR_SIGNATURE_SIZE
+                ));
 
                 verifier
-                    .verify_ecdsa(&msg, &sig, &pub_key)
+                    .verify_ecdsa(&msg, &sig, &public_key)
                     .map(|_| true)
                     .map_err(|_| BundlrError::InvalidSignature)
             }

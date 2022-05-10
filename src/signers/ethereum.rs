@@ -1,7 +1,7 @@
 use crate::{Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
-    constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
+    constants::{SCHNORR_PUBLIC_KEY_SIZE, SCHNORR_SIGNATURE_SIZE},
     ecdsa::Signature,
     Message, PublicKey, Secp256k1, SecretKey,
 };
@@ -33,8 +33,8 @@ impl EthereumSigner {
 
 impl Signer for EthereumSigner {
     const SIG_TYPE: u16 = 3;
-    const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
-    const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
+    const SIG_LENGTH: u16 = SCHNORR_SIGNATURE_SIZE as u16;
+    const PUB_LENGTH: u16 = SCHNORR_PUBLIC_KEY_SIZE as u16;
 
     fn pub_key(&self) -> bytes::Bytes {
         Bytes::copy_from_slice(&self.pub_key.serialize())
