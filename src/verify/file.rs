@@ -174,10 +174,48 @@ mod tests {
     }
 
     #[test]
-    fn test_verify() {
+    fn should_verify_bundle() {
         println!(
             "{:?}",
-            aw!(verify_file_bundle("./src/verify/test_bundle".to_string()))
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/test_bundle".to_string()
+            ))
+        );
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    fn should_verify_arweave() {
+        /*println!(
+            "{:?}",
+            aw!(verify_file_bundle("./src/verify/test_bundles/arweave_sig".to_string()))
+        );*/
+
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    #[cfg(any(feature = "ethereum", feature = "erc20"))]
+    fn should_verify_secp256k1() {
+        /*println!(
+            "{:?}",
+            aw!(verify_file_bundle("./src/verify/test_bundles/ethereum_sig".to_string()))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle("./src/verify/test_bundles/chainlink_sig".to_string()))
+        );*/
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    #[cfg(any(feature = "solana", feature = "algorand"))]
+    fn should_verify_ed25519() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/solana_sig".to_string()
+            ))
         );
         assert_eq!(1, 1)
     }
