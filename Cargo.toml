@@ -32,7 +32,7 @@ bigint = "4.4.3"
 ring = "0.16.20"
 serde = "1.0.132"
 serde_json = "1.0.73"
-sha2 = "0.10.0"
+sha2 = "0.10.2"
 tokio = { version = "1.15.0", features = [ "fs" ]}
 tokio-util = "0.6.9"
 bs58 = "0.4.0"
@@ -40,7 +40,7 @@ avro = "0.2.1"
 reqwest = { version = "0.11.9", features = [ "json" ] }
 thiserror = "1.0.30"
 ed25519-dalek = { version = "1.0.1", optional = true }
-secp256k1 = { version = "0.22.1", optional = true }
+secp256k1 = { version = "0.22.1", optional = true, features = [ "bitcoin_hashes" ]  }
 
 [dev-dependencies]
 tokio-test = "0.4.2"
