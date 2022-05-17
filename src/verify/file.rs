@@ -174,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn should_verify_bundle() {
+    fn should_verify_test_bundle() {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
@@ -186,10 +186,12 @@ mod tests {
 
     #[test]
     fn should_verify_arweave() {
-        /*println!(
+        println!(
             "{:?}",
-            aw!(verify_file_bundle("./src/verify/test_bundles/arweave_sig".to_string()))
-        );*/
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/arweave_sig".to_string()
+            ))
+        );
 
         assert_eq!(1, 1)
     }

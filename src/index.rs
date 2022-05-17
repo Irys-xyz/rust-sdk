@@ -10,7 +10,7 @@ use std::panic;
 use ed25519_dalek::Verifier;
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
-use secp256k1::Secp256k1;
+use secp256k1::{hashes::sha256::Hash as sha256_Hash, Secp256k1};
 
 use crate::error::BundlrError;
 
@@ -47,8 +47,8 @@ impl SignerMap {
             },
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => Config {
-                sig_length: secp256k1::constants::SCHNORR_SIGNATURE_SIZE,
-                pub_length: secp256k1::constants::SCHNORR_PUBLIC_KEY_SIZE,
+                sig_length: secp256k1::constants::COMPACT_SIGNATURE_SIZE + 1,
+                pub_length: secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE,
             },
             #[allow(unreachable_patterns)]
             _ => panic!("{} get_config not implemented in SignerMap yet", self),
@@ -59,11 +59,7 @@ impl SignerMap {
         match *self {
             SignerMap::Arweave => {
                 let jwt_str = format!(
-                    "{{
-                    \"kty\": \"RSA\",
-                    \"e\": \"AQAB\",
-                    \"n\": {}
-                }}",
+                    "{{\"kty\":\"RSA\",\"e\":\"AQAB\",\"n\":\"{}\"}}",
                     BASE64URL.encode(pk)
                 );
                 let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
@@ -76,7 +72,7 @@ impl SignerMap {
                 verifier.update(message).unwrap();
                 verifier
                     .verify(signature)
-                    .map_err(|_| BundlrError::InvalidSignature)
+                    .map_err(|e| BundlrError::InvalidSignature)
             }
             #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => {
@@ -97,17 +93,17 @@ impl SignerMap {
             SignerMap::Secp256k1 => {
                 let verifier = Secp256k1::verification_only();
                 let public_key = secp256k1::PublicKey::from_slice(pk).expect(&format!(
-                    "Secp256k1 public keys must be {} bytes long",
-                    secp256k1::constants::SCHNORR_PUBLIC_KEY_SIZE
+                    "Secp256k1 public keys must be {} bytes long (uncompressed)",
+                    secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE
                 ));
-                let msg = secp256k1::Message::from_slice(message).expect(&format!(
-                    "Secp256k1 messages must be {} bytes long",
-                    secp256k1::constants::MESSAGE_SIZE
-                ));
-                let sig = secp256k1::ecdsa::Signature::from_compact(signature).expect(&format!(
-                    "Secp256k1 signatures must be {} bytes long",
-                    secp256k1::constants::SCHNORR_SIGNATURE_SIZE
-                ));
+
+                let msg = secp256k1::Message::from_hashed_data::<sha256_Hash>(&message);
+
+                let sig =
+                    secp256k1::ecdsa::Signature::from_compact(&signature[1..65]).expect(&format!(
+                        "Secp256k1 signatures must be {} bytes long",
+                        secp256k1::constants::SCHNORR_SIGNATURE_SIZE
+                    ));
 
                 verifier
                     .verify_ecdsa(&msg, &sig, &public_key)
