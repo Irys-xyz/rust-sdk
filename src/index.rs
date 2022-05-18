@@ -9,7 +9,7 @@ use std::panic;
 #[cfg(any(feature = "solana", feature = "algorand"))]
 use ed25519_dalek::Verifier;
 
-#[cfg(any(feature = "ethereum", feature = "erc20"))]
+#[cfg(any(feature = "ethereum", feature = "erc20", feature = "cosmos"))]
 use secp256k1::{hashes::sha256, Secp256k1};
 
 use crate::error::BundlrError;
