@@ -26,7 +26,7 @@ jsonwebkey = { version = "0.3.4", features = [ "pkcs-convert" ] }
 lazy_static = "1.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.14"
-openssl = "0.10.40"
+openssl = { version = "0.10.40", features = ["vendored"] }
 pipe = "0.4.0"
 bigint = "4.4.3"
 ring = "0.16.20"

@@ -10,7 +10,7 @@ use std::panic;
 use ed25519_dalek::Verifier;
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
-use secp256k1::{hashes::sha256::Hash as sha256_Hash, Secp256k1};
+use secp256k1::{hashes::sha256, Secp256k1};
 
 use crate::error::BundlrError;
 
@@ -72,7 +72,7 @@ impl SignerMap {
                 verifier.update(message).unwrap();
                 verifier
                     .verify(signature)
-                    .map_err(|e| BundlrError::InvalidSignature)
+                    .map_err(|_| BundlrError::InvalidSignature)
             }
             #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => {
@@ -91,20 +91,18 @@ impl SignerMap {
             }
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => {
-                let verifier = Secp256k1::verification_only();
                 let public_key = secp256k1::PublicKey::from_slice(pk).expect(&format!(
                     "Secp256k1 public keys must be {} bytes long (uncompressed)",
                     secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE
                 ));
-
-                let msg = secp256k1::Message::from_hashed_data::<sha256_Hash>(&message);
-
+                let msg = secp256k1::Message::from_hashed_data::<sha256::Hash>(&message);
                 let sig =
                     secp256k1::ecdsa::Signature::from_compact(&signature[1..65]).expect(&format!(
                         "Secp256k1 signatures must be {} bytes long",
                         secp256k1::constants::SCHNORR_SIGNATURE_SIZE
                     ));
 
+                let verifier = Secp256k1::verification_only();
                 verifier
                     .verify_ecdsa(&msg, &sig, &public_key)
                     .map(|_| true)
