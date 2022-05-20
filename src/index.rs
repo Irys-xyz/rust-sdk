@@ -10,7 +10,7 @@ use std::panic;
 #[cfg(any(feature = "solana", feature = "algorand"))]
 use ed25519_dalek::Verifier;
 
-#[cfg(feature = "ethereum")]
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
 use crate::{EthereumSigner, Verifier as EthVerifier};
 
 use crate::error::BundlrError;

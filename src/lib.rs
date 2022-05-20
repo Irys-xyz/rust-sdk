@@ -20,9 +20,6 @@ pub use signers::solana::SolanaSigner;
 #[cfg(feature = "ethereum")]
 pub use signers::ethereum::EthereumSigner;
 
-#[cfg(feature = "erc20")]
-pub use signers::erc20::ERC20Signer;
-
 #[cfg(feature = "cosmos")]
 pub use signers::cosmos::CosmosSigner;
 

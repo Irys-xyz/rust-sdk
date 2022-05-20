@@ -208,7 +208,43 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
+                "./src/verify/test_bundles/arbitrum_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/avalanche_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/bnb_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/boba-eth_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
                 "./src/verify/test_bundles/chainlink_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/kyve_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/matic_sig".to_string()
             ))
         );
         assert_eq!(1, 1)
