@@ -199,14 +199,18 @@ mod tests {
     #[test]
     #[cfg(any(feature = "ethereum", feature = "erc20"))]
     fn should_verify_secp256k1() {
-        /*println!(
+        println!(
             "{:?}",
-            aw!(verify_file_bundle("./src/verify/test_bundles/ethereum_sig".to_string()))
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/ethereum_sig".to_string()
+            ))
         );
         println!(
             "{:?}",
-            aw!(verify_file_bundle("./src/verify/test_bundles/chainlink_sig".to_string()))
-        );*/
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/chainlink_sig".to_string()
+            ))
+        );
         assert_eq!(1, 1)
     }
 

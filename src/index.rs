@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use data_encoding::BASE64URL;
 use derive_more::Display;
 use jsonwebkey as jwk;
@@ -9,8 +10,8 @@ use std::panic;
 #[cfg(any(feature = "solana", feature = "algorand"))]
 use ed25519_dalek::Verifier;
 
-#[cfg(any(feature = "ethereum", feature = "erc20", feature = "cosmos"))]
-use secp256k1::{hashes::sha256, Secp256k1};
+#[cfg(feature = "ethereum")]
+use crate::{EthereumSigner, Verifier as EthVerifier};
 
 use crate::error::BundlrError;
 
@@ -90,24 +91,11 @@ impl SignerMap {
                     .map_err(|_| BundlrError::InvalidSignature)
             }
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
-            SignerMap::Secp256k1 => {
-                let public_key = secp256k1::PublicKey::from_slice(pk).expect(&format!(
-                    "Secp256k1 public keys must be {} bytes long (uncompressed)",
-                    secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE
-                ));
-                let msg = secp256k1::Message::from_hashed_data::<sha256::Hash>(&message);
-                let sig =
-                    secp256k1::ecdsa::Signature::from_compact(&signature[1..65]).expect(&format!(
-                        "Secp256k1 signatures must be {} bytes long",
-                        secp256k1::constants::SCHNORR_SIGNATURE_SIZE
-                    ));
-
-                let verifier = Secp256k1::verification_only();
-                verifier
-                    .verify_ecdsa(&msg, &sig, &public_key)
-                    .map(|_| true)
-                    .map_err(|_| BundlrError::InvalidSignature)
-            }
+            SignerMap::Secp256k1 => EthereumSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
             #[allow(unreachable_patterns)]
             _ => panic!("{} verify not implemented in SignerMap yet", self),
         }
