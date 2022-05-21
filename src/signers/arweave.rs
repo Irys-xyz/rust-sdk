@@ -1,5 +1,6 @@
 use crate::error::BundlrError;
 use bytes::Bytes;
+use data_encoding::BASE64URL;
 use jwk::JsonWebKey;
 use openssl::{
     hash::MessageDigest,
@@ -7,7 +8,6 @@ use openssl::{
     rsa::Padding,
     sign,
 };
-use data_encoding::BASE64URL;
 extern crate jsonwebkey as jwk;
 
 use super::signer::{Signer, Verifier};
@@ -37,11 +37,11 @@ impl Signer for ArweaveSigner {
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError> {
         let mut signer = sign::Signer::new(MessageDigest::sha256(), &self.priv_key).unwrap();
         signer.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
-        if let Err(_) = signer.update(&message) {
+        if signer.update(&message).is_err() {
             return Err(BundlrError::NoBytesLeft);
         };
 
-        return Ok(message.into());
+        return Ok(message);
     }
 
     fn pub_key(&self) -> Bytes {

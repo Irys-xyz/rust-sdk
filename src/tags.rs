@@ -17,7 +17,7 @@ impl Tag {
     }
 }
 
-const SCHEMA_STR: &'static str = r##"{
+const SCHEMA_STR: &str = r##"{
     "type": "array",
     "items": {
         "type": "record",

@@ -6,13 +6,13 @@ use std::panic;
 use crate::{ArweaveSigner, Verifier};
 
 #[cfg(any(feature = "solana", feature = "algorand"))]
-use crate::{SolanaSigner};
+use crate::SolanaSigner;
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
-use crate::{EthereumSigner};
+use crate::EthereumSigner;
 
 #[cfg(feature = "cosmos")]
-use crate::{CosmosSigner};
+use crate::CosmosSigner;
 
 use crate::error::BundlrError;
 

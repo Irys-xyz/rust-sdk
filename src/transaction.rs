@@ -14,7 +14,7 @@ impl BundlrTx {
     }
 
     pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &impl Signer) -> Self {
-        let encoded_tags = if tags.len() > 0 {
+        let encoded_tags = if !tags.is_empty() {
             tags.encode().unwrap()
         } else {
             Bytes::default()
@@ -77,7 +77,7 @@ impl BundlrTx {
         let number_of_tags_bytes = (encoded_tags.len() as u64).to_le_bytes();
         b.put(number_of_tags.as_slice());
         b.put(number_of_tags_bytes.as_slice());
-        if number_of_tags_bytes.len() > 0 {
+        if !number_of_tags_bytes.is_empty() {
             b.put(encoded_tags);
         }
 

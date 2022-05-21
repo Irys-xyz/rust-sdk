@@ -15,17 +15,17 @@ pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
             let tag = [BLOB_AS_BUFFER, b.len().to_string().as_bytes()].concat();
-            let c = [sha384hash(tag.into()), sha384hash(b.into())].concat();
+            let c = [sha384hash(tag.into()), sha384hash(b)].concat();
             Ok(Bytes::copy_from_slice(&sha384hash(c.into())))
         }
         DeepHashChunk::Chunks(chunks) => {
             // Be careful of truncation
             let len = chunks.len() as f64;
-            let tag = [LIST_AS_BUFFER, &len.to_string().as_bytes()].concat();
+            let tag = [LIST_AS_BUFFER, len.to_string().as_bytes()].concat();
 
             let acc = sha384hash(tag.into());
 
-            return deep_hash_chunks_sync(chunks, acc);
+            deep_hash_chunks_sync(chunks, acc)
         }
         _ => panic!("Streaming is not supported for sync"),
     }
@@ -35,7 +35,7 @@ pub fn deep_hash_chunks_sync(
     mut chunks: Vec<DeepHashChunk>,
     acc: Bytes,
 ) -> Result<Bytes, BundlrError> {
-    if chunks.len() == 0 {
+    if chunks.is_empty() {
         return Ok(acc);
     };
 
