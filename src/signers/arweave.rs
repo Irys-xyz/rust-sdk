@@ -41,7 +41,7 @@ impl Signer for ArweaveSigner {
             return Err(BundlrError::NoBytesLeft);
         };
 
-        return Ok(message);
+        Ok(message)
     }
 
     fn pub_key(&self) -> Bytes {
