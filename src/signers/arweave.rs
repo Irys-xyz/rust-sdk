@@ -1,11 +1,13 @@
 use crate::error::BundlrError;
 use bytes::Bytes;
+use jwk::JsonWebKey;
 use openssl::{
     hash::MessageDigest,
     pkey::{PKey, Private},
     rsa::Padding,
     sign,
 };
+use data_encoding::BASE64URL;
 extern crate jsonwebkey as jwk;
 
 use super::signer::{Signer, Verifier};
@@ -49,15 +51,21 @@ impl Signer for ArweaveSigner {
 
 impl Verifier for ArweaveSigner {
     fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<bool, BundlrError> {
-        let pub_key = PKey::public_key_from_pem(&pk).unwrap();
-        let mut verifier = sign::Verifier::new(MessageDigest::sha256(), &pub_key).unwrap();
-        if let Err(_) = verifier.update(&message) {
-            return Err(BundlrError::NoBytesLeft);
-        };
+        let jwt_str = format!(
+            "{{\"kty\":\"RSA\",\"e\":\"AQAB\",\"n\":\"{}\"}}",
+            BASE64URL.encode(&pk[..])
+        );
+        let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
+        let p = serde_json::to_string(&jwk).unwrap();
+        let key: JsonWebKey = p.parse().unwrap();
 
+        let pkey = PKey::public_key_from_der(key.key.to_der().as_slice()).unwrap();
+        let mut verifier = sign::Verifier::new(MessageDigest::sha256(), &pkey).unwrap();
+        verifier.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
+        verifier.update(&message[..]).unwrap();
         verifier
-            .verify(&signature)
-            .map_err(|_| BundlrError::NoBytesLeft)
+            .verify(&signature[..])
+            .map_err(|_| BundlrError::InvalidSignature)
     }
 }
 

@@ -1,20 +1,18 @@
 use bytes::Bytes;
-use data_encoding::BASE64URL;
 use derive_more::Display;
-use jsonwebkey as jwk;
-use jsonwebkey::JsonWebKey;
 use num_derive::FromPrimitive;
-use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use std::panic;
 
+use crate::{ArweaveSigner, Verifier};
+
 #[cfg(any(feature = "solana", feature = "algorand"))]
-use crate::{SolanaSigner, Verifier as SolVerifier};
+use crate::{SolanaSigner};
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
-use crate::{EthereumSigner, Verifier as EthVerifier};
+use crate::{EthereumSigner};
 
 #[cfg(feature = "cosmos")]
-use crate::{CosmosSigner, Verifier as CosmosVerifier};
+use crate::{CosmosSigner};
 
 use crate::error::BundlrError;
 
@@ -67,23 +65,11 @@ impl SignerMap {
 
     pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<bool, BundlrError> {
         match *self {
-            SignerMap::Arweave => {
-                let jwt_str = format!(
-                    "{{\"kty\":\"RSA\",\"e\":\"AQAB\",\"n\":\"{}\"}}",
-                    BASE64URL.encode(pk)
-                );
-                let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
-                let p = serde_json::to_string(&jwk).unwrap();
-                let key: JsonWebKey = p.parse().unwrap();
-
-                let pkey = PKey::public_key_from_der(key.key.to_der().as_slice()).unwrap();
-                let mut verifier = sign::Verifier::new(MessageDigest::sha256(), &pkey).unwrap();
-                verifier.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
-                verifier.update(message).unwrap();
-                verifier
-                    .verify(signature)
-                    .map_err(|_| BundlrError::InvalidSignature)
-            }
+            SignerMap::Arweave => ArweaveSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
             #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => SolanaSigner::verify(
                 Bytes::copy_from_slice(pk),
