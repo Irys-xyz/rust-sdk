@@ -1,7 +1,7 @@
 use crate::{error::BundlrError, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
-    constants::{SCHNORR_SIGNATURE_SIZE, UNCOMPRESSED_PUBLIC_KEY_SIZE},
+    constants::{COMPACT_SIGNATURE_SIZE, UNCOMPRESSED_PUBLIC_KEY_SIZE},
     Message, PublicKey, Secp256k1, SecretKey,
 };
 use web3::{
@@ -46,7 +46,7 @@ impl EthereumSigner {
 
 impl Signer for EthereumSigner {
     const SIG_TYPE: u16 = 3;
-    const SIG_LENGTH: u16 = (SCHNORR_SIGNATURE_SIZE + 1) as u16;
+    const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
     const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
 
     fn pub_key(&self) -> bytes::Bytes {

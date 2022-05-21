@@ -50,6 +50,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
         let sig_type_b = &buffer[0..2];
         let sig_type = u16::from_le_bytes(<[u8; 2]>::try_from(sig_type_b).unwrap());
+        dbg!(&sig_type);
         let signer: SignerMap = match SignerMap::from_u16(sig_type) {
             Some(s) => s,
             None => return Err(BundlrError::InvalidSignerType),
@@ -245,6 +246,17 @@ mod tests {
             "{:?}",
             aw!(verify_file_bundle(
                 "./src/verify/test_bundles/matic_sig".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "cosmos")]
+    fn should_verify_cosmos() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/cosmos_sig".to_string()
             ))
         );
         assert_eq!(1, 1)

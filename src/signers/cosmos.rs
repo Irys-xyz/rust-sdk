@@ -1,10 +1,10 @@
-use crate::{Signer, Verifier};
+use crate::{error::BundlrError, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
-    constants::{SCHNORR_PUBLIC_KEY_SIZE, SCHNORR_SIGNATURE_SIZE},
-    ecdsa::Signature,
+    constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
     Message, PublicKey, Secp256k1, SecretKey,
 };
+use sha2::Digest;
 
 pub struct CosmosSigner {
     sec_key: SecretKey,
@@ -29,23 +29,31 @@ impl CosmosSigner {
 
         Self::new(sec_key)
     }
+
+    pub fn sha256_digest(msg: &[u8]) -> [u8; 32] {
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(msg);
+        let result = hasher.finalize();
+        result.try_into().unwrap()
+    }
 }
 
 impl Signer for CosmosSigner {
-    const SIG_TYPE: u16 = 3;
-    const SIG_LENGTH: u16 = SCHNORR_SIGNATURE_SIZE as u16;
-    const PUB_LENGTH: u16 = SCHNORR_PUBLIC_KEY_SIZE as u16;
+    const SIG_TYPE: u16 = 4;
+    const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
+    const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
 
     fn pub_key(&self) -> bytes::Bytes {
-        Bytes::copy_from_slice(&self.pub_key.serialize())
+        Bytes::copy_from_slice(&self.pub_key.serialize_uncompressed())
     }
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        let secp = Secp256k1::new();
-        let msg = Message::from_slice(&message).unwrap();
-        let sig = secp.sign_ecdsa(&msg, &self.sec_key);
+        let msg = Message::from_slice(&CosmosSigner::sha256_digest(&message[..])).unwrap();
+        let signature = secp256k1::Secp256k1::signing_only()
+            .sign_ecdsa(&msg, &self.sec_key)
+            .serialize_compact();
 
-        Ok(Bytes::copy_from_slice(&sig.serialize_compact()))
+        Ok(Bytes::copy_from_slice(&signature))
     }
 }
 
@@ -55,18 +63,21 @@ impl Verifier for CosmosSigner {
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        let secp = Secp256k1::new();
-        let pub_key = PublicKey::from_slice(&public_key.to_vec())
-            .expect("public keys must be 33 or 65 bytes, serialized according to SEC 2");
-        let msg = Message::from_slice(&message.to_vec())
-            .expect("messages must be 32 bytes and are expected to be hashes");
-        let sig = Signature::from_compact(&signature.to_vec())
-            .expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
+        let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
+            .expect(&format!("Cosmos messages should have 32 bytes"));
+        let sig = secp256k1::ecdsa::Signature::from_compact(&signature).expect(&format!(
+            "Cosmos signatures should have {} bytes",
+            CosmosSigner::SIG_LENGTH
+        ));
+        let pk = secp256k1::PublicKey::from_slice(&public_key).expect(&format!(
+            "Cosmos public keys should have {} bytes",
+            CosmosSigner::PUB_LENGTH
+        ));
 
-        match secp.verify_ecdsa(&msg, &sig, &pub_key) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        secp256k1::Secp256k1::verification_only()
+            .verify_ecdsa(&msg, &sig, &pk)
+            .map(|_| true)
+            .map_err(|_| BundlrError::InvalidSignature)
     }
 }
 
@@ -79,7 +90,7 @@ mod tests {
 
     #[test]
     fn should_create_signer() {
-        let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
+        let secret_key = SecretKey::from_slice(&[0xac; 32]).expect("");
         CosmosSigner::new(secret_key);
 
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
@@ -87,14 +98,19 @@ mod tests {
     }
 
     #[test]
-    fn should_sign_and_verify() {
-        let msg_bytes = &[
-            0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe, 0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0,
-            0xcd, 0x91, 0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61, 0xd5, 0x44, 0x53, 0xcf,
-            0x6e, 0x82, 0xb4, 0x50,
+    fn should_hash_message_correctly() {
+        let expected: [u8; 32] = [
+            242, 32, 241, 161, 45, 243, 110, 65, 225, 215, 2, 87, 174, 67, 33, 202, 65, 130, 179,
+            30, 170, 249, 140, 26, 152, 240, 228, 194, 31, 206, 193, 109,
         ];
-        let msg = Bytes::from(&msg_bytes[..]);
-        let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("");
+        let hashed_message = CosmosSigner::sha256_digest(b"Hello, Bundlr!");
+        assert_eq!(expected, hashed_message);
+    }
+
+    #[test]
+    fn should_sign_and_verify() {
+        let msg = Bytes::from("Hello, Bundlr!");
+        let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = CosmosSigner::new(secret_key);
 
         let sig = signer.sign(msg.clone()).unwrap();
