@@ -1,10 +1,9 @@
+use crate::error::BundlrError;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
 
 use bytes::Bytes;
-use ed25519_dalek::{
-    Keypair, PublicKey, Signature, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH,
-};
+use ed25519_dalek::{Keypair, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 
 pub struct SolanaSigner {
     keypair: Keypair,
@@ -34,14 +33,13 @@ impl SignerTrait for SolanaSigner {
     const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        let sig = &self.keypair.sign(message.as_ref());
-        let sig_bytes: [u8; SIGNATURE_LENGTH] = sig.to_bytes();
-        Ok(Bytes::copy_from_slice(&sig_bytes))
+        Ok(Bytes::copy_from_slice(
+            &self.keypair.sign(&message).to_bytes(),
+        ))
     }
 
     fn pub_key(&self) -> bytes::Bytes {
-        let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = self.keypair.public.to_bytes();
-        Bytes::copy_from_slice(&public_key_bytes[..])
+        Bytes::copy_from_slice(&self.keypair.public.to_bytes())
     }
 }
 
@@ -51,13 +49,24 @@ impl VerifierTrait for SolanaSigner {
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        let public_key = PublicKey::from_bytes(&pk[..]).unwrap();
-        let sig = Signature::from_bytes(&signature[..]).unwrap();
-
-        match public_key.verify(&message[..], &sig) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        println!(
+            "pk:{:?}\nmsg:{:?}\nsig:{:?}",
+            &pk[..],
+            &message[..],
+            &signature[..]
+        );
+        let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).expect(&format!(
+            "ED25519 public keys must be {} bytes long",
+            ed25519_dalek::PUBLIC_KEY_LENGTH
+        ));
+        let sig = ed25519_dalek::Signature::from_bytes(&signature).expect(&format!(
+            "ED22519 signatures keys must be {} bytes long",
+            ed25519_dalek::SIGNATURE_LENGTH
+        ));
+        public_key
+            .verify(&message, &sig)
+            .map(|_| true)
+            .map_err(|_| BundlrError::InvalidSignature)
     }
 }
 
@@ -65,26 +74,29 @@ impl VerifierTrait for SolanaSigner {
 mod tests {
     use crate::{Signer, SolanaSigner, Verifier};
     use bytes::Bytes;
-    use ed25519_dalek::{Keypair, PublicKey, SecretKey, PUBLIC_KEY_LENGTH};
-
-    #[test]
-    fn should_create_signer() {
-        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        SolanaSigner::from_base58(base58_secret_key);
-
-        let keypair = Keypair::from_bytes(&[0xcd; 64]).unwrap();
-        SolanaSigner::new(keypair);
-    }
+    use ed25519_dalek::Keypair;
 
     #[test]
     fn should_sign_and_verify() {
-        let keypair = Keypair::from_bytes(&[0xcd; 64]).unwrap();
-        let signer = SolanaSigner::new(keypair);
-
         let msg = Bytes::from(b"Message".to_vec());
+
+        let base58_secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
+        let signer = SolanaSigner::from_base58(base58_secret_key);
+        let sig = signer.sign(msg.clone()).unwrap();
+        let pub_key = signer.pub_key();
+        assert!(SolanaSigner::verify(pub_key, msg.clone(), sig).unwrap());
+
+        let keypair = Keypair::from_bytes(&[
+            237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
+            8, 221, 184, 199, 62, 253, 98, 131, 33, 165, 165, 215, 14, 7, 46, 23, 221, 242, 240,
+            226, 94, 79, 161, 31, 192, 163, 13, 25, 106, 53, 34, 215, 83, 124, 162, 156, 8, 97,
+            194, 180, 213, 179, 33, 68,
+        ])
+        .unwrap();
+        let signer = SolanaSigner::new(keypair);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 
-        // assert!(SolanaSigner::verify(pub_key, msg, sig).unwrap());
+        assert!(SolanaSigner::verify(pub_key, msg, sig).unwrap());
     }
 }

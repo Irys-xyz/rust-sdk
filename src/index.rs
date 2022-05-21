@@ -8,7 +8,7 @@ use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
 use std::panic;
 
 #[cfg(any(feature = "solana", feature = "algorand"))]
-use ed25519_dalek::Verifier;
+use crate::{SolanaSigner, Verifier as SolVerifier};
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
 use crate::{EthereumSigner, Verifier as EthVerifier};
@@ -85,20 +85,11 @@ impl SignerMap {
                     .map_err(|_| BundlrError::InvalidSignature)
             }
             #[cfg(any(feature = "solana", feature = "algorand"))]
-            SignerMap::Ed25519 => {
-                let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).expect(&format!(
-                    "ED25519 public keys must be {} bytes long",
-                    ed25519_dalek::PUBLIC_KEY_LENGTH
-                ));
-                let sig = ed25519_dalek::Signature::from_bytes(&signature).expect(&format!(
-                    "ED22519 signatures keys must be {} bytes long",
-                    ed25519_dalek::SIGNATURE_LENGTH
-                ));
-                public_key
-                    .verify(message, &sig)
-                    .map(|_| true)
-                    .map_err(|_| BundlrError::InvalidSignature)
-            }
+            SignerMap::Ed25519 => SolanaSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
             SignerMap::Secp256k1 => EthereumSigner::verify(
                 Bytes::copy_from_slice(pk),
