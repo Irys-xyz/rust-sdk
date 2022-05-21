@@ -28,11 +28,4 @@ where
     Self: Sized,
 {
     fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<bool, BundlrError>;
-    // fn from(s: u16) -> Result<Self, BundleError> {
-    //     let signer = SignerMap::from_u16(3);
-    //     match signer {
-    //         SignerMap::Arweave => Ok(),
-    //         _ => Err(BundleError::NoBytesLeft)
-    //     }
-    // }
 }

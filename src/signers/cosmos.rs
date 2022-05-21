@@ -89,15 +89,6 @@ mod tests {
     use crate::{CosmosSigner, Signer, Verifier};
 
     #[test]
-    fn should_create_signer() {
-        let secret_key = SecretKey::from_slice(&[0xac; 32]).expect("");
-        CosmosSigner::new(secret_key);
-
-        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        CosmosSigner::from_base58(base58_secret_key);
-    }
-
-    #[test]
     fn should_hash_message_correctly() {
         let expected: [u8; 32] = [
             242, 32, 241, 161, 45, 243, 110, 65, 225, 215, 2, 87, 174, 67, 33, 202, 65, 130, 179,
@@ -110,12 +101,17 @@ mod tests {
     #[test]
     fn should_sign_and_verify() {
         let msg = Bytes::from("Hello, Bundlr!");
+
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = CosmosSigner::new(secret_key);
-
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
+        assert!(CosmosSigner::verify(pub_key, msg.clone(), sig).unwrap());
 
+        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = CosmosSigner::from_base58(base58_secret_key);
+        let sig = signer.sign(msg.clone()).unwrap();
+        let pub_key = signer.pub_key();
         assert!(CosmosSigner::verify(pub_key, msg, sig).unwrap());
     }
 }

@@ -103,15 +103,6 @@ mod tests {
     use crate::{EthereumSigner, Signer, Verifier};
 
     #[test]
-    fn should_create_signer() {
-        let secret_key = SecretKey::from_slice(&[0xac; 32]).expect("");
-        EthereumSigner::new(secret_key);
-
-        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        EthereumSigner::from_base58(base58_secret_key);
-    }
-
-    #[test]
     fn should_hash_message_correctly() {
         let expected: [u8; 32] = [
             115, 94, 155, 26, 251, 67, 239, 226, 251, 85, 181, 193, 50, 136, 70, 88, 238, 217, 84,
@@ -124,12 +115,17 @@ mod tests {
     #[test]
     fn should_sign_and_verify() {
         let msg = Bytes::from("Hello, Bundlr!");
+
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = EthereumSigner::new(secret_key);
-
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
+        assert!(EthereumSigner::verify(pub_key, msg.clone(), sig).unwrap());
 
+        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = EthereumSigner::from_base58(base58_secret_key);
+        let sig = signer.sign(msg.clone()).unwrap();
+        let pub_key = signer.pub_key();
         assert!(EthereumSigner::verify(pub_key, msg, sig).unwrap());
     }
 }

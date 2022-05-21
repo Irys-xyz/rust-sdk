@@ -69,7 +69,18 @@ mod tests {
     use openssl::{pkey::PKey, rsa::Rsa};
 
     #[test]
-    fn should_create_signer() {
+    fn should_sign_and_verify() {
+        let msg = Bytes::copy_from_slice(b"Hello, Bundlr!");
+
+        let rsa = Rsa::generate(4096).unwrap();
+        let pkey = PKey::from_rsa(rsa).unwrap();
+        let signer = ArweaveSigner::new(pkey);
+
+        let sig = signer.sign(msg.clone()).unwrap();
+        let pub_key = signer.pub_key();
+
+        assert!(ArweaveSigner::verify(pub_key, msg.clone(), sig).is_ok());
+
         let jwt_str = r#"{
             "kty" : "RSA",
             "kid" : "cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df",
@@ -84,29 +95,11 @@ mod tests {
             "qi"  : "ldHXIrEmMZVaNwGzDF9WG8sHj2mOZmQpw9yrjLK9hAsmsNr5LTyqWAqJIYZSwPTYWhY4nu2O0EY9G9uYiqewXfCKw_UngrJt8Xwfq1Zruz0YY869zPN4GiE9-9rzdZB33RBw8kIOquY3MK74FMwCihYx_LiU2YTHkaoJ3ncvtvg"
         }"#;
         let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
-        ArweaveSigner::from_jwk(jwk);
+        let signer = ArweaveSigner::from_jwk(jwk);
 
-        let rsa = Rsa::generate(4096).unwrap();
-        let pkey = PKey::from_rsa(rsa).unwrap();
-        ArweaveSigner::new(pkey);
-    }
-
-    #[test]
-    fn should_sign_and_verify() {
-        let msg = &[
-            0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe, 0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0,
-            0xcd, 0x91, 0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61, 0xd5, 0x44, 0x53, 0xcf,
-            0x6e, 0x82, 0xb4, 0x50,
-        ];
-
-        let rsa = Rsa::generate(4096).unwrap();
-        let pkey = PKey::from_rsa(rsa).unwrap();
-        let signer = ArweaveSigner::new(pkey);
-
-        let sig = signer.sign(Bytes::from(&msg[..])).unwrap();
+        let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        let msg = Bytes::from(&msg[..]);
 
-        ArweaveSigner::verify(pub_key, msg, sig);
+        assert!(ArweaveSigner::verify(pub_key, msg.clone(), sig).is_ok());
     }
 }
