@@ -52,6 +52,7 @@ default-features = false
 features = ["user-hooks"]
 
 [features]
+default = ["solana", "ethereum", "erc20", "cosmos"]
 solana = ["ed25519-dalek"]
 ethereum = ["secp256k1", "web3"]
 erc20 = ["secp256k1", "web3"]
