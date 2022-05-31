@@ -6,10 +6,10 @@ use std::panic;
 use crate::{ArweaveSigner, Verifier};
 
 #[cfg(any(feature = "solana", feature = "algorand"))]
-use crate::SolanaSigner;
+use crate::Ed25519Signer;
 
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
-use crate::EthereumSigner;
+use crate::Secp256k1Signer;
 
 #[cfg(feature = "cosmos")]
 use crate::CosmosSigner;
@@ -71,13 +71,13 @@ impl SignerMap {
                 Bytes::copy_from_slice(signature),
             ),
             #[cfg(any(feature = "solana", feature = "algorand"))]
-            SignerMap::Ed25519 => SolanaSigner::verify(
+            SignerMap::Ed25519 => Ed25519Signer::verify(
                 Bytes::copy_from_slice(pk),
                 Bytes::copy_from_slice(message),
                 Bytes::copy_from_slice(signature),
             ),
             #[cfg(any(feature = "ethereum", feature = "erc20"))]
-            SignerMap::Secp256k1 => EthereumSigner::verify(
+            SignerMap::Secp256k1 => Secp256k1Signer::verify(
                 Bytes::copy_from_slice(pk),
                 Bytes::copy_from_slice(message),
                 Bytes::copy_from_slice(signature),

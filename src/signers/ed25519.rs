@@ -5,13 +5,13 @@ use crate::Verifier as VerifierTrait;
 use bytes::Bytes;
 use ed25519_dalek::{Keypair, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 
-pub struct AlgorandSigner {
+pub struct Ed25519Signer {
     keypair: Keypair,
 }
 
-impl AlgorandSigner {
-    pub fn new(keypair: Keypair) -> AlgorandSigner {
-        AlgorandSigner { keypair }
+impl Ed25519Signer {
+    pub fn new(keypair: Keypair) -> Ed25519Signer {
+        Ed25519Signer { keypair }
     }
 
     pub fn from_base58(s: &str) -> Self {
@@ -27,7 +27,7 @@ impl AlgorandSigner {
     }
 }
 
-impl SignerTrait for AlgorandSigner {
+impl SignerTrait for Ed25519Signer {
     const SIG_TYPE: u16 = 2;
     const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
     const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
@@ -43,7 +43,7 @@ impl SignerTrait for AlgorandSigner {
     }
 }
 
-impl VerifierTrait for AlgorandSigner {
+impl VerifierTrait for Ed25519Signer {
     fn verify(
         pk: Bytes,
         message: Bytes,
@@ -72,7 +72,7 @@ impl VerifierTrait for AlgorandSigner {
 
 #[cfg(test)]
 mod tests {
-    use crate::{AlgorandSigner, Signer, Verifier};
+    use crate::{Ed25519Signer, Signer, Verifier};
     use bytes::Bytes;
     use ed25519_dalek::Keypair;
 
@@ -81,10 +81,10 @@ mod tests {
         let msg = Bytes::from(b"Message".to_vec());
 
         let base58_secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
-        let signer = AlgorandSigner::from_base58(base58_secret_key);
+        let signer = Ed25519Signer::from_base58(base58_secret_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(AlgorandSigner::verify(pub_key, msg.clone(), sig).unwrap());
+        assert!(Ed25519Signer::verify(pub_key, msg.clone(), sig).unwrap());
 
         let keypair = Keypair::from_bytes(&[
             237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
@@ -93,10 +93,10 @@ mod tests {
             194, 180, 213, 179, 33, 68,
         ])
         .unwrap();
-        let signer = AlgorandSigner::new(keypair);
+        let signer = Ed25519Signer::new(keypair);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 
-        assert!(AlgorandSigner::verify(pub_key, msg, sig).unwrap());
+        assert!(Ed25519Signer::verify(pub_key, msg, sig).unwrap());
     }
 }

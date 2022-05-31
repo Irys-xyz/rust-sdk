@@ -14,11 +14,11 @@ pub mod verify;
 pub use signers::arweave::ArweaveSigner;
 pub use transaction::BundlrTx;
 
-#[cfg(feature = "solana")]
-pub use signers::solana::SolanaSigner;
+#[cfg(any(feature = "solana", feature = "algorand"))]
+pub use signers::ed25519::Ed25519Signer;
 
-#[cfg(feature = "ethereum")]
-pub use signers::ethereum::EthereumSigner;
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
+pub use signers::secp256k1::Secp256k1Signer;
 
 #[cfg(feature = "cosmos")]
 pub use signers::cosmos::CosmosSigner;

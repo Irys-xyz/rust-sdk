@@ -91,7 +91,7 @@ impl BundlrTx {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "solana")]
-    use crate::SolanaSigner;
+    use crate::Ed25519Signer;
     use crate::{tags::Tag, transaction::BundlrTx};
     use std::{fs::File, io::Write};
 
@@ -106,7 +106,7 @@ mod tests {
     #[cfg(feature = "solana")]
     fn test_x() {
         let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        let signer = SolanaSigner::from_base58(secret_key);
+        let signer = Ed25519Signer::from_base58(secret_key);
         let data_item = BundlrTx::create_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],

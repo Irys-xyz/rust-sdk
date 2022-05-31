@@ -9,16 +9,16 @@ use web3::{
     types::{Address, H256},
 };
 
-pub struct EthereumSigner {
+pub struct Secp256k1Signer {
     sec_key: SecretKey,
     pub_key: PublicKey,
 }
 
-impl EthereumSigner {
-    pub fn new(sec_key: SecretKey) -> EthereumSigner {
+impl Secp256k1Signer {
+    pub fn new(sec_key: SecretKey) -> Secp256k1Signer {
         let secp = Secp256k1::new();
         let pub_key = PublicKey::from_secret_key(&secp, &sec_key);
-        EthereumSigner { sec_key, pub_key }
+        Secp256k1Signer { sec_key, pub_key }
     }
 
     pub fn from_base58(s: &str) -> Self {
@@ -44,7 +44,7 @@ impl EthereumSigner {
     }
 }
 
-impl Signer for EthereumSigner {
+impl Signer for Secp256k1Signer {
     const SIG_TYPE: u16 = 3;
     const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
     const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
@@ -54,7 +54,7 @@ impl Signer for EthereumSigner {
     }
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        let msg = Message::from_slice(&EthereumSigner::eth_hash_message(&message[..])).unwrap();
+        let msg = Message::from_slice(&Secp256k1Signer::eth_hash_message(&message[..])).unwrap();
         let (recovery_id, signature) = secp256k1::Secp256k1::signing_only()
             .sign_ecdsa_recoverable(&msg, &self.sec_key)
             .serialize_compact();
@@ -69,13 +69,13 @@ impl Signer for EthereumSigner {
     }
 }
 
-impl Verifier for EthereumSigner {
+impl Verifier for Secp256k1Signer {
     fn verify(
         public_key: Bytes,
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        let msg = EthereumSigner::eth_hash_message(&message);
+        let msg = Secp256k1Signer::eth_hash_message(&message);
 
         let recovery_address = recover(&msg, &signature[0..64], signature[64] as i32 - 27)
             .expect("Invalid message or signature, could not recover address");
@@ -100,7 +100,7 @@ mod tests {
     use bytes::Bytes;
     use secp256k1::SecretKey;
 
-    use crate::{EthereumSigner, Signer, Verifier};
+    use crate::{Secp256k1Signer, Signer, Verifier};
 
     #[test]
     fn should_hash_message_correctly() {
@@ -108,7 +108,7 @@ mod tests {
             115, 94, 155, 26, 251, 67, 239, 226, 251, 85, 181, 193, 50, 136, 70, 88, 238, 217, 84,
             244, 92, 5, 82, 24, 227, 189, 141, 69, 122, 231, 149, 229,
         ];
-        let hashed_message = EthereumSigner::eth_hash_message(b"Hello, Bundlr!");
+        let hashed_message = Secp256k1Signer::eth_hash_message(b"Hello, Bundlr!");
         assert_eq!(expected, hashed_message);
     }
 
@@ -117,15 +117,15 @@ mod tests {
         let msg = Bytes::from("Hello, Bundlr!");
 
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
-        let signer = EthereumSigner::new(secret_key);
+        let signer = Secp256k1Signer::new(secret_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(EthereumSigner::verify(pub_key, msg.clone(), sig).unwrap());
+        assert!(Secp256k1Signer::verify(pub_key, msg.clone(), sig).unwrap());
 
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        let signer = EthereumSigner::from_base58(base58_secret_key);
+        let signer = Secp256k1Signer::from_base58(base58_secret_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(EthereumSigner::verify(pub_key, msg, sig).unwrap());
+        assert!(Secp256k1Signer::verify(pub_key, msg, sig).unwrap());
     }
 }
