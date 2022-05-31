@@ -55,14 +55,18 @@ impl VerifierTrait for Ed25519Signer {
             &message[..],
             &signature[..]
         );
-        let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).expect(&format!(
-            "ED25519 public keys must be {} bytes long",
-            ed25519_dalek::PUBLIC_KEY_LENGTH
-        ));
-        let sig = ed25519_dalek::Signature::from_bytes(&signature).expect(&format!(
-            "ED22519 signatures keys must be {} bytes long",
-            ed25519_dalek::SIGNATURE_LENGTH
-        ));
+        let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).unwrap_or_else(|_| {
+            panic!(
+                "ED25519 public keys must be {} bytes long",
+                ed25519_dalek::PUBLIC_KEY_LENGTH
+            )
+        });
+        let sig = ed25519_dalek::Signature::from_bytes(&signature).unwrap_or_else(|_| {
+            panic!(
+                "ED22519 signatures keys must be {} bytes long",
+                ed25519_dalek::SIGNATURE_LENGTH
+            )
+        });
         public_key
             .verify(&message, &sig)
             .map(|_| true)

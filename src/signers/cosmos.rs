@@ -64,15 +64,19 @@ impl Verifier for CosmosSigner {
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
         let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
-            .expect(&format!("Cosmos messages should have 32 bytes"));
-        let sig = secp256k1::ecdsa::Signature::from_compact(&signature).expect(&format!(
-            "Cosmos signatures should have {} bytes",
-            CosmosSigner::SIG_LENGTH
-        ));
-        let pk = secp256k1::PublicKey::from_slice(&public_key).expect(&format!(
-            "Cosmos public keys should have {} bytes",
-            CosmosSigner::PUB_LENGTH
-        ));
+            .unwrap_or_else(|_| panic!("Cosmos messages should have 32 bytes"));
+        let sig = secp256k1::ecdsa::Signature::from_compact(&signature).unwrap_or_else(|_| {
+            panic!(
+                "Cosmos signatures should have {} bytes",
+                CosmosSigner::SIG_LENGTH
+            )
+        });
+        let pk = secp256k1::PublicKey::from_slice(&public_key).unwrap_or_else(|_| {
+            panic!(
+                "Cosmos public keys should have {} bytes",
+                CosmosSigner::PUB_LENGTH
+            )
+        });
 
         secp256k1::Secp256k1::verification_only()
             .verify_ecdsa(&msg, &sig, &pk)
