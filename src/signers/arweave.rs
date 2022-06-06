@@ -89,7 +89,7 @@ mod tests {
 
         assert!(ArweaveSigner::verify(pub_key, msg.clone(), sig).is_ok());
 
-        let jwt_str = r#"{
+        let jwk_str = r#"{
             "kty" : "RSA",
             "kid" : "cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df",
             "use" : "sig",
@@ -102,7 +102,7 @@ mod tests {
             "dq"  : "mxRTU3QDyR2EnCv0Nl0TCF90oliJGAHR9HJmBe__EjuCBbwHfcT8OG3hWOv8vpzokQPRl5cQt3NckzX3fs6xlJN4Ai2Hh2zduKFVQ2p-AF2p6Yfahscjtq-GY9cB85NxLy2IXCC0PF--Sq9LOrTE9QV988SJy_yUrAjcZ5MmECk",
             "qi"  : "ldHXIrEmMZVaNwGzDF9WG8sHj2mOZmQpw9yrjLK9hAsmsNr5LTyqWAqJIYZSwPTYWhY4nu2O0EY9G9uYiqewXfCKw_UngrJt8Xwfq1Zruz0YY869zPN4GiE9-9rzdZB33RBw8kIOquY3MK74FMwCihYx_LiU2YTHkaoJ3ncvtvg"
         }"#;
-        let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
+        let jwk: jwk::JsonWebKey = jwk_str.parse().unwrap();
         let signer = ArweaveSigner::from_jwk(jwk);
 
         let sig = signer.sign(msg.clone()).unwrap();
