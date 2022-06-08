@@ -43,7 +43,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     let mut offset = 32 + (64 * bundle_length);
     let mut items = Vec::with_capacity(cmp::min(bundle_length as usize, 1000));
 
-    for Header(size, mut id) in headers {
+    for Header(size, id) in headers {
         // Read 4 KiB - max data-less Bundlr tx
         // We do it all at once to improve performance - by lowering fs ops and doing ops in memory
         let buffer = read_offset(&mut file, offset, 4096)?;
@@ -136,8 +136,10 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
             return Err(BundlrError::InvalidSignature);
         };
 
-        id.pop();
-        let item = Item { id };
+        let item = Item {
+            tx_id: id,
+            signature: sig.to_vec(),
+        };
 
         items.push(item);
 
@@ -148,6 +150,8 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 }
 
 // Reads `length` bytes at `offset` within `file`
+#[allow(clippy::uninit_vec)]
+#[allow(clippy::unused_io_amount)]
 fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes, std::io::Error> {
     let mut b = Vec::with_capacity(length);
     unsafe { b.set_len(length) };
@@ -170,10 +174,107 @@ mod tests {
     }
 
     #[test]
-    fn test_verify() {
+    fn should_verify_test_bundle() {
         println!(
             "{:?}",
-            aw!(verify_file_bundle("./src/verify/test_bundle".to_string()))
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/test_bundle".to_string()
+            ))
+        );
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    fn should_verify_arweave() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/arweave_sig".to_string()
+            ))
+        );
+
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    #[cfg(any(feature = "ethereum", feature = "erc20"))]
+    fn should_verify_secp256k1() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/ethereum_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/arbitrum_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/avalanche_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/bnb_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/boba-eth_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/chainlink_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/kyve_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/matic_sig".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "cosmos")]
+    fn should_verify_cosmos() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/cosmos_sig".to_string()
+            ))
+        );
+        assert_eq!(1, 1)
+    }
+
+    #[test]
+    #[cfg(any(feature = "solana", feature = "algorand"))]
+    fn should_verify_ed25519() {
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/solana_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/algorand_sig".to_string()
+            ))
         );
         assert_eq!(1, 1)
     }

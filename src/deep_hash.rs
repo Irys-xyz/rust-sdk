@@ -24,7 +24,7 @@ pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
             let tag = [BLOB_AS_BUFFER, b.len().to_string().as_bytes()].concat();
-            let c = [sha384hash(tag.into()), sha384hash(b.into())].concat();
+            let c = [sha384hash(tag.into()), sha384hash(b)].concat();
             Ok(Bytes::copy_from_slice(&sha384hash(c.into())))
         }
         DeepHashChunk::Stream(mut s) => {
@@ -53,7 +53,7 @@ pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
         DeepHashChunk::Chunks(chunks) => {
             // Be careful of truncation
             let len = chunks.len() as f64;
-            let tag = [LIST_AS_BUFFER, &len.to_string().as_bytes()].concat();
+            let tag = [LIST_AS_BUFFER, len.to_string().as_bytes()].concat();
 
             let acc = sha384hash(tag.into());
 
@@ -67,7 +67,7 @@ pub async fn deep_hash_chunks(
     mut chunks: Vec<DeepHashChunk>,
     acc: Bytes,
 ) -> Result<Bytes, BundlrError> {
-    if chunks.len() == 0 {
+    if chunks.is_empty() {
         return Ok(acc);
     };
 

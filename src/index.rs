@@ -1,11 +1,18 @@
+use bytes::Bytes;
+use derive_more::Display;
+use num_derive::FromPrimitive;
 use std::panic;
 
-use data_encoding::BASE64URL;
-use derive_more::Display;
-use jsonwebkey::JsonWebKey;
-use num_derive::FromPrimitive;
-use openssl::{hash::MessageDigest, pkey::PKey, rsa::Padding, sign};
-use serde::Serialize;
+use crate::{ArweaveSigner, Verifier};
+
+#[cfg(any(feature = "solana", feature = "algorand"))]
+use crate::Ed25519Signer;
+
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
+use crate::Secp256k1Signer;
+
+#[cfg(feature = "cosmos")]
+use crate::CosmosSigner;
 
 use crate::error::BundlrError;
 
@@ -13,6 +20,8 @@ use crate::error::BundlrError;
 pub enum SignerMap {
     Arweave = 1,
     Ed25519 = 2,
+    Secp256k1 = 3,
+    Cosmos = 4,
 }
 
 pub struct Config {
@@ -27,13 +36,6 @@ impl Config {
     }
 }
 
-#[derive(Serialize)]
-pub struct JWK<'a> {
-    pub kty: &'a str,
-    pub e: &'a str,
-    pub n: String,
-}
-
 impl SignerMap {
     pub fn get_config(&self) -> Config {
         match *self {
@@ -41,9 +43,20 @@ impl SignerMap {
                 sig_length: 512,
                 pub_length: 512,
             },
+            #[cfg(any(feature = "solana", feature = "algorand"))]
             SignerMap::Ed25519 => Config {
-                sig_length: 64,
-                pub_length: 32,
+                sig_length: ed25519_dalek::SIGNATURE_LENGTH,
+                pub_length: ed25519_dalek::PUBLIC_KEY_LENGTH,
+            },
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
+            SignerMap::Secp256k1 => Config {
+                sig_length: secp256k1::constants::COMPACT_SIGNATURE_SIZE + 1,
+                pub_length: secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE,
+            },
+            #[cfg(feature = "cosmos")]
+            SignerMap::Cosmos => Config {
+                sig_length: secp256k1::constants::COMPACT_SIGNATURE_SIZE,
+                pub_length: secp256k1::constants::PUBLIC_KEY_SIZE,
             },
             #[allow(unreachable_patterns)]
             _ => panic!("{} get_config not implemented in SignerMap yet", self),
@@ -52,31 +65,29 @@ impl SignerMap {
 
     pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<bool, BundlrError> {
         match *self {
-            SignerMap::Arweave => {
-                let jwk = JWK {
-                    kty: "RSA",
-                    e: "AQAB",
-                    n: BASE64URL.encode(pk),
-                };
-                let p = serde_json::to_string(&jwk).unwrap();
-                let key: JsonWebKey = p.parse().unwrap();
-
-                let pkey = PKey::public_key_from_der(key.key.to_der().as_slice()).unwrap();
-                let mut verifier = sign::Verifier::new(MessageDigest::sha256(), &pkey).unwrap();
-                verifier.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
-                verifier.update(message).unwrap();
-                verifier
-                    .verify(signature)
-                    .map_err(|_| BundlrError::InvalidSignature)
-            }
-            SignerMap::Ed25519 => {
-                let pkey = PKey::public_key_from_raw_bytes(pk, openssl::pkey::Id::ED25519)
-                    .expect("Couldn't create PKey<Public>");
-                let mut verifier = sign::Verifier::new(MessageDigest::null(), &pkey).unwrap();
-                verifier
-                    .verify_oneshot(signature, message)
-                    .map_err(|_| BundlrError::InvalidSignature)
-            }
+            SignerMap::Arweave => ArweaveSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
+            #[cfg(any(feature = "solana", feature = "algorand"))]
+            SignerMap::Ed25519 => Ed25519Signer::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
+            SignerMap::Secp256k1 => Secp256k1Signer::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
+            #[cfg(feature = "cosmos")]
+            SignerMap::Cosmos => CosmosSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
             #[allow(unreachable_patterns)]
             _ => panic!("{} verify not implemented in SignerMap yet", self),
         }

@@ -14,7 +14,7 @@ impl BundlrTx {
     }
 
     pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &impl Signer) -> Self {
-        let encoded_tags = if tags.len() > 0 {
+        let encoded_tags = if !tags.is_empty() {
             tags.encode().unwrap()
         } else {
             Bytes::default()
@@ -77,7 +77,7 @@ impl BundlrTx {
         let number_of_tags_bytes = (encoded_tags.len() as u64).to_le_bytes();
         b.put(number_of_tags.as_slice());
         b.put(number_of_tags_bytes.as_slice());
-        if number_of_tags_bytes.len() > 0 {
+        if !number_of_tags_bytes.is_empty() {
             b.put(encoded_tags);
         }
 
@@ -90,9 +90,10 @@ impl BundlrTx {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "solana")]
+    use crate::Ed25519Signer;
+    use crate::{tags::Tag, transaction::BundlrTx};
     use std::{fs::File, io::Write};
-
-    use crate::{tags::Tag, transaction::BundlrTx, SolanaSigner};
 
     #[allow(unused)]
     macro_rules! aw {
@@ -102,8 +103,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "solana")]
     fn test_x() {
-        let signer = SolanaSigner::from_base58("key");
+        let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = Ed25519Signer::from_base58(secret_key);
         let data_item = BundlrTx::create_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
