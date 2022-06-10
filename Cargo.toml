@@ -26,7 +26,6 @@ lazy_static = "1.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.14"
 openssl = { version = "0.10.40", features = ["vendored"] }
-pipe = "0.4.0"
 bigint = "4.4.3"
 ring = "0.16.20"
 serde = "1.0.132"
@@ -35,7 +34,6 @@ sha2 = "0.10.2"
 tokio = { version = "1.15.0", features = [ "fs" ]}
 tokio-util = "0.6.9"
 bs58 = "0.4.0"
-avro = "0.2.1"
 reqwest = { version = "0.11.9", features = [ "json" ] }
 thiserror = "1.0.30"
 ed25519-dalek = { version = "1.0.1", optional = true }
