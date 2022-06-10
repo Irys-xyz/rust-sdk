@@ -26,7 +26,6 @@ lazy_static = "1.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.14"
 openssl = { version = "0.10.40", features = ["vendored"] }
-bigint = "4.4.3"
 ring = "0.16.20"
 serde = "1.0.132"
 serde_json = "1.0.73"
@@ -39,6 +38,7 @@ thiserror = "1.0.30"
 ed25519-dalek = { version = "1.0.1", optional = true }
 secp256k1 = { version = "0.22.1", optional = true, features = [ "recovery" ] }
 web3 = { version = "0.18.0", optional = true }
+primitive-types = "0.11"
 
 [dev-dependencies]
 tokio-test = "0.4.2"
