@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use async_recursion::async_recursion;
 use bytes::Bytes;
-use openssl::sha::Sha384;
+use sha2::{ Sha384, Digest };
 
 use crate::error::BundlrError;
 use futures::{Stream, TryStream, TryStreamExt};
@@ -44,7 +44,7 @@ pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 
             let tagged_hash = [
                 sha384hash(tag.into()),
-                Bytes::copy_from_slice(&hasher.finish()),
+                Bytes::copy_from_slice(&hasher.finalize()),
             ]
             .concat();
 
@@ -81,5 +81,5 @@ pub async fn deep_hash_chunks(
 fn sha384hash(b: Bytes) -> Bytes {
     let mut hasher = Sha384::new();
     hasher.update(&b);
-    Bytes::copy_from_slice(&hasher.finish())
+    Bytes::copy_from_slice(&hasher.finalize())
 }
