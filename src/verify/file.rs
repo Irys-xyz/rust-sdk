@@ -6,10 +6,10 @@ use crate::{
     index::{Config, SignerMap},
 };
 use async_stream::try_stream;
-use bigint::U256;
 use bytes::Bytes;
 use data_encoding::BASE64URL;
 use num_traits::FromPrimitive;
+use primitive_types::U256;
 use std::{
     cmp,
     fs::File,
