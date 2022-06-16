@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use async_recursion::async_recursion;
 use bytes::Bytes;
-use sha2::{ Sha384, Digest };
+use sha2::{Digest, Sha384};
 
 use crate::error::BundlrError;
 use futures::{Stream, TryStream, TryStreamExt};

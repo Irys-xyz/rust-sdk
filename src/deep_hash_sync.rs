@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use sha2::{ Sha384, Digest };
+use sha2::{Digest, Sha384};
 
 use crate::{deep_hash::DeepHashChunk, error::BundlrError};
 use futures::{Stream, TryStream};
