@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use openssl::sha::Sha384;
+use sha2::{Digest, Sha384};
 
 use crate::{deep_hash::DeepHashChunk, error::BundlrError};
 use futures::{Stream, TryStream};
@@ -49,5 +49,5 @@ pub fn deep_hash_chunks_sync(
 fn sha384hash(b: Bytes) -> Bytes {
     let mut hasher = Sha384::new();
     hasher.update(&b);
-    Bytes::copy_from_slice(&hasher.finish())
+    Bytes::copy_from_slice(&hasher.finalize())
 }
