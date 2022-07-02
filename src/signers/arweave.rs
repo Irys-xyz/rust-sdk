@@ -1,30 +1,30 @@
 use crate::error::BundlrError;
 use bytes::Bytes;
 use data_encoding::BASE64URL;
-use openssl::{
-    hash::MessageDigest,
-    pkey::{PKey, Private},
-    rsa::Padding,
-    sign,
+use rand::thread_rng;
+use rsa::{
+    pkcs8::{DecodePrivateKey, DecodePublicKey},
+    PaddingScheme, PublicKey, PublicKeyParts, RsaPrivateKey, RsaPublicKey,
 };
-use rsa::{pkcs8::DecodePublicKey, Hash, PaddingScheme, PublicKey, RsaPublicKey};
+use sha2::Digest;
+
 extern crate jsonwebkey as jwk;
 
 use super::signer::{Signer, Verifier};
 
 pub struct ArweaveSigner {
-    priv_key: PKey<Private>,
+    priv_key: RsaPrivateKey,
 }
 
 #[allow(unused)]
 impl ArweaveSigner {
-    fn new(priv_key: PKey<Private>) -> ArweaveSigner {
+    fn new(priv_key: RsaPrivateKey) -> ArweaveSigner {
         Self { priv_key }
     }
 
     fn from_jwk(jwk: jwk::JsonWebKey) -> ArweaveSigner {
         let pem = jwk.key.to_pem();
-        let priv_key = PKey::private_key_from_pem(pem.as_bytes()).unwrap();
+        let priv_key = RsaPrivateKey::from_pkcs8_pem(&pem).unwrap();
 
         Self { priv_key }
     }
@@ -35,17 +35,27 @@ impl Signer for ArweaveSigner {
     const SIG_LENGTH: u16 = 512;
     const PUB_LENGTH: u16 = 512;
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError> {
-        let mut signer = sign::Signer::new(MessageDigest::sha256(), &self.priv_key).unwrap();
-        signer.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
-        if signer.update(&message).is_err() {
-            return Err(BundlrError::NoBytesLeft);
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(&message);
+        let hashed = hasher.finalize();
+
+        let rng = thread_rng();
+        let padding = PaddingScheme::PSS {
+            salt_rng: Box::new(rng),
+            digest: Box::new(sha2::Sha256::new()),
+            salt_len: None,
         };
 
-        Ok(message)
+        let signature = self
+            .priv_key
+            .sign(padding, &hashed)
+            .map_err(|e| BundlrError::SigningError(e.to_string()))?;
+
+        Ok(signature.into())
     }
 
     fn pub_key(&self) -> Bytes {
-        self.priv_key.public_key_to_pem().unwrap().into()
+        self.priv_key.to_public_key().n().to_bytes_be().into()
     }
 }
 
@@ -57,23 +67,20 @@ impl Verifier for ArweaveSigner {
         );
         let jwk: jwk::JsonWebKey = jwt_str.parse().unwrap();
 
-        /*
         let pub_key = RsaPublicKey::from_public_key_der(jwk.key.to_der().as_slice()).unwrap();
         let mut hasher = sha2::Sha256::new();
         hasher.update(&message);
         let hashed = &hasher.finalize();
-        let padding = PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256));
-        pub_key.verify(padding, hashed, &signature)
-            .map(|_| true)
-            .map_err(|_| BundlrError::InvalidSignature);
-        */
 
-        let pkey = PKey::public_key_from_der(jwk.key.to_der().as_slice()).unwrap();
-        let mut verifier = sign::Verifier::new(MessageDigest::sha256(), &pkey).unwrap();
-        verifier.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
-        verifier.update(&message[..]).unwrap();
-        verifier
-            .verify(&signature[..])
+        let rng = thread_rng();
+        let padding = PaddingScheme::PSS {
+            salt_rng: Box::new(rng),
+            digest: Box::new(sha2::Sha256::new()),
+            salt_len: None,
+        };
+        pub_key
+            .verify(padding, hashed, &signature)
+            .map(|_| true)
             .map_err(|_| BundlrError::InvalidSignature)
     }
 }
