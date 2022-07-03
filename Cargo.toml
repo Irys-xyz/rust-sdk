@@ -2,7 +2,7 @@
 name = "bundlr-sdk"
 description = "Bundlr Network Rust sdk"
 homepage = "https://bundlr.network"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 repository = "https://github.com/Bundlr-Network/rust-sdk"
 readme = "README.md"
