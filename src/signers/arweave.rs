@@ -1,14 +1,13 @@
 use crate::error::BundlrError;
 use bytes::Bytes;
 use data_encoding::BASE64URL;
+use jsonwebkey as jwk;
 use rand::thread_rng;
 use rsa::{
     pkcs8::{DecodePrivateKey, DecodePublicKey},
     PaddingScheme, PublicKey, PublicKeyParts, RsaPrivateKey, RsaPublicKey,
 };
 use sha2::Digest;
-
-extern crate jsonwebkey as jwk;
 
 use super::signer::{Signer, Verifier};
 
