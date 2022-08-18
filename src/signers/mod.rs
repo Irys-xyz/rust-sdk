@@ -1,3 +1,4 @@
+#[cfg(feature = "arweave")]
 pub mod arweave;
 #[cfg(feature = "cosmos")]
 pub mod cosmos;

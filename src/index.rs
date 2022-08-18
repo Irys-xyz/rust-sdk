@@ -3,7 +3,10 @@ use derive_more::Display;
 use num_derive::FromPrimitive;
 use std::panic;
 
-use crate::{ArweaveSigner, Verifier};
+use crate::Verifier;
+
+#[cfg(feature = "arweave")]
+use crate::ArweaveSigner;
 
 #[cfg(any(feature = "solana", feature = "algorand"))]
 use crate::Ed25519Signer;
@@ -39,6 +42,7 @@ impl Config {
 impl SignerMap {
     pub fn get_config(&self) -> Config {
         match *self {
+            #[cfg(feature = "arweave")]
             SignerMap::Arweave => Config {
                 sig_length: 512,
                 pub_length: 512,
@@ -65,6 +69,7 @@ impl SignerMap {
 
     pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<bool, BundlrError> {
         match *self {
+            #[cfg(feature = "arweave")]
             SignerMap::Arweave => ArweaveSigner::verify(
                 Bytes::copy_from_slice(pk),
                 Bytes::copy_from_slice(message),

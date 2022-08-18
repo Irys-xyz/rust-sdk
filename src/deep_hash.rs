@@ -57,7 +57,7 @@ pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 
             let acc = sha384hash(tag.into());
 
-            return deep_hash_chunks(chunks, acc).await;
+            deep_hash_chunks(chunks, acc).await
         }
     }
 }
