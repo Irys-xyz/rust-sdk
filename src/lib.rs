@@ -10,6 +10,7 @@ pub mod deep_hash_sync;
 pub mod error;
 pub mod tags;
 pub mod verify;
+pub mod wallet;
 
 pub use bundlr::Bundlr;
 pub use signers::signer::{Signer, Verifier};
