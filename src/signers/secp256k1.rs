@@ -44,11 +44,11 @@ impl Secp256k1Signer {
     }
 }
 
-impl Signer for Secp256k1Signer {
-    const SIG_TYPE: u16 = 3;
-    const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
-    const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
+const SIG_TYPE: u16 = 3;
+const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
+const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
 
+impl Signer for Secp256k1Signer {
     fn pub_key(&self) -> bytes::Bytes {
         Bytes::copy_from_slice(&self.pub_key.serialize_uncompressed())
     }
@@ -66,6 +66,16 @@ impl Signer for Secp256k1Signer {
         let data = &[r.as_bytes(), s.as_bytes(), &[v]].concat();
 
         Ok(Bytes::copy_from_slice(data))
+    }
+
+    fn sig_type(&self) -> u16 {
+        SIG_TYPE
+    }
+    fn get_sig_length(&self) -> u16 {
+        SIG_LENGTH
+    }
+    fn get_pub_length(&self) -> u16 {
+        PUB_LENGTH
     }
 }
 

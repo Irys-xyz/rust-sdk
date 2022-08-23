@@ -27,11 +27,11 @@ impl Ed25519Signer {
     }
 }
 
-impl SignerTrait for Ed25519Signer {
-    const SIG_TYPE: u16 = 2;
-    const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
-    const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
+const SIG_TYPE: u16 = 2;
+const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
+const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
+impl SignerTrait for Ed25519Signer {
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
         Ok(Bytes::copy_from_slice(
             &self.keypair.sign(&message).to_bytes(),
@@ -40,6 +40,16 @@ impl SignerTrait for Ed25519Signer {
 
     fn pub_key(&self) -> bytes::Bytes {
         Bytes::copy_from_slice(&self.keypair.public.to_bytes())
+    }
+
+    fn sig_type(&self) -> u16 {
+        SIG_TYPE
+    }
+    fn get_sig_length(&self) -> u16 {
+        SIG_LENGTH
+    }
+    fn get_pub_length(&self) -> u16 {
+        PUB_LENGTH
     }
 }
 

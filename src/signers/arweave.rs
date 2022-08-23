@@ -21,7 +21,7 @@ impl ArweaveSigner {
         Self { priv_key }
     }
 
-    fn from_jwk(jwk: jwk::JsonWebKey) -> ArweaveSigner {
+    pub fn from_jwk(jwk: jwk::JsonWebKey) -> ArweaveSigner {
         let pem = jwk.key.to_pem();
         let priv_key = RsaPrivateKey::from_pkcs8_pem(&pem).unwrap();
 
@@ -29,10 +29,11 @@ impl ArweaveSigner {
     }
 }
 
+const SIG_TYPE: u16 = 1;
+const SIG_LENGTH: u16 = 512;
+const PUB_LENGTH: u16 = 512;
+
 impl Signer for ArweaveSigner {
-    const SIG_TYPE: u16 = 1;
-    const SIG_LENGTH: u16 = 512;
-    const PUB_LENGTH: u16 = 512;
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError> {
         let mut hasher = sha2::Sha256::new();
         hasher.update(&message);
@@ -55,6 +56,16 @@ impl Signer for ArweaveSigner {
 
     fn pub_key(&self) -> Bytes {
         self.priv_key.to_public_key().n().to_bytes_be().into()
+    }
+
+    fn sig_type(&self) -> u16 {
+        SIG_TYPE
+    }
+    fn get_sig_length(&self) -> u16 {
+        SIG_LENGTH
+    }
+    fn get_pub_length(&self) -> u16 {
+        PUB_LENGTH
     }
 }
 
