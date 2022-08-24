@@ -2,6 +2,9 @@ use num_derive::FromPrimitive;
 use std::str::FromStr;
 use strum_macros::Display;
 
+#[cfg(feature = "build-binary")]
+use clap::ValueEnum;
+
 #[derive(FromPrimitive, Debug, Copy, Clone, Display)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
 #[strum(serialize_all = "snake_case")]
