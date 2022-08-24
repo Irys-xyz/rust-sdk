@@ -90,3 +90,72 @@ impl Bundlr<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{currency::Currency, tags::Tag, wallet, ArweaveSigner, Bundlr};
+    use httpmock::{
+        Method::{GET, POST},
+        MockServer,
+    };
+    use jsonwebkey as jwk;
+    use std::str::FromStr;
+
+    #[tokio::test]
+    async fn should_fetch_balance_correctly() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path("/account/balance/arweave")
+                .query_param("address", "address");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body("{ \"balance\": \"10\" }");
+        });
+
+        let url = server.url("");
+        let address = "address";
+        let currency = Currency::from_str("arweave").unwrap();
+        let bundler = &Bundlr::new(url.to_string(), currency, None);
+        let balance = bundler.get_balance(address.to_string()).await.unwrap();
+
+        mock.assert();
+        assert_eq!(balance, 10);
+    }
+
+    #[tokio::test]
+    async fn should_send_transactions_correctly() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST).path("/tx/arweave");
+            then.status(200)
+                .header("Content-Type", "application/octet-stream")
+                .body("{}");
+        });
+
+        let url = server.url("");
+        let currency = Currency::from_str("arweave").unwrap();
+        let jwk: jwk::JsonWebKey = wallet::load_from_file("res/test_wallet.json");
+        let signer = ArweaveSigner::from_jwk(jwk);
+        let bundler = &Bundlr::new(url.to_string(), currency, Some(&signer));
+        let tx = bundler.create_transaction_with_tags(
+            Vec::from("hello"),
+            vec![Tag::new("name".to_string(), "value".to_string())],
+        );
+        let value = bundler.send_transaction(tx).await.unwrap();
+
+        mock.assert();
+        assert_eq!(value.to_string(), "{}");
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_panic_when_creating_txs_without_secret_key() {
+        let currency = Currency::from_str("arweave").unwrap();
+        let bundler = &Bundlr::new("".to_string(), currency, None);
+        bundler.create_transaction_with_tags(
+            Vec::from("hello"),
+            vec![Tag::new("name".to_string(), "value".to_string())],
+        );
+    }
+}
