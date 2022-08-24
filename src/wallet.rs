@@ -3,7 +3,8 @@ use std::fs;
 use jsonwebkey as jwk;
 
 pub fn load_from_file(path: &str) -> jwk::JsonWebKey {
-    let jwt_str = fs::read_to_string(path).unwrap_or_else(|_| panic!("Unable to read file {}", path));
+    let jwt_str =
+        fs::read_to_string(path).unwrap_or_else(|_| panic!("Unable to read file {}", path));
     jwt_str.parse().expect("Malformed jwk")
 }
 

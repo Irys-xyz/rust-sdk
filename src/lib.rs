@@ -1,13 +1,14 @@
 extern crate derive_builder;
 
 mod bundlr;
-mod index;
 mod signers;
 mod transaction;
 
+pub mod currency;
 pub mod deep_hash;
 pub mod deep_hash_sync;
 pub mod error;
+pub mod index;
 pub mod tags;
 pub mod verify;
 pub mod wallet;

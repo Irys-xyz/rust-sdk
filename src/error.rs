@@ -28,4 +28,7 @@ pub enum BundlrError {
 
     #[error("Failed to sign message: {0}")]
     SigningError(String),
+
+    #[error("Request error: {0}.")]
+    RequestError(String),
 }

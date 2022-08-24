@@ -1,16 +1,15 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::currency::Currency;
 use crate::error::BundlrError;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
 
-#[allow(unused)]
-pub struct Bundlr<T> {
+pub struct Bundlr<'a> {
     url: String,
-    chain: String,
-    currency: String,
-    signer: T,
+    currency: Currency,
+    signer: Option<&'a dyn Signer>,
     client: reqwest::Client,
 }
 
@@ -20,11 +19,15 @@ pub struct TxResponse {
     id: String,
 }
 
-impl<T: Signer> Bundlr<T> {
-    pub fn new(url: String, chain: String, currency: String, signer: T) -> Bundlr<T> {
+#[derive(Deserialize)]
+pub struct BalanceResData {
+    balance: String,
+}
+
+impl Bundlr<'_> {
+    pub fn new(url: String, currency: Currency, signer: Option<&dyn Signer>) -> Bundlr {
         Bundlr {
             url,
-            chain,
             currency,
             signer,
             client: reqwest::Client::new(),
@@ -32,7 +35,10 @@ impl<T: Signer> Bundlr<T> {
     }
 
     pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
-        BundlrTx::create_with_tags(data, tags, &self.signer)
+        match self.signer.is_some() {
+            true => BundlrTx::create_with_tags(data, tags, self.signer.unwrap()),
+            false => panic!("No secret key present"),
+        }
     }
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
@@ -40,7 +46,7 @@ impl<T: Signer> Bundlr<T> {
 
         let response = self
             .client
-            .post(format!("{}/tx/{}", self.url, self.chain))
+            .post(format!("{}/tx/{}", self.url, self.currency))
             .header("Content-Type", "application/octet-stream")
             .body(tx)
             .send()
@@ -56,7 +62,31 @@ impl<T: Signer> Bundlr<T> {
                     .await
                     .map_err(|e| BundlrError::ResponseError(e.to_string()))
             }
-            Err(_) => Err(BundlrError::ResponseError("Unknown Error".to_string())),
+            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
+        }
+    }
+
+    pub async fn get_balance(&self, address: String) -> Result<u64, BundlrError> {
+        let response = self
+            .client
+            .get(format!("{}/account/balance/{}", &self.url, &self.currency))
+            .query(&[("address", address.as_str())])
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+
+        match response {
+            Ok(r) => {
+                if !r.status().is_success() {
+                    let msg = format!("Status: {}", r.status());
+                    return Err(BundlrError::ResponseError(msg));
+                };
+                let data = r.json::<BalanceResData>().await.unwrap();
+                data.balance
+                    .parse::<u64>()
+                    .map_err(|err| BundlrError::RequestError(err.to_string()))
+            }
+            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
         }
     }
 }

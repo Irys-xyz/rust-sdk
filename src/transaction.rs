@@ -13,7 +13,7 @@ impl BundlrTx {
         self.0
     }
 
-    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &impl Signer) -> Self {
+    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &dyn Signer) -> Self {
         let encoded_tags = if !tags.is_empty() {
             tags.encode().unwrap()
         } else {
