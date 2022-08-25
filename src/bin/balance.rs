@@ -1,7 +1,7 @@
 use std::{str::FromStr, time::Duration};
 
 use bundlr_sdk::{currency::Currency, Bundlr};
-use clap::Parser;
+use clap::{ArgEnum, Parser};
 
 #[derive(Clone, Debug, Parser)]
 #[clap(name = "balance")]
@@ -25,10 +25,10 @@ async fn main() {
     let args = Args::parse();
     let url = args.host;
     let address = args.address;
-    let currency = Currency::from_str(&args.currency).unwrap();
+    let currency = Currency::from_str(&args.currency, false).unwrap();
     let timeout = args.timeout.unwrap_or_else(|| 30000);
 
-    let bundler = &Bundlr::new(url, currency, None, None).await;
+    let bundler = &Bundlr::new(url, currency, None).await;
     let work = bundler.get_balance(address);
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {

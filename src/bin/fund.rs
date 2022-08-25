@@ -4,7 +4,7 @@ use bundlr_sdk::{
     currency::Currency, wallet::load_from_file, ArweaveSigner, Bundlr, CosmosSigner, Ed25519Signer,
     Secp256k1Signer, Signer,
 };
-use clap::Parser;
+use clap::{ArgEnum, Parser};
 use num_bigint::BigUint;
 use num_traits::Zero;
 
@@ -50,7 +50,7 @@ fn confirm(amount: &BigUint, currency: &Currency, host: &String, address: &Strin
 async fn main() {
     let args = Args::parse();
     let amount = args.amount.parse::<BigUint>().unwrap();
-    let currency = Currency::from_str(&args.currency).unwrap();
+    let currency = Currency::from_str(&args.currency, false).unwrap();
     let url = args.host;
     let wallet = args.wallet;
     let timeout = args.timeout.unwrap_or_else(|| 30000);
@@ -79,7 +79,8 @@ async fn main() {
         }
         Currency::Cosmos => Some(Box::new(CosmosSigner::from_base58(&wallet))),
     };
-    let bundler = &Bundlr::new(url, currency, signer, None).await;
+    let currency = Currency::from(currency);
+    let bundler = &Bundlr::new(url, currency, signer).await;
     let work = bundler.fund(amount);
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {

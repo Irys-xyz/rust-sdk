@@ -5,7 +5,8 @@ use crate::error::BundlrError;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
 use num_bigint::BigUint;
-use serde::Deserialize;
+use num_traits::Zero;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub struct Bundlr {
@@ -26,7 +27,6 @@ pub struct TxResponse {
 pub struct BalanceResData {
     balance: String,
 }
-#[allow(unused)]
 #[derive(Deserialize)]
 pub struct InfoResponse {
     version: String,
@@ -34,24 +34,16 @@ pub struct InfoResponse {
     addresses: HashMap<String, String>,
 }
 
+#[derive(Serialize)]
+pub struct FundBody {
+    tx_id: String,
+}
+
 impl Bundlr {
-    pub async fn new(
-        url: String,
-        currency: Currency,
-        signer: Option<Box<dyn Signer>>,
-        address: Option<String>,
-    ) -> Bundlr {
-        let address = match address.is_some() {
-            true => address.unwrap(),
-            false => match Bundlr::get_address(&url, &currency, reqwest::Client::new()).await {
-                Ok(res) => res,
-                Err(err) => panic!(
-                    "Could not infere address from url: {}/info : {}",
-                    url,
-                    err.to_string()
-                ),
-            },
-        };
+    pub async fn new(url: String, currency: Currency, signer: Option<Box<dyn Signer>>) -> Bundlr {
+        let address = Bundlr::get_address(&url, &currency, reqwest::Client::new())
+            .await
+            .unwrap_or_else(|_| panic!("Could not infer bundler address from url {}", url));
 
         Bundlr {
             url,
@@ -141,14 +133,38 @@ impl Bundlr {
         }
     }
 
-    pub async fn fund(&self, _amount: BigUint) -> Result<Value, BundlrError> {
-        todo!();
+    pub async fn fund(&self, amount: BigUint) -> Result<Value, BundlrError> {
+        if amount.le(&Zero::zero()) {
+            return Err(BundlrError::InvalidFundingValue);
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/account/balance/{}", &self.url, &self.currency))
+            .body(format!("{{\"tx_id\" = \"{}\"}}", "tx_id"))
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+
+        match response {
+            Ok(r) => {
+                if !r.status().is_success() {
+                    let msg = format!("Status: {}", r.status());
+                    return Err(BundlrError::ResponseError(msg));
+                };
+                r.json::<Value>()
+                    .await
+                    .map_err(|err| BundlrError::RequestError(err.to_string()))
+            }
+            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{currency::Currency, tags::Tag, wallet, ArweaveSigner, Bundlr};
+    use clap::ArgEnum;
     use httpmock::{
         Method::{GET, POST},
         MockServer,
@@ -156,6 +172,49 @@ mod tests {
     use jsonwebkey as jwk;
     use num_bigint::BigUint;
     use std::str::FromStr;
+
+    #[tokio::test]
+    #[should_panic]
+    async fn should_panic_when_creating_txs_without_secret_key() {
+        let currency = Currency::from_str("arweave", false).unwrap();
+        let bundler = &Bundlr::new("".to_string(), currency, None).await;
+        bundler.create_transaction_with_tags(
+            Vec::from("hello"),
+            vec![Tag::new("name".to_string(), "value".to_string())],
+        );
+    }
+
+    #[tokio::test]
+    async fn should_send_transactions_correctly() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST).path("/tx/arweave");
+            then.status(200)
+                .header("Content-Type", "application/octet-stream")
+                .body("{}");
+        });
+        let mock_2 = server.mock(|when, then| {
+            when.method(GET)
+                .path("/info");
+            then.status(200)
+                .body("{ \"version\": \"0\", \"gateway\": \"gateway\", \"addresses\": { \"arweave\": \"address\" }}");  
+        });
+
+        let url = server.url("");
+        let currency = Currency::from_str("arweave", false).unwrap();
+        let jwk: jwk::JsonWebKey = wallet::load_from_file("res/test_wallet.json");
+        let signer = Box::new(ArweaveSigner::from_jwk(jwk));
+        let bundler = &Bundlr::new(url.to_string(), currency, Some(signer)).await;
+        let tx = bundler.create_transaction_with_tags(
+            Vec::from("hello"),
+            vec![Tag::new("name".to_string(), "value".to_string())],
+        );
+        let value = bundler.send_transaction(tx).await.unwrap();
+
+        mock.assert();
+        mock_2.assert();
+        assert_eq!(value.to_string(), "{}");
+    }
 
     #[tokio::test]
     async fn should_fetch_balance_correctly() {
@@ -177,8 +236,8 @@ mod tests {
 
         let url = server.url("");
         let address = "address";
-        let currency = Currency::from_str("arweave").unwrap();
-        let bundler = &Bundlr::new(url.to_string(), currency, None, None).await;
+        let currency = Currency::from_str("arweave", false).unwrap();
+        let bundler = &Bundlr::new(url.to_string(), currency, None).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();
 
         mock.assert();
@@ -187,13 +246,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_send_transactions_correctly() {
+    async fn should_fund_address_correctly() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
-            when.method(POST).path("/tx/arweave");
+            when.method(GET)
+                .path("/account/balance/arweave")
+                .query_param("address", "address");
             then.status(200)
-                .header("Content-Type", "application/octet-stream")
-                .body("{}");
+                .header("content-type", "application/json")
+                .body("{ \"balance\": \"10\" }");
         });
         let mock_2 = server.mock(|when, then| {
             when.method(GET)
@@ -203,29 +264,13 @@ mod tests {
         });
 
         let url = server.url("");
-        let currency = Currency::from_str("arweave").unwrap();
-        let jwk: jwk::JsonWebKey = wallet::load_from_file("res/test_wallet.json");
-        let signer = Box::new(ArweaveSigner::from_jwk(jwk));
-        let bundler = &Bundlr::new(url.to_string(), currency, Some(signer), None).await;
-        let tx = bundler.create_transaction_with_tags(
-            Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
-        );
-        let value = bundler.send_transaction(tx).await.unwrap();
+        let address = "address";
+        let currency = Currency::from_str("arweave", false).unwrap();
+        let bundler = &Bundlr::new(url.to_string(), currency, None).await;
+        let balance = bundler.get_balance(address.to_string()).await.unwrap();
 
         mock.assert();
         mock_2.assert();
-        assert_eq!(value.to_string(), "{}");
-    }
-
-    #[tokio::test]
-    #[should_panic]
-    async fn should_panic_when_creating_txs_without_secret_key() {
-        let currency = Currency::from_str("arweave").unwrap();
-        let bundler = &Bundlr::new("".to_string(), currency, None, None).await;
-        bundler.create_transaction_with_tags(
-            Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
-        );
+        assert_eq!(balance, "10".parse::<BigUint>().unwrap());
     }
 }

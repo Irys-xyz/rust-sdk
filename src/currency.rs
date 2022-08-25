@@ -1,7 +1,6 @@
 use core::fmt;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[cfg(feature = "build-binary")]
 use clap::ValueEnum;
@@ -14,20 +13,6 @@ pub enum Currency {
     Ethereum = 3,
     Erc20 = 4,
     Cosmos = 5,
-}
-
-impl FromStr for Currency {
-    type Err = anyhow::Error;
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input {
-            "arweave" => Ok(Currency::Arweave),
-            "solana" => Ok(Currency::Solana),
-            "ethereum" => Ok(Currency::Ethereum),
-            "erc20" => Ok(Currency::Erc20),
-            "cosmos" => Ok(Currency::Cosmos),
-            _ => Err(anyhow::Error::msg("Invalid or unsupported currency")),
-        }
-    }
 }
 
 impl fmt::Display for Currency {
