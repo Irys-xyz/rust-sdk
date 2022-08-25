@@ -1,4 +1,4 @@
-use std::{str::FromStr, time::Duration};
+use std::time::Duration;
 
 use bundlr_sdk::{currency::Currency, Bundlr};
 use clap::{ArgEnum, Parser};

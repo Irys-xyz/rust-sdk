@@ -1,12 +1,8 @@
-use std::{str::FromStr, time::Duration};
-
-use bundlr_sdk::{
-    currency::Currency, wallet::load_from_file, ArweaveSigner, Bundlr, CosmosSigner, Ed25519Signer,
-    Secp256k1Signer, Signer,
-};
+use bundlr_sdk::{currency::Currency, Bundlr};
 use clap::{ArgEnum, Parser};
 use num_bigint::BigUint;
 use num_traits::Zero;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Parser)]
 #[clap(name = "fund")]
@@ -66,21 +62,8 @@ async fn main() {
         return;
     }
 
-    let signer: Option<Box<dyn Signer>> = match currency {
-        Currency::Arweave => {
-            let wallet_path = wallet;
-            let jwk = load_from_file(&wallet_path);
-            let signer = Box::new(ArweaveSigner::from_jwk(jwk));
-            Some(signer)
-        }
-        Currency::Solana => Some(Box::new(Ed25519Signer::from_base58(&wallet))),
-        Currency::Ethereum | Currency::Erc20 => {
-            Some(Box::new(Secp256k1Signer::from_base58(&wallet)))
-        }
-        Currency::Cosmos => Some(Box::new(CosmosSigner::from_base58(&wallet))),
-    };
     let currency = Currency::from(currency);
-    let bundler = &Bundlr::new(url, currency, signer).await;
+    let bundler = &Bundlr::new(url, currency, Some(wallet)).await;
     let work = bundler.fund(amount);
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {
