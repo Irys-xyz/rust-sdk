@@ -1,12 +1,14 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::currency::Currency;
 use crate::error::BundlrError;
 use crate::signers::get_signer;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
+use num_bigfloat::BigFloat;
 use num_bigint::BigUint;
-use num_traits::Zero;
+use num_traits::{CheckedMul, One, Zero};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -15,7 +17,7 @@ pub struct Bundlr {
     currency: Currency,
     signer: Option<Box<dyn Signer>>,
     client: reqwest::Client,
-    address: String,
+    pub_info: PubInfo,
 }
 
 #[allow(unused)]
@@ -29,7 +31,7 @@ pub struct BalanceResData {
     balance: String,
 }
 #[derive(Deserialize)]
-pub struct InfoResponse {
+pub struct PubInfo {
     version: String,
     gateway: String,
     addresses: HashMap<String, String>,
@@ -42,9 +44,9 @@ pub struct FundBody {
 
 impl Bundlr {
     pub async fn new(url: String, currency: Currency, wallet: Option<String>) -> Bundlr {
-        let address = Bundlr::get_address(&url, &currency, reqwest::Client::new())
+        let pub_info = Bundlr::get_pub_info(&url)
             .await
-            .unwrap_or_else(|_| panic!("Could not infer bundler address from url {}", url));
+            .unwrap_or_else(|_| panic!("Could not fetch public info from url: {}", url));
 
         let signer = match wallet {
             Some(w) => match get_signer(currency, w) {
@@ -59,15 +61,12 @@ impl Bundlr {
             currency,
             signer,
             client: reqwest::Client::new(),
-            address,
+            pub_info,
         }
     }
 
-    pub async fn get_address(
-        url: &String,
-        currency: &Currency,
-        client: reqwest::Client,
-    ) -> Result<String, BundlrError> {
+    pub async fn get_pub_info(url: &String) -> Result<PubInfo, BundlrError> {
+        let client = reqwest::Client::new();
         let response = client
             .get(format!("{}/info", url))
             .header("Content-Type", "application/json")
@@ -79,8 +78,9 @@ impl Bundlr {
                     let msg = format!("Status: {}", r.status());
                     return Err(BundlrError::ResponseError(msg));
                 };
-                let data = r.json::<InfoResponse>().await.unwrap();
-                Ok(data.addresses[&currency.to_string()].to_string())
+                r.json::<PubInfo>()
+                    .await
+                    .map_err(|err| BundlrError::RequestError(err.to_string()))
             }
             Err(err) => Err(BundlrError::ResponseError(err.to_string())),
         }
@@ -136,33 +136,6 @@ impl Bundlr {
                 let data = r.json::<BalanceResData>().await.unwrap();
                 data.balance
                     .parse::<BigUint>()
-                    .map_err(|err| BundlrError::RequestError(err.to_string()))
-            }
-            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
-        }
-    }
-
-    pub async fn fund(&self, amount: BigUint) -> Result<Value, BundlrError> {
-        if amount.le(&Zero::zero()) {
-            return Err(BundlrError::InvalidFundingValue);
-        };
-
-        let response = self
-            .client
-            .post(format!("{}/account/balance/{}", &self.url, &self.currency))
-            .body(format!("{{\"tx_id\" = \"{}\"}}", "tx_id"))
-            .header("Content-Type", "application/json")
-            .send()
-            .await;
-
-        match response {
-            Ok(r) => {
-                if !r.status().is_success() {
-                    let msg = format!("Status: {}", r.status());
-                    return Err(BundlrError::ResponseError(msg));
-                };
-                r.json::<Value>()
-                    .await
                     .map_err(|err| BundlrError::RequestError(err.to_string()))
             }
             Err(err) => Err(BundlrError::ResponseError(err.to_string())),

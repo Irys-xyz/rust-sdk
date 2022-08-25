@@ -8,6 +8,11 @@ use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
 
+pub struct SignedTx {
+    tx_id: String,
+    tx: BundlrTx,
+}
+
 impl BundlrTx {
     pub fn into_inner(self) -> Vec<u8> {
         self.0
