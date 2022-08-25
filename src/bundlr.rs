@@ -6,10 +6,10 @@ use crate::error::BundlrError;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
 
-pub struct Bundlr<'a> {
+pub struct Bundlr {
     url: String,
     currency: Currency,
-    signer: Option<&'a dyn Signer>,
+    signer: Option<Box<dyn Signer>>,
     client: reqwest::Client,
 }
 
@@ -24,8 +24,8 @@ pub struct BalanceResData {
     balance: String,
 }
 
-impl Bundlr<'_> {
-    pub fn new(url: String, currency: Currency, signer: Option<&dyn Signer>) -> Bundlr {
+impl Bundlr {
+    pub fn new(url: String, currency: Currency, signer: Option<Box<dyn Signer>>) -> Bundlr {
         Bundlr {
             url,
             currency,
@@ -36,7 +36,7 @@ impl Bundlr<'_> {
 
     pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
         match self.signer.is_some() {
-            true => BundlrTx::create_with_tags(data, tags, self.signer.unwrap()),
+            true => BundlrTx::create_with_tags(data, tags, self.signer.as_ref().unwrap()),
             false => panic!("No secret key present"),
         }
     }
@@ -89,11 +89,24 @@ impl Bundlr<'_> {
             Err(err) => Err(BundlrError::ResponseError(err.to_string())),
         }
     }
+
+    pub async fn fund_account(&self) -> Result<Value, BundlrError> {
+        /*
+            let response = self
+                .client
+                .post(format!("{}/account/balance/{}", &self.url, &self.currency))
+                .query(&[("address", address.as_str())])
+                .header("Content-Type", "application/json")
+                .send()
+                .await;
+        */
+        todo!();
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{currency::Currency, tags::Tag, wallet, ArweaveSigner, Bundlr};
+    use crate::{currency::Currency, tags::Tag, wallet, ArweaveSigner, Bundlr, Signer};
     use httpmock::{
         Method::{GET, POST},
         MockServer,
@@ -136,8 +149,8 @@ mod tests {
         let url = server.url("");
         let currency = Currency::from_str("arweave").unwrap();
         let jwk: jwk::JsonWebKey = wallet::load_from_file("res/test_wallet.json");
-        let signer = ArweaveSigner::from_jwk(jwk);
-        let bundler = &Bundlr::new(url.to_string(), currency, Some(&signer));
+        let signer = Box::new(ArweaveSigner::from_jwk(jwk));
+        let bundler = &Bundlr::new(url.to_string(), currency, Some(signer));
         let tx = bundler.create_transaction_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],

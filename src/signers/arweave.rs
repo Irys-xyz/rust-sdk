@@ -25,7 +25,7 @@ impl ArweaveSigner {
         let pem = jwk.key.to_pem();
         let priv_key = RsaPrivateKey::from_pkcs8_pem(&pem).unwrap();
 
-        Self { priv_key }
+        ArweaveSigner::new(priv_key)
     }
 }
 
