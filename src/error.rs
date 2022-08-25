@@ -23,6 +23,9 @@ pub enum BundlrError {
     #[error("Invalid signature.")]
     InvalidSignature,
 
+    #[error("Invalid value for funding.")]
+    InvalidFundingValue,
+
     #[error("Response failed with the following error: {0}")]
     ResponseError(String),
 

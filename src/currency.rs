@@ -1,13 +1,13 @@
+use core::fmt;
 use num_derive::FromPrimitive;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use strum_macros::Display;
 
 #[cfg(feature = "build-binary")]
 use clap::ValueEnum;
 
-#[derive(FromPrimitive, Debug, Copy, Clone, Display)]
+#[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
-#[strum(serialize_all = "snake_case")]
 pub enum Currency {
     Arweave = 1,
     Solana = 2,
@@ -27,5 +27,11 @@ impl FromStr for Currency {
             "cosmos" => Ok(Currency::Cosmos),
             _ => Err(anyhow::Error::msg("Invalid or unsupported currency")),
         }
+    }
+}
+
+impl fmt::Display for Currency {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "{}", format!("{:?}", self).to_lowercase())
     }
 }

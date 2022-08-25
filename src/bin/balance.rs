@@ -28,7 +28,7 @@ async fn main() {
     let currency = Currency::from_str(&args.currency).unwrap();
     let timeout = args.timeout.unwrap_or_else(|| 30000);
 
-    let bundler = &Bundlr::new(url, currency, None);
+    let bundler = &Bundlr::new(url, currency, None, None).await;
     let work = bundler.get_balance(address);
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {

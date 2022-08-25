@@ -405,6 +405,7 @@ dependencies = [
  "httpmock",
  "jsonwebkey",
  "lazy_static",
+ "num-bigint 0.4.3",
  "num-derive",
  "num-traits",
  "pipe",
