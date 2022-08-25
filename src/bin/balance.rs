@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 use bundlr_sdk::{currency::Currency, Bundlr};
 use clap::Parser;
@@ -17,7 +17,7 @@ struct Args {
     currency: String,
 
     #[clap(long = "timeout")]
-    timeout: Option<String>,
+    timeout: Option<u64>,
 }
 
 #[tokio::main]
@@ -26,9 +26,17 @@ async fn main() {
     let url = args.host;
     let address = args.address;
     let currency = Currency::from_str(&args.currency).unwrap();
+    let timeout = args.timeout.unwrap_or_else(|| 30000);
 
     let bundler = &Bundlr::new(url, currency, None);
-    let balance = bundler.get_balance(address).await.unwrap();
+    let work = bundler.get_balance(address);
 
-    println!("Balance: {:?}", balance);
+    match tokio::time::timeout(Duration::from_millis(timeout), work).await {
+        Ok(result) => {
+            println!("Balance: {:?}", result.unwrap());
+        }
+        Err(err) => {
+            println!("Error getting balance: {:?}", err.to_string());
+        }
+    }
 }
