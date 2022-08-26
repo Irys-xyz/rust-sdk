@@ -10,7 +10,7 @@ use serde_json::Value;
 
 #[allow(unused)]
 pub struct Bundlr<'a> {
-    url: String,
+    url: String, // FIXME: type of this field should be Url
     currency: Currency,
     signer: &'a dyn Signer,
     client: reqwest::Client,
@@ -106,14 +106,14 @@ impl Bundlr<'_> {
     }
 
     pub async fn get_balance_public(
-        url: &String,
+        url: &str,
         currency: &Currency,
-        address: &String,
+        address: &str,
         client: &reqwest::Client,
     ) -> Result<BigUint, BundlrError> {
         let response = client
             .get(format!("{}/account/balance/{}", url, currency))
-            .query(&[("address", address.as_str())])
+            .query(&[("address", address)])
             .header("Content-Type", "application/json")
             .send()
             .await;
@@ -141,7 +141,6 @@ impl Bundlr<'_> {
 #[cfg(test)]
 mod tests {
     use crate::{currency::Currency, tags::Tag, wallet::load_from_file, ArweaveSigner, Bundlr};
-    use clap::ArgEnum;
     use httpmock::{
         Method::{GET, POST},
         MockServer,
@@ -165,7 +164,7 @@ mod tests {
         });
 
         let url = server.url("");
-        let currency = Currency::from_str("arweave", false).unwrap();
+        let currency = Currency::Arweave;
         let jwk = load_from_file(&"res/test_wallet.json".to_string());
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
@@ -200,7 +199,7 @@ mod tests {
 
         let url = server.url("");
         let address = "address";
-        let currency = Currency::from_str("arweave", false).unwrap();
+        let currency = Currency::Arweave;
         let jwk = load_from_file(&"res/test_wallet.json".to_string());
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
@@ -231,7 +230,7 @@ mod tests {
 
         let url = server.url("");
         let address = "address";
-        let currency = Currency::from_str("arweave", false).unwrap();
+        let currency = Currency::Arweave;
         let jwk = load_from_file(&"res/test_wallet.json".to_string());
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
