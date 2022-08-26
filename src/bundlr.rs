@@ -1,21 +1,18 @@
 use std::collections::HashMap;
-use std::str::FromStr;
 
 use crate::currency::Currency;
 use crate::error::BundlrError;
-use crate::signers::get_signer;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
-use num_bigfloat::BigFloat;
 use num_bigint::BigUint;
-use num_traits::{CheckedMul, One, Zero};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub struct Bundlr {
+#[allow(unused)]
+pub struct Bundlr<'a> {
     url: String,
     currency: Currency,
-    signer: Option<Box<dyn Signer>>,
+    signer: &'a dyn Signer,
     client: reqwest::Client,
     pub_info: PubInfo,
 }
@@ -30,6 +27,7 @@ pub struct TxResponse {
 pub struct BalanceResData {
     balance: String,
 }
+#[allow(unused)]
 #[derive(Deserialize)]
 pub struct PubInfo {
     version: String,
@@ -42,19 +40,11 @@ pub struct FundBody {
     tx_id: String,
 }
 
-impl Bundlr {
-    pub async fn new(url: String, currency: Currency, wallet: Option<String>) -> Bundlr {
+impl Bundlr<'_> {
+    pub async fn new(url: String, currency: Currency, signer: &dyn Signer) -> Bundlr {
         let pub_info = Bundlr::get_pub_info(&url)
             .await
             .unwrap_or_else(|_| panic!("Could not fetch public info from url: {}", url));
-
-        let signer = match wallet {
-            Some(w) => match get_signer(currency, w) {
-                Ok(s) => Some(s),
-                Err(_) => None,
-            },
-            None => None,
-        };
 
         Bundlr {
             url,
@@ -87,10 +77,7 @@ impl Bundlr {
     }
 
     pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
-        match self.signer.is_some() {
-            true => BundlrTx::create_with_tags(data, tags, self.signer.as_ref().unwrap()),
-            false => panic!("No secret key present"),
-        }
+        BundlrTx::create_with_tags(data, tags, self.signer)
     }
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
@@ -118,10 +105,14 @@ impl Bundlr {
         }
     }
 
-    pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
-        let response = self
-            .client
-            .get(format!("{}/account/balance/{}", &self.url, &self.currency))
+    pub async fn get_balance_public(
+        url: &String,
+        currency: &Currency,
+        address: &String,
+        client: &reqwest::Client,
+    ) -> Result<BigUint, BundlrError> {
+        let response = client
+            .get(format!("{}/account/balance/{}", url, currency))
             .query(&[("address", address.as_str())])
             .header("Content-Type", "application/json")
             .send()
@@ -141,28 +132,21 @@ impl Bundlr {
             Err(err) => Err(BundlrError::ResponseError(err.to_string())),
         }
     }
+
+    pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
+        Bundlr::get_balance_public(&self.url, &self.currency, &address, &self.client).await
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{currency::Currency, tags::Tag, Bundlr};
+    use crate::{currency::Currency, tags::Tag, wallet::load_from_file, ArweaveSigner, Bundlr};
     use clap::ArgEnum;
     use httpmock::{
         Method::{GET, POST},
         MockServer,
     };
     use num_bigint::BigUint;
-
-    #[tokio::test]
-    #[should_panic]
-    async fn should_panic_when_creating_txs_without_secret_key() {
-        let currency = Currency::from_str("arweave", false).unwrap();
-        let bundler = &Bundlr::new("".to_string(), currency, None).await;
-        bundler.create_transaction_with_tags(
-            Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
-        );
-    }
 
     #[tokio::test]
     async fn should_send_transactions_correctly() {
@@ -182,12 +166,9 @@ mod tests {
 
         let url = server.url("");
         let currency = Currency::from_str("arweave", false).unwrap();
-        let bundler = &Bundlr::new(
-            url.to_string(),
-            currency,
-            Some("res/test_wallet.json".to_string()),
-        )
-        .await;
+        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let signer = &ArweaveSigner::from_jwk(jwk);
+        let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let tx = bundler.create_transaction_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
@@ -220,7 +201,9 @@ mod tests {
         let url = server.url("");
         let address = "address";
         let currency = Currency::from_str("arweave", false).unwrap();
-        let bundler = &Bundlr::new(url.to_string(), currency, None).await;
+        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let signer = &ArweaveSigner::from_jwk(jwk);
+        let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();
 
         mock.assert();
@@ -249,7 +232,9 @@ mod tests {
         let url = server.url("");
         let address = "address";
         let currency = Currency::from_str("arweave", false).unwrap();
-        let bundler = &Bundlr::new(url.to_string(), currency, None).await;
+        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let signer = &ArweaveSigner::from_jwk(jwk);
+        let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();
 
         mock.assert();

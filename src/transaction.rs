@@ -8,6 +8,7 @@ use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
 
+#[allow(unused)]
 pub struct SignedTx {
     tx_id: String,
     tx: BundlrTx,
@@ -18,7 +19,7 @@ impl BundlrTx {
         self.0
     }
 
-    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &Box<dyn Signer>) -> Self {
+    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &dyn Signer) -> Self {
         let encoded_tags = if !tags.is_empty() {
             tags.encode().unwrap()
         } else {
@@ -110,10 +111,8 @@ mod tests {
     #[test]
     #[cfg(feature = "solana")]
     fn test_x() {
-        use crate::Signer;
-
         let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        let signer: Box<dyn Signer> = Box::new(Ed25519Signer::from_base58(secret_key));
+        let signer = Ed25519Signer::from_base58(secret_key);
         let data_item = BundlrTx::create_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],

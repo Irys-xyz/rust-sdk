@@ -1,12 +1,9 @@
 use core::fmt;
-use num_bigint::BigUint;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "build-binary")]
 use clap::ValueEnum;
-
-use crate::BundlrTx;
 
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
@@ -24,6 +21,7 @@ impl fmt::Display for Currency {
     }
 }
 
+/*
 impl Currency {
     pub fn needs_fee(&self) -> bool {
         todo!();
@@ -35,3 +33,4 @@ impl Currency {
         todo!();
     }
 }
+*/

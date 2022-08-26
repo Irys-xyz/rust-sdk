@@ -28,8 +28,8 @@ async fn main() {
     let currency = Currency::from_str(&args.currency, false).unwrap();
     let timeout = args.timeout.unwrap_or_else(|| 30000);
 
-    let bundler = &Bundlr::new(url, currency, None).await;
-    let work = bundler.get_balance(address);
+    let client = reqwest::Client::new();
+    let work = Bundlr::get_balance_public(&url, &currency, &address, &client);
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {
         Ok(result) => {
