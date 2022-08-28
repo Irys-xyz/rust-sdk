@@ -63,6 +63,6 @@ solana = ["ed25519-dalek"]
 build-binary = ["clap"]
 
 [[bin]]
-name = "balance"
-path = "src/bin/balance.rs"
+name = "cli"
+path = "src/client/bin/cli.rs"
 required-features = ["build-binary"]

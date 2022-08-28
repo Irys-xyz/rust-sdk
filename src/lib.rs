@@ -4,6 +4,9 @@ mod bundlr;
 mod signers;
 mod transaction;
 
+#[cfg(feature = "build-binary")]
+pub mod client;
+
 pub mod currency;
 pub mod deep_hash;
 pub mod deep_hash_sync;
