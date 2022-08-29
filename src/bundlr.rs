@@ -4,7 +4,8 @@ use crate::currency::Currency;
 use crate::error::BundlrError;
 use crate::tags::Tag;
 use crate::{signers::signer::Signer, BundlrTx};
-use num_bigint::BigUint;
+use num::{BigRational, BigUint};
+use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -137,8 +138,24 @@ impl Bundlr<'_> {
         Bundlr::get_balance_public(&self.url, &self.currency, &address, &self.client).await
     }
 
-    pub async fn fund(&self, _amount: BigUint) -> Result<bool, BundlrError> {
-        todo!();
+    pub async fn fund(
+        &self,
+        amount: BigUint,
+        multiplier: Option<BigRational>,
+    ) -> Result<bool, BundlrError> {
+        let curr_str = &self.currency.to_string().to_lowercase();
+        let to = self
+            .pub_info
+            .addresses
+            .get(curr_str)
+            .expect("Address should not be empty");
+        let fee: BigUint = match self.currency.needs_fee() {
+            true => self.currency.get_fee(&amount, to, multiplier).await,
+            false => Zero::zero(),
+        };
+        let _tx = self.currency.create_tx(&amount, to, &fee).await;
+
+        todo!()
     }
 }
 
@@ -149,8 +166,7 @@ mod tests {
         Method::{GET, POST},
         MockServer,
     };
-    use num_bigint::BigUint;
-
+    use num::BigUint;
     #[tokio::test]
     async fn should_send_transactions_correctly() {
         let server = MockServer::start();

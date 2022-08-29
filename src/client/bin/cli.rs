@@ -6,7 +6,7 @@ use bundlr_sdk::{
 };
 use clap::Parser;
 use futures::Future;
-use num_bigint::BigUint;
+use num::BigUint;
 use num_traits::Zero;
 
 #[derive(Clone, Debug, Parser)]

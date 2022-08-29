@@ -1,5 +1,7 @@
 use core::fmt;
+use num::{BigRational, BigUint, CheckedMul};
 use num_derive::FromPrimitive;
+use num_traits::One;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -36,16 +38,31 @@ impl FromStr for Currency {
     }
 }
 
-/*
 impl Currency {
     pub fn needs_fee(&self) -> bool {
         todo!();
     }
-    pub async fn get_fee(&self, amount: &BigUint, to: &str) -> BigUint {
-        todo!();
+    pub async fn get_fee(
+        &self,
+        _amount: &BigUint,
+        _to: &str,
+        multiplier: Option<BigRational>,
+    ) -> BigUint {
+        let base_fee: BigUint = One::one(); //TODO: get fee properly
+        if multiplier.is_some() {
+            let multiplier = multiplier.unwrap();
+            let base_fee = BigRational::from_str(&base_fee.to_string())
+                .expect("Error converting BigUInt to BigFloat");
+            let base_fee = base_fee
+                .checked_mul(&multiplier)
+                .expect("Error multiplying two BigRational numbers");
+            let base_fee = base_fee.ceil();
+            BigUint::from_str(&base_fee.to_string()).expect("Error converting BigInt to BigUint")
+        } else {
+            base_fee.clone()
+        }
     }
-    pub async fn create_tx(&self, amount: &BigUint, to: &str, fee: &BigUint) -> BundlrTx {
+    pub async fn create_tx(&self, _amount: &BigUint, _to: &str, _fee: &BigUint) -> () {
         todo!();
     }
 }
-*/

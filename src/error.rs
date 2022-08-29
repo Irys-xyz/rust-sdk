@@ -26,6 +26,9 @@ pub enum BundlrError {
     #[error("Invalid value for funding.")]
     InvalidFundingValue,
 
+    #[error("Invalid amount, must be a integer bigger than zero")]
+    InvalidAmount,
+
     #[error("Invalid wallet")]
     InvalidWallet,
 
