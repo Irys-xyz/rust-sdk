@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::currency::Currency;
 use crate::error::BundlrError;
 use crate::tags::Tag;
-use crate::{signers::signer::Signer, BundlrTx};
+use crate::{signers::Signer, BundlrTx};
 use num::{BigRational, BigUint};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};

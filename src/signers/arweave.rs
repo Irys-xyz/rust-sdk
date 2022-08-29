@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, index::SignerMap};
+use crate::{error::BundlrError, Verifier};
 use bytes::Bytes;
 use data_encoding::BASE64URL;
 use jsonwebkey as jwk;
@@ -9,7 +9,7 @@ use rsa::{
 };
 use sha2::Digest;
 
-use super::signer::{Signer, Verifier};
+use super::{Signer};
 
 pub struct ArweaveSigner {
     priv_key: RsaPrivateKey,

@@ -3,7 +3,7 @@ use ring::rand::SecureRandom;
 
 use crate::deep_hash::{DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
 use crate::deep_hash_sync::deep_hash_sync;
-use crate::signers::signer::Signer;
+use crate::signers::Signer;
 use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
