@@ -136,6 +136,10 @@ impl Bundlr<'_> {
     pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
         Bundlr::get_balance_public(&self.url, &self.currency, &address, &self.client).await
     }
+
+    pub async fn fund(&self, _amount: BigUint) -> Result<bool, BundlrError> {
+        todo!();
+    }
 }
 
 #[cfg(test)]
