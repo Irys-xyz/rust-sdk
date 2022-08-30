@@ -1,5 +1,4 @@
 use bytes::{BufMut, Bytes};
-use num::BigUint;
 use ring::rand::SecureRandom;
 
 use crate::deep_hash::{DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
@@ -8,15 +7,6 @@ use crate::signers::Signer;
 use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
-
-pub struct Tx {
-    from: String,
-    to: String,
-    amount: BigUint,
-    block_height: BigUint,
-    pending: bool,
-    confirmed: bool,
-}
 
 impl BundlrTx {
     pub fn into_inner(self) -> Vec<u8> {
@@ -102,7 +92,7 @@ impl BundlrTx {
 mod tests {
     #[cfg(feature = "solana")]
     use crate::Ed25519Signer;
-    use crate::{tags::Tag, transaction::BundlrTx};
+    use crate::tags::Tag;
     use std::{fs::File, io::Write};
 
     #[allow(unused)]
@@ -115,6 +105,8 @@ mod tests {
     #[test]
     #[cfg(feature = "solana")]
     fn test_x() {
+        use crate::transaction::bundlr::BundlrTx;
+
         let secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
         let signer = Ed25519Signer::from_base58(secret_key);
         let data_item = BundlrTx::create_with_tags(

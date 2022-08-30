@@ -18,7 +18,7 @@ pub mod wallet;
 
 pub use bundlr::Bundlr;
 pub use signers::Signer;
-pub use transaction::BundlrTx;
+pub use transaction::bundlr::BundlrTx;
 pub use verify::Verifier;
 
 #[cfg(feature = "arweave")]

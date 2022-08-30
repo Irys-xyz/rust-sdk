@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::currency::Currency;
+use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
 use crate::error::BundlrError;
 use crate::tags::Tag;
 use crate::BundlrTx;
@@ -16,13 +16,6 @@ pub struct Bundlr<'a> {
     client: reqwest::Client,
     pub_info: PubInfo,
 }
-
-#[allow(unused)]
-#[derive(Deserialize)]
-pub struct TxResponse {
-    id: String,
-}
-
 #[derive(Deserialize)]
 pub struct BalanceResData {
     balance: String,
@@ -35,7 +28,7 @@ pub struct PubInfo {
     addresses: HashMap<String, String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FundBody {
     tx_id: String,
 }
@@ -167,6 +160,7 @@ mod tests {
         MockServer,
     };
     use num::BigUint;
+
     #[tokio::test]
     async fn should_send_transactions_correctly() {
         let server = MockServer::start();
