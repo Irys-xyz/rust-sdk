@@ -2,7 +2,7 @@ use crate::{
     currency::{arweave::Arweave, Currency, CurrencyType},
     error::BundlrError,
     wallet::load_from_file,
-    ArweaveSigner, Bundlr, Signer,
+    ArweaveSigner, Bundlr,
 };
 use num::BigUint;
 use num_traits::Zero;
@@ -19,8 +19,14 @@ pub async fn run_fund(
 
     let jwk = load_from_file(wallet);
     let signer = ArweaveSigner::from_jwk(jwk);
-    let currency = Arweave::new(Some(&signer));
-    let bundlr = Bundlr::new(url.to_string(), &currency).await;
+    let currency: Box<dyn Currency> = match currency {
+        CurrencyType::Arweave => Box::new(Arweave::new(Some(&signer))),
+        CurrencyType::Solana => todo!(),
+        CurrencyType::Ethereum => todo!(),
+        CurrencyType::Erc20 => todo!(),
+        CurrencyType::Cosmos => todo!(),
+    };
+    let bundlr = Bundlr::new(url.to_string(), currency.as_ref()).await;
 
     bundlr.fund(amount, None).await.map(|res| res.to_string())
 }
