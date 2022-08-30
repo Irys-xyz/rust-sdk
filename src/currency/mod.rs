@@ -1,3 +1,4 @@
+#[cfg(feature = "arweave")]
 pub mod arweave;
 
 use core::fmt;
@@ -19,6 +20,11 @@ pub enum CurrencyType {
     Ethereum = 3,
     Erc20 = 4,
     Cosmos = 5,
+}
+
+#[derive(Deserialize)]
+pub struct TxResponse {
+    pub tx_id: String,
 }
 
 impl fmt::Display for CurrencyType {
@@ -58,5 +64,5 @@ pub trait Currency {
         multiplier: Option<BigRational>,
     ) -> BigUint;
     async fn create_tx(&self, _amount: &BigUint, _to: &str, _fee: &BigUint) -> Tx;
-    async fn send_tx(&self, data: Vec<u8>) -> Result<bool, BundlrError>;
+    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError>;
 }

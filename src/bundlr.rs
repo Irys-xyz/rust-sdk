@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
-use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
 use crate::error::BundlrError;
 use crate::tags::Tag;
+use crate::utils::check_and_return;
 use crate::BundlrTx;
-use num::{BigRational, BigUint};
+use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
+use num::{BigRational, BigUint, FromPrimitive};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -54,18 +56,8 @@ impl Bundlr<'_> {
             .header("Content-Type", "application/json")
             .send()
             .await;
-        match response {
-            Ok(r) => {
-                if !r.status().is_success() {
-                    let msg = format!("Status: {}", r.status());
-                    return Err(BundlrError::ResponseError(msg));
-                };
-                r.json::<PubInfo>()
-                    .await
-                    .map_err(|err| BundlrError::RequestError(err.to_string()))
-            }
-            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
-        }
+
+        check_and_return::<PubInfo>(response).await
     }
 
     pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
@@ -83,18 +75,7 @@ impl Bundlr<'_> {
             .send()
             .await;
 
-        match response {
-            Ok(r) => {
-                if !r.status().is_success() {
-                    let msg = format!("Status: {}", r.status());
-                    return Err(BundlrError::ResponseError(msg));
-                };
-                r.json::<Value>()
-                    .await
-                    .map_err(|e| BundlrError::ResponseError(e.to_string()))
-            }
-            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
-        }
+        check_and_return::<Value>(response).await
     }
 
     pub async fn get_balance_public(
@@ -110,19 +91,9 @@ impl Bundlr<'_> {
             .send()
             .await;
 
-        match response {
-            Ok(r) => {
-                if !r.status().is_success() {
-                    let msg = format!("Status: {}", r.status());
-                    return Err(BundlrError::ResponseError(msg));
-                };
-                let data = r.json::<BalanceResData>().await.unwrap();
-                data.balance
-                    .parse::<BigUint>()
-                    .map_err(|err| BundlrError::RequestError(err.to_string()))
-            }
-            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
-        }
+        check_and_return::<BalanceResData>(response)
+            .await
+            .map(|d| BigUint::from_str(&d.balance).expect("Error converting from u128 to BigUint"))
     }
 
     pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
@@ -144,9 +115,27 @@ impl Bundlr<'_> {
             true => self.currency.get_fee(&amount, to, multiplier).await,
             false => Zero::zero(),
         };
-        let _tx = self.currency.create_tx(&amount, to, &fee).await;
 
-        todo!()
+        let tx = self.currency.create_tx(&amount, to, &fee).await;
+        let tx_res = self
+            .currency
+            .send_tx(tx)
+            .await
+            .expect("Error while sending transaction");
+
+        ConfirmationPoll::check(&tx_res.tx_id).await;
+        let post_tx_res = self
+            .client
+            .post(format!(
+                "{}/account/balance/{}",
+                self.url,
+                self.currency.get_type()
+            ))
+            .body(format!("{{\"tx_id\":{}}}", &tx_res.tx_id))
+            .send()
+            .await;
+
+        check_and_return::<String>(post_tx_res).await.map(|_| true)
     }
 }
 
@@ -225,33 +214,5 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_fund_address_correctly() {
-        let server = MockServer::start();
-        let mock = server.mock(|when, then| {
-            when.method(GET)
-                .path("/account/balance/arweave")
-                .query_param("address", "address");
-            then.status(200)
-                .header("content-type", "application/json")
-                .body("{ \"balance\": \"10\" }");
-        });
-        let mock_2 = server.mock(|when, then| {
-            when.method(GET)
-                .path("/info");
-            then.status(200)
-                .body("{ \"version\": \"0\", \"gateway\": \"gateway\", \"addresses\": { \"arweave\": \"address\" }}");  
-        });
-
-        let url = server.url("");
-        let address = "address";
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
-        let signer = ArweaveSigner::from_jwk(jwk);
-        let currency = Arweave::new(Some(&signer));
-        let bundler = &Bundlr::new(url.to_string(), &currency).await;
-        let balance = bundler.get_balance(address.to_string()).await.unwrap();
-
-        mock.assert();
-        mock_2.assert();
-        assert_eq!(balance, "10".parse::<BigUint>().unwrap());
-    }
+    async fn should_fund_address_correctly() {}
 }

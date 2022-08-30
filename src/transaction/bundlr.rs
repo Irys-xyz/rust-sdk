@@ -90,9 +90,9 @@ impl BundlrTx {
 
 #[cfg(test)]
 mod tests {
+    use crate::tags::Tag;
     #[cfg(feature = "solana")]
     use crate::Ed25519Signer;
-    use crate::tags::Tag;
     use std::{fs::File, io::Write};
 
     #[allow(unused)]

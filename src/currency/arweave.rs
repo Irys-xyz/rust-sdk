@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
 use crate::{error::BundlrError, transaction::Tx, ArweaveSigner, Signer};
-use num::{BigRational, BigUint, CheckedMul, One};
+use num::{BigRational, BigUint, CheckedMul};
+use serde_json::Value;
 
-use super::{Currency, CurrencyType};
+use super::{Currency, CurrencyType, TxResponse};
 
 pub struct Arweave<'a> {
     is_slow: bool,
@@ -12,17 +13,23 @@ pub struct Arweave<'a> {
     name: CurrencyType,
     ticker: String,
     signer: Option<&'a ArweaveSigner>,
+    min_confirm: i16,
+    url: String,
+    client: reqwest::Client, //TODO: change this field type to Url
 }
 
 impl<'a> Arweave<'a> {
-    pub fn new(s: Option<&'a ArweaveSigner>) -> Self {
+    pub fn new(signer: Option<&'a ArweaveSigner>) -> Self {
         Self {
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
             name: CurrencyType::Arweave,
             ticker: "ar".to_string(),
-            signer: s,
+            signer,
+            min_confirm: 5,
+            url: "http://arweave.net/v2/transactions".to_string(), //TODO: add url
+            client: reqwest::Client::new(),
         }
     }
 }
@@ -32,34 +39,58 @@ impl<'a> Currency for Arweave<'a> {
     fn get_type(&self) -> CurrencyType {
         self.name
     }
+
     fn needs_fee(&self) -> bool {
-        todo!();
+        self.needs_fee
     }
+
     fn get_tx(&self, tx_id: String) -> Tx {
         todo!();
     }
+
     fn owner_to_address(&self, owner: String) -> String {
         todo!()
     }
+
     fn get_signer(&self) -> &'a dyn Signer {
         self.signer.expect("No signer present")
     }
+
     async fn get_id(&self, item: ()) -> String {
         todo!();
     }
+
     async fn price(&self) -> String {
         todo!();
     }
+
     async fn get_current_height(&self) -> BigUint {
         todo!();
     }
+
     async fn get_fee(
         &self,
         _amount: &BigUint,
         _to: &str,
         multiplier: Option<BigRational>,
     ) -> BigUint {
-        let base_fee: BigUint = One::one(); //TODO: get fee properly
+        let res = self.client.get(&self.url).send().await;
+        let base_fee = match res {
+            Ok(r) => r
+                .json::<Value>()
+                .await
+                .map_err(|e| BundlrError::ResponseError(e.to_string()))
+                .map(|val| {
+                    let base = &val
+                        .get("min-fee")
+                        .expect("Error getting min-fee from response")
+                        .to_string();
+                    BigUint::from_str(base).expect("Error converting response to BigUint")
+                }),
+            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
+        };
+        let base_fee = base_fee.expect("Error getting base fee");
+
         if multiplier.is_some() {
             let multiplier = multiplier.unwrap();
             let base_fee = BigRational::from_str(&base_fee.to_string())
@@ -73,10 +104,17 @@ impl<'a> Currency for Arweave<'a> {
             base_fee.clone()
         }
     }
+
     async fn create_tx(&self, _amount: &BigUint, _to: &str, _fee: &BigUint) -> Tx {
         todo!();
     }
-    async fn send_tx(&self, data: Vec<u8>) -> Result<bool, BundlrError> {
+
+    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError> {
         todo!();
     }
+}
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn should_get_fee_correctly() {}
 }

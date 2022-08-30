@@ -13,6 +13,7 @@ pub mod deep_hash_sync;
 pub mod error;
 pub mod index;
 pub mod tags;
+pub mod utils;
 pub mod verify;
 pub mod wallet;
 
