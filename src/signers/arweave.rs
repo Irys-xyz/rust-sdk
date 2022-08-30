@@ -9,7 +9,7 @@ use rsa::{
 };
 use sha2::Digest;
 
-use super::{Signer};
+use super::Signer;
 
 pub struct ArweaveSigner {
     priv_key: RsaPrivateKey,

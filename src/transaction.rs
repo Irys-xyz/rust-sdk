@@ -1,4 +1,5 @@
 use bytes::{BufMut, Bytes};
+use num::BigUint;
 use ring::rand::SecureRandom;
 
 use crate::deep_hash::{DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
@@ -7,6 +8,15 @@ use crate::signers::Signer;
 use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
+
+pub struct Tx {
+    from: String,
+    to: String,
+    amount: BigUint,
+    block_height: BigUint,
+    pending: bool,
+    confirmed: bool,
+}
 
 impl BundlrTx {
     pub fn into_inner(self) -> Vec<u8> {

@@ -2,6 +2,7 @@ use std::{pin::Pin, time::Duration};
 
 use bundlr_sdk::{
     client::{balance::run_balance, fund::run_fund, method::Method},
+    currency::CurrencyType,
     error::BundlrError,
 };
 use clap::Parser;
@@ -32,7 +33,7 @@ struct Args {
     host: String,
 
     #[clap(short = 'c', long = "currency")]
-    currency: String,
+    currency: CurrencyType,
 }
 
 #[tokio::main]
@@ -65,7 +66,7 @@ pub async fn main() {
         ),
         Method::Fund => (
             "Fund: ",
-            Box::pin(run_fund(amount, &url, &wallet, &currency)),
+            Box::pin(run_fund(amount, &url, &wallet, currency)),
         ),
         Method::Withdraw => todo!("Method {:?} not implemented yet", method),
         Method::Help => todo!("Method {:?} not implemented yet", method),

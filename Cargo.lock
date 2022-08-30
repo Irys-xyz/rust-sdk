@@ -392,6 +392,7 @@ dependencies = [
  "anyhow",
  "async-recursion",
  "async-stream",
+ "async-trait",
  "avro-rs",
  "bs58",
  "bytes",
