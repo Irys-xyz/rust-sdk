@@ -276,6 +276,11 @@ mod tests {
                 "./src/verify/test_bundles/algorand_sig".to_string()
             ))
         );
-        assert_eq!(1, 1)
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./src/verify/test_bundles/near_sig".to_string()
+            ))
+        );
     }
 }
