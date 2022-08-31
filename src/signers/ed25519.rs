@@ -49,12 +49,6 @@ impl VerifierTrait for Ed25519Signer {
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        println!(
-            "pk:{:?}\nmsg:{:?}\nsig:{:?}",
-            &pk[..],
-            &message[..],
-            &signature[..]
-        );
         let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).unwrap_or_else(|_| {
             panic!(
                 "ED25519 public keys must be {} bytes long",
