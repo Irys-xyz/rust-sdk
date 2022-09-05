@@ -9,11 +9,11 @@ use clap::ValueEnum;
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
 pub enum Currency {
-    Arweave = 1,
-    Solana = 2,
-    Ethereum = 3,
-    Erc20 = 4,
-    Cosmos = 5,
+    Arweave,
+    Solana,
+    Ethereum,
+    Erc20,
+    Cosmos,
 }
 
 impl fmt::Display for Currency {

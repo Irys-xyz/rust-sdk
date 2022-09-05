@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, Signer, Verifier};
+use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
     constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
@@ -38,7 +38,7 @@ impl CosmosSigner {
     }
 }
 
-const SIG_TYPE: u16 = 4;
+const SIG_TYPE: SignerMap = SignerMap::Cosmos;
 const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
 
@@ -56,7 +56,7 @@ impl Signer for CosmosSigner {
         Ok(Bytes::copy_from_slice(&signature))
     }
 
-    fn sig_type(&self) -> u16 {
+    fn sig_type(&self) -> SignerMap {
         SIG_TYPE
     }
     fn get_sig_length(&self) -> u16 {

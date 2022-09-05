@@ -35,12 +35,12 @@ pub async fn main() {
     let timeout = args.timeout.unwrap_or_else(|| 30000);
     let currency = args.currency;
 
-    let (info, work) = match method {
+    let (info, task) = match method {
         Method::Balance => ("Balance: ", run_balance(&url, &address, &currency)),
         _ => panic!("Method {:?} not recognized or not implemented yet", method),
     };
 
-    match tokio::time::timeout(Duration::from_millis(timeout), work).await {
+    match tokio::time::timeout(Duration::from_millis(timeout), task).await {
         Ok(res) => println!("{}{:?}", info, res.unwrap()),
         Err(err) => println!("Error: {}", err.to_string()),
     }

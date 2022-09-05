@@ -165,7 +165,8 @@ mod tests {
 
         let url = server.url("");
         let currency = Currency::Arweave;
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let jwk =
+            load_from_file(&"res/test_wallet.json".to_string()).expect("Error loading wallet");
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let tx = bundler.create_transaction_with_tags(
@@ -200,7 +201,8 @@ mod tests {
         let url = server.url("");
         let address = "address";
         let currency = Currency::Arweave;
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let jwk =
+            load_from_file(&"res/test_wallet.json".to_string()).expect("Error loading wallet");
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();
@@ -231,7 +233,8 @@ mod tests {
         let url = server.url("");
         let address = "address";
         let currency = Currency::Arweave;
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let jwk =
+            load_from_file(&"res/test_wallet.json".to_string()).expect("Error loading wallet");
         let signer = &ArweaveSigner::from_jwk(jwk);
         let bundler = &Bundlr::new(url.to_string(), currency, signer).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();

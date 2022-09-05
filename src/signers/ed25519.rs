@@ -1,4 +1,5 @@
 use crate::error::BundlrError;
+use crate::index::SignerMap;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
 
@@ -27,7 +28,7 @@ impl Ed25519Signer {
     }
 }
 
-const SIG_TYPE: u16 = 2;
+const SIG_TYPE: SignerMap = SignerMap::Ed25519;
 const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
@@ -42,7 +43,7 @@ impl SignerTrait for Ed25519Signer {
         Bytes::copy_from_slice(&self.keypair.public.to_bytes())
     }
 
-    fn sig_type(&self) -> u16 {
+    fn sig_type(&self) -> SignerMap {
         SIG_TYPE
     }
     fn get_sig_length(&self) -> u16 {

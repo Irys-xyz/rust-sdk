@@ -1,4 +1,4 @@
-use crate::error::BundlrError;
+use crate::{error::BundlrError, index::SignerMap};
 use bytes::Bytes;
 use data_encoding::BASE64URL;
 use jsonwebkey as jwk;
@@ -29,7 +29,7 @@ impl ArweaveSigner {
     }
 }
 
-const SIG_TYPE: u16 = 1;
+const SIG_TYPE: SignerMap = SignerMap::Arweave;
 const SIG_LENGTH: u16 = 512;
 const PUB_LENGTH: u16 = 512;
 
@@ -58,7 +58,7 @@ impl Signer for ArweaveSigner {
         self.priv_key.to_public_key().n().to_bytes_be().into()
     }
 
-    fn sig_type(&self) -> u16 {
+    fn sig_type(&self) -> SignerMap {
         SIG_TYPE
     }
     fn get_sig_length(&self) -> u16 {
@@ -104,7 +104,8 @@ mod tests {
     #[test]
     fn should_sign_and_verify() {
         let msg = Bytes::copy_from_slice(b"Hello, Bundlr!");
-        let jwk: jwk::JsonWebKey = wallet::load_from_file("res/test_wallet.json");
+        let jwk: jwk::JsonWebKey =
+            wallet::load_from_file("res/test_wallet.json").expect("Error loading wallet");
         let signer = ArweaveSigner::from_jwk(jwk);
 
         let sig = signer.sign(msg.clone()).unwrap();

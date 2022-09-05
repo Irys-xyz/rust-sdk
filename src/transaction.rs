@@ -61,7 +61,7 @@ impl BundlrTx {
         let sig = signer.sign(message).unwrap();
 
         // Put sig type
-        let sig_type = signer.sig_type().to_le_bytes();
+        let sig_type = (signer.sig_type() as u16).to_le_bytes();
         b.put(&sig_type[..]);
 
         // Put sig

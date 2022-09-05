@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, Signer, Verifier};
+use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
     constants::{COMPACT_SIGNATURE_SIZE, UNCOMPRESSED_PUBLIC_KEY_SIZE},
@@ -44,7 +44,7 @@ impl Secp256k1Signer {
     }
 }
 
-const SIG_TYPE: u16 = 3;
+const SIG_TYPE: SignerMap = SignerMap::Secp256k1;
 const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
 const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
 
@@ -68,7 +68,7 @@ impl Signer for Secp256k1Signer {
         Ok(Bytes::copy_from_slice(data))
     }
 
-    fn sig_type(&self) -> u16 {
+    fn sig_type(&self) -> SignerMap {
         SIG_TYPE
     }
     fn get_sig_length(&self) -> u16 {
