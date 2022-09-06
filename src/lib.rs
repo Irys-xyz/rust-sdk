@@ -1,15 +1,20 @@
 extern crate derive_builder;
 
 mod bundlr;
-mod index;
 mod signers;
 mod transaction;
 
+#[cfg(feature = "build-binary")]
+pub mod client;
+
+pub mod currency;
 pub mod deep_hash;
 pub mod deep_hash_sync;
 pub mod error;
+pub mod index;
 pub mod tags;
 pub mod verify;
+pub mod wallet;
 
 pub use bundlr::Bundlr;
 pub use signers::signer::{Signer, Verifier};

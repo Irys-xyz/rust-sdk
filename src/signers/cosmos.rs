@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, Signer, Verifier};
+use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
     constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
@@ -38,11 +38,11 @@ impl CosmosSigner {
     }
 }
 
-impl Signer for CosmosSigner {
-    const SIG_TYPE: u16 = 4;
-    const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
-    const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
+const SIG_TYPE: SignerMap = SignerMap::Cosmos;
+const SIG_LENGTH: u16 = COMPACT_SIGNATURE_SIZE as u16;
+const PUB_LENGTH: u16 = PUBLIC_KEY_SIZE as u16;
 
+impl Signer for CosmosSigner {
     fn pub_key(&self) -> bytes::Bytes {
         Bytes::copy_from_slice(&self.pub_key.serialize_uncompressed())
     }
@@ -55,6 +55,16 @@ impl Signer for CosmosSigner {
 
         Ok(Bytes::copy_from_slice(&signature))
     }
+
+    fn sig_type(&self) -> SignerMap {
+        SIG_TYPE
+    }
+    fn get_sig_length(&self) -> u16 {
+        SIG_LENGTH
+    }
+    fn get_pub_length(&self) -> u16 {
+        PUB_LENGTH
+    }
 }
 
 impl Verifier for CosmosSigner {
@@ -65,18 +75,10 @@ impl Verifier for CosmosSigner {
     ) -> Result<bool, crate::error::BundlrError> {
         let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
             .unwrap_or_else(|_| panic!("Cosmos messages should have 32 bytes"));
-        let sig = secp256k1::ecdsa::Signature::from_compact(&signature).unwrap_or_else(|_| {
-            panic!(
-                "Cosmos signatures should have {} bytes",
-                CosmosSigner::SIG_LENGTH
-            )
-        });
-        let pk = secp256k1::PublicKey::from_slice(&public_key).unwrap_or_else(|_| {
-            panic!(
-                "Cosmos public keys should have {} bytes",
-                CosmosSigner::PUB_LENGTH
-            )
-        });
+        let sig = secp256k1::ecdsa::Signature::from_compact(&signature)
+            .unwrap_or_else(|_| panic!("Cosmos signatures should have {} bytes", SIG_LENGTH));
+        let pk = secp256k1::PublicKey::from_slice(&public_key)
+            .unwrap_or_else(|_| panic!("Cosmos public keys should have {} bytes", PUB_LENGTH));
 
         secp256k1::Secp256k1::verification_only()
             .verify_ecdsa(&msg, &sig, &pk)

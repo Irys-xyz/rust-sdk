@@ -1,25 +1,13 @@
-use crate::error::BundlrError;
+use crate::{error::BundlrError, index::SignerMap};
 use bytes::Bytes;
 
 pub trait ToPem {}
 
-pub trait Signer
-where
-    Self: Sized,
-{
-    const SIG_TYPE: u16;
-    const SIG_LENGTH: u16;
-    const PUB_LENGTH: u16;
+pub trait Signer {
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError>;
-    fn sig_type(&self) -> u16 {
-        Self::SIG_TYPE
-    }
-    fn get_sig_length(&self) -> u16 {
-        Self::SIG_LENGTH
-    }
-    fn get_pub_length(&self) -> u16 {
-        Self::PUB_LENGTH
-    }
+    fn sig_type(&self) -> SignerMap;
+    fn get_sig_length(&self) -> u16;
+    fn get_pub_length(&self) -> u16;
     fn pub_key(&self) -> Bytes;
 }
 

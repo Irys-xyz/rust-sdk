@@ -8,12 +8,18 @@ use crate::tags::{AvroEncode, Tag};
 
 pub struct BundlrTx(Vec<u8>);
 
+#[allow(unused)]
+pub struct SignedTx {
+    tx_id: String,
+    tx: BundlrTx,
+}
+
 impl BundlrTx {
     pub fn into_inner(self) -> Vec<u8> {
         self.0
     }
 
-    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &impl Signer) -> Self {
+    pub fn create_with_tags(data: Vec<u8>, tags: Vec<Tag>, signer: &dyn Signer) -> Self {
         let encoded_tags = if !tags.is_empty() {
             tags.encode().unwrap()
         } else {
@@ -55,7 +61,7 @@ impl BundlrTx {
         let sig = signer.sign(message).unwrap();
 
         // Put sig type
-        let sig_type = signer.sig_type().to_le_bytes();
+        let sig_type = (signer.sig_type() as u16).to_le_bytes();
         b.put(&sig_type[..]);
 
         // Put sig
