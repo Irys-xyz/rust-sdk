@@ -17,7 +17,7 @@ pub async fn run_fund(
         return Err(BundlrError::InvalidAmount);
     }
 
-    let jwk = load_from_file(wallet);
+    let jwk = load_from_file(wallet).unwrap();
     let signer = ArweaveSigner::from_jwk(jwk);
     let currency: Box<dyn Currency> = match currency {
         CurrencyType::Arweave => Box::new(Arweave::new(Some(&signer))),

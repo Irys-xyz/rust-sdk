@@ -76,7 +76,7 @@ pub async fn main() {
         Method::Price => todo!("Method {:?} not implemented yet", method),
     };
 
-    match tokio::time::timeout(Duration::from_millis(timeout), task).await {
+    match tokio::time::timeout(Duration::from_millis(timeout), work).await {
         Ok(res) => println!("{}{:?}", info, res.unwrap()),
         Err(err) => println!("Error: {}", err.to_string()),
     }

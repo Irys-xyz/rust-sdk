@@ -6,7 +6,7 @@ use crate::tags::Tag;
 use crate::utils::check_and_return;
 use crate::BundlrTx;
 use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
-use num::{BigRational, BigUint, FromPrimitive};
+use num::{BigRational, BigUint};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -167,7 +167,7 @@ mod tests {
         });
 
         let url = server.url("");
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let jwk = load_from_file(&"res/test_wallet.json".to_string()).unwrap();
         let signer = ArweaveSigner::from_jwk(jwk);
         let currency = Arweave::new(Some(&signer));
         let bundler = &Bundlr::new(url.to_string(), &currency).await;
@@ -202,7 +202,7 @@ mod tests {
 
         let url = server.url("");
         let address = "address";
-        let jwk = load_from_file(&"res/test_wallet.json".to_string());
+        let jwk = load_from_file(&"res/test_wallet.json".to_string()).unwrap();
         let signer = ArweaveSigner::from_jwk(jwk);
         let currency = Arweave::new(Some(&signer));
         let bundler = &Bundlr::new(url.to_string(), &currency).await;

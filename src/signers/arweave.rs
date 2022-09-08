@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, Verifier};
+use crate::{error::BundlrError, index::SignerMap, Verifier};
 use bytes::Bytes;
 use data_encoding::BASE64URL;
 use jsonwebkey as jwk;
