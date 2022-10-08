@@ -53,7 +53,7 @@ pub async fn main() {
         Method::Balance => "".to_string(),
         _ => args.wallet.expect("Argument <Wallet> not provided"),
     };
-    let url = args.host;
+    let bundlr_url = args.host;
     let timeout = args.timeout.unwrap_or_else(|| 30000);
     let currency = args.currency;
 
@@ -61,8 +61,14 @@ pub async fn main() {
         &str,
         Pin<Box<dyn Future<Output = Result<String, BundlrError>>>>,
     ) = match method {
-        Method::Balance => ("Balance: ", Box::pin(run_balance(url, &address, &currency))),
-        Method::Fund => ("Fund: ", Box::pin(run_fund(amount, url, &wallet, currency))),
+        Method::Balance => (
+            "Balance: ",
+            Box::pin(run_balance(bundlr_url, &address, &currency)),
+        ),
+        Method::Fund => (
+            "Fund: ",
+            Box::pin(run_fund(amount, bundlr_url, &wallet, currency)),
+        ),
         Method::Withdraw => todo!("Method {:?} not implemented yet", method),
         Method::Help => todo!("Method {:?} not implemented yet", method),
         Method::Upload => todo!("Method {:?} not implemented yet", method),

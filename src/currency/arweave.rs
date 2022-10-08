@@ -1,10 +1,13 @@
 use arweave_rs::{crypto::base64::Base64, Arweave as ArweaveSdk};
+use num::ToPrimitive;
 use reqwest::Url;
-use std::{path::PathBuf, str::FromStr};
+use std::{ops::Mul, path::PathBuf, str::FromStr};
 
 use crate::{error::BundlrError, transaction::Tx, Signer};
 
 use super::{Currency, CurrencyType, TxResponse};
+
+const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
 pub struct Arweave {
     sdk: ArweaveSdk,
@@ -14,7 +17,6 @@ pub struct Arweave {
     name: CurrencyType,
     ticker: String,
     min_confirm: i16,
-    url: Url,
     client: reqwest::Client, //TODO: change this field type to Url
 }
 
@@ -28,14 +30,14 @@ impl Default for Arweave {
             name: CurrencyType::Arweave,
             ticker: "ar".to_string(),
             min_confirm: 5,
-            url: Url::from_str("http://arweave.net/v2/transactions").unwrap(),
             client: reqwest::Client::new(),
         }
     }
 }
 
 impl Arweave {
-    pub fn new(keypair_path: PathBuf, base_url: Url) -> Self {
+    pub fn new(keypair_path: PathBuf, base_url: Option<Url>) -> Self {
+        let base_url = base_url.unwrap_or(Url::from_str(ARWEAVE_BASE_URL).unwrap());
         Self {
             sdk: ArweaveSdk::from_keypair_path(keypair_path, base_url.clone())
                 .expect("Invalid path or url"),
@@ -45,7 +47,6 @@ impl Arweave {
             name: CurrencyType::Arweave,
             ticker: "ar".to_string(),
             min_confirm: 5,
-            url: base_url,
             client: reqwest::Client::new(),
         }
     }
@@ -85,8 +86,19 @@ impl Currency for Arweave {
         todo!();
     }
 
-    async fn get_fee(&self, _amount: u64, _to: &str, multiplier: f64) -> u64 {
-        todo!()
+    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> u64 {
+        let base64_address = Base64::from_str(to).expect("Could not convert target to base64");
+        dbg!(&self.sdk.base_url);
+        let base_fee = self
+            .sdk
+            .get_fee(base64_address)
+            .await
+            .expect("Could not get fee");
+        multiplier
+            .mul(base_fee.to_f64().unwrap())
+            .ceil()
+            .to_u64()
+            .unwrap()
     }
 
     async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Tx {
@@ -108,6 +120,7 @@ impl Currency for Arweave {
             from: tx.owner.to_string(),
             to: tx.target.to_string(),
             amount: u64::from_str(&tx.quantity.to_string()).expect("Could not parse amount"),
+            fee: tx.reward,
             block_height: Default::default(),
             pending: true,
             confirmed: false,
@@ -115,7 +128,32 @@ impl Currency for Arweave {
     }
 
     async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError> {
-        todo!();
+        let tx = self
+            .sdk
+            .create_transaction(
+                Base64::from_str(&data.to).expect("Could not convert to Base64"),
+                vec![],
+                vec![],
+                data.amount,
+                data.fee,
+                false,
+            )
+            .await
+            .expect("Could not create transaction");
+
+        let signed_tx = self
+            .sdk
+            .sign_transaction(tx)
+            .expect("Could not sign transaction");
+        let (tx_id, _r) = self
+            .sdk
+            .post_transaction(&signed_tx)
+            .await
+            .expect("Could not send transaction");
+
+        Ok(TxResponse {
+            tx_id: tx_id.to_string(),
+        })
     }
 }
 #[cfg(test)]

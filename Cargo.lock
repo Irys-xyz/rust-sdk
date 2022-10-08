@@ -43,7 +43,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "arweave-rs"
 version = "0.1.0"
-source = "git+https://github.com/bluekirby1111/arweave-rs#60021c7704b4b4862f12f04e4c1dd6f25037e028"
+source = "git+https://github.com/bluekirby1111/arweave-rs#4837f989a74167f860b014961ca08ab8d706985c"
 dependencies = [
  "anyhow",
  "async-recursion",

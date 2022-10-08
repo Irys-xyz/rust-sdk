@@ -211,7 +211,7 @@ mod tests {
         let address = "address";
         let path = PathBuf::from_str("res/test_wallet.json").unwrap();
         println!("{:?}", &path);
-        let currency = Arweave::new(path, url.clone());
+        let currency = Arweave::new(path, Some(url.clone()));
         let bundler = &Bundlr::new(url, &currency).await;
         let balance = bundler.get_balance(address.to_string()).await.unwrap();
 

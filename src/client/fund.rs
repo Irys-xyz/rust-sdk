@@ -22,7 +22,7 @@ pub async fn run_fund(
 
     let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
     let currency: Box<dyn Currency> = match currency {
-        CurrencyType::Arweave => Box::new(Arweave::new(wallet, url.clone())),
+        CurrencyType::Arweave => Box::new(Arweave::new(wallet, None)),
         CurrencyType::Solana => todo!(),
         CurrencyType::Ethereum => todo!(),
         CurrencyType::Erc20 => todo!(),
