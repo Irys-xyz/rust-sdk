@@ -7,9 +7,9 @@ use bundlr_sdk::{
 };
 use clap::Parser;
 use futures::Future;
-use num::BigUint;
-use num_traits::Zero;
 use reqwest::Url;
+
+const DEFAULT_TIMEOUT: u64 = 60000 * 20; //20 mins
 
 #[derive(Clone, Debug, Parser)]
 #[clap(name = "cli")]
@@ -54,7 +54,7 @@ pub async fn main() {
         _ => args.wallet.expect("Argument <Wallet> not provided"),
     };
     let bundlr_url = args.host;
-    let timeout = args.timeout.unwrap_or_else(|| 30000);
+    let timeout = args.timeout.unwrap_or(DEFAULT_TIMEOUT);
     let currency = args.currency;
 
     let (info, work): (

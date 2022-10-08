@@ -46,4 +46,7 @@ pub enum BundlrError {
 
     #[error("Tx not found")]
     TxNotFound,
+
+    #[error("Tx status not confirmed")]
+    TxStatusNotConfirmed,
 }

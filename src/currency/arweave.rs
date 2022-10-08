@@ -1,9 +1,13 @@
 use arweave_rs::{crypto::base64::Base64, Arweave as ArweaveSdk};
 use num::ToPrimitive;
-use reqwest::Url;
+use reqwest::{StatusCode, Url};
 use std::{ops::Mul, path::PathBuf, str::FromStr};
 
-use crate::{error::BundlrError, transaction::{ Tx, TxStatus }, Signer};
+use crate::{
+    error::BundlrError,
+    transaction::{Tx, TxStatus},
+    Signer,
+};
 
 use super::{Currency, CurrencyType, TxResponse};
 
@@ -63,8 +67,9 @@ impl Currency for Arweave {
     }
 
     async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError> {
-        let (status, tx) = self.sdk.get_tx(Base64::from_str(&tx_id)
-            .expect("Could not parse tx_id into base64"))
+        let (status, tx) = self
+            .sdk
+            .get_tx(Base64::from_str(&tx_id).expect("Could not parse tx_id into base64"))
             .await
             .expect("Could not get tx");
 
@@ -85,19 +90,34 @@ impl Currency for Arweave {
         }
     }
 
-    async fn get_tx_status(&self, tx_id: String) -> TxStatus {
-        let status = self.sdk.get_tx_status(Base64::from_str(&tx_id)
-            .expect("Could not parse tx_id into base64"))
-            .await
-            .expect("Could not get tx status");
-        
-        TxStatus { 
-            confirmations: status.number_of_confirmations,
-            height: status.block_height,
-            block_hash: status.block_indep_hash.to_string()
+    async fn get_tx_status(
+        &self,
+        tx_id: String,
+    ) -> Result<(StatusCode, Option<TxStatus>), BundlrError> {
+        let res = self
+            .sdk
+            .get_tx_status(Base64::from_str(&tx_id).expect("Could not parse tx_id into base64"))
+            .await;
+
+        if let Ok((status, tx_status)) = res {
+            if status == StatusCode::OK {
+                let tx_status = tx_status.unwrap();
+                Ok((
+                    status,
+                    Some(TxStatus {
+                        confirmations: tx_status.number_of_confirmations,
+                        height: tx_status.block_height,
+                        block_hash: tx_status.block_indep_hash.to_string(),
+                    }),
+                ))
+            } else {
+                //Tx is pending
+                Ok((status, None))
+            }
+        } else {
+            Err(BundlrError::TxStatusNotConfirmed)
         }
     }
-
 
     fn owner_to_address(&self, owner: String) -> String {
         todo!()
@@ -121,7 +141,6 @@ impl Currency for Arweave {
 
     async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> u64 {
         let base64_address = Base64::from_str(to).expect("Could not convert target to base64");
-        dbg!(&self.sdk.base_url);
         let base_fee = self
             .sdk
             .get_fee(base64_address)
@@ -189,6 +208,7 @@ impl Currency for Arweave {
         })
     }
 }
+
 #[cfg(test)]
 mod tests {
     #[tokio::test]

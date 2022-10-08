@@ -4,13 +4,18 @@ pub mod arweave;
 use core::fmt;
 use num::{BigRational, BigUint};
 use num_derive::FromPrimitive;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 #[cfg(feature = "build-binary")]
 use clap::ValueEnum;
 
-use crate::{error::BundlrError, transaction::{ Tx, TxStatus }, Signer};
+use crate::{
+    error::BundlrError,
+    transaction::{Tx, TxStatus},
+    Signer,
+};
 
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
@@ -52,7 +57,10 @@ pub trait Currency {
     fn get_type(&self) -> CurrencyType;
     fn needs_fee(&self) -> bool;
     async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError>;
-    async fn get_tx_status(&self, tx_id: String) -> TxStatus;
+    async fn get_tx_status(
+        &self,
+        tx_id: String,
+    ) -> Result<(StatusCode, Option<TxStatus>), BundlrError>;
     fn owner_to_address(&self, owner: String) -> String;
     fn get_signer(&self) -> &dyn Signer;
     async fn get_id(&self, item: ()) -> String;

@@ -3,10 +3,8 @@ use std::{path::PathBuf, str::FromStr};
 use crate::{
     currency::{arweave::Arweave, Currency, CurrencyType},
     error::BundlrError,
-    wallet::load_from_file,
-    ArweaveSigner, Bundlr,
+    Bundlr,
 };
-use num::BigUint;
 use num_traits::Zero;
 use reqwest::Url;
 

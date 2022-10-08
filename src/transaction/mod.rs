@@ -3,10 +3,11 @@ use num::BigUint;
 pub mod bundlr;
 pub mod poll;
 
+#[derive(Debug)]
 pub struct TxStatus {
     pub confirmations: u64,
     pub height: u128,
-    pub block_hash: String
+    pub block_hash: String,
 }
 
 pub struct Tx {
