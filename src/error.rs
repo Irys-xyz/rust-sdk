@@ -43,4 +43,7 @@ pub enum BundlrError {
 
     #[error("Request error: {0}.")]
     RequestError(String),
+
+    #[error("Tx not found")]
+    TxNotFound,
 }

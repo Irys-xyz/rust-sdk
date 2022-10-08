@@ -128,7 +128,7 @@ impl Bundlr<'_> {
             .await
             .expect("Error while sending transaction");
 
-        ConfirmationPoll::check(&tx_res.tx_id).await;
+        ConfirmationPoll::await_confirmation(&tx_res.tx_id, self.currency).await;
         let post_tx_res = self
             .client
             .post(

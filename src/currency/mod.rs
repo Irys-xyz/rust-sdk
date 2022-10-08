@@ -10,7 +10,7 @@ use std::str::FromStr;
 #[cfg(feature = "build-binary")]
 use clap::ValueEnum;
 
-use crate::{error::BundlrError, transaction::Tx, Signer};
+use crate::{error::BundlrError, transaction::{ Tx, TxStatus }, Signer};
 
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "build-binary", derive(ValueEnum))]
@@ -51,7 +51,8 @@ impl FromStr for CurrencyType {
 pub trait Currency {
     fn get_type(&self) -> CurrencyType;
     fn needs_fee(&self) -> bool;
-    fn get_tx(&self, tx_id: String) -> Tx;
+    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError>;
+    async fn get_tx_status(&self, tx_id: String) -> TxStatus;
     fn owner_to_address(&self, owner: String) -> String;
     fn get_signer(&self) -> &dyn Signer;
     async fn get_id(&self, item: ()) -> String;

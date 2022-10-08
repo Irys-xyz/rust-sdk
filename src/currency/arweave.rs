@@ -3,7 +3,7 @@ use num::ToPrimitive;
 use reqwest::Url;
 use std::{ops::Mul, path::PathBuf, str::FromStr};
 
-use crate::{error::BundlrError, transaction::Tx, Signer};
+use crate::{error::BundlrError, transaction::{ Tx, TxStatus }, Signer};
 
 use super::{Currency, CurrencyType, TxResponse};
 
@@ -62,9 +62,42 @@ impl Currency for Arweave {
         self.needs_fee
     }
 
-    fn get_tx(&self, tx_id: String) -> Tx {
-        todo!()
+    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError> {
+        let (status, tx) = self.sdk.get_tx(Base64::from_str(&tx_id)
+            .expect("Could not parse tx_id into base64"))
+            .await
+            .expect("Could not get tx");
+
+        if status == 200 {
+            let tx = tx.unwrap();
+            Ok(Tx {
+                id: tx.id.to_string(),
+                from: tx.owner.to_string(),
+                to: tx.target.to_string(),
+                amount: u64::from_str(&tx.quantity.to_string()).expect("Could not parse amount"),
+                fee: tx.reward,
+                block_height: 1,
+                pending: false,
+                confirmed: true,
+            })
+        } else {
+            Err(BundlrError::TxNotFound)
+        }
     }
+
+    async fn get_tx_status(&self, tx_id: String) -> TxStatus {
+        let status = self.sdk.get_tx_status(Base64::from_str(&tx_id)
+            .expect("Could not parse tx_id into base64"))
+            .await
+            .expect("Could not get tx status");
+        
+        TxStatus { 
+            confirmations: status.number_of_confirmations,
+            height: status.block_height,
+            block_hash: status.block_indep_hash.to_string()
+        }
+    }
+
 
     fn owner_to_address(&self, owner: String) -> String {
         todo!()
@@ -108,7 +141,7 @@ impl Currency for Arweave {
                 Base64::from_str(to).unwrap(),
                 vec![],
                 vec![],
-                amount,
+                amount.into(),
                 fee,
                 false,
             )
@@ -134,7 +167,7 @@ impl Currency for Arweave {
                 Base64::from_str(&data.to).expect("Could not convert to Base64"),
                 vec![],
                 vec![],
-                data.amount,
+                data.amount.into(),
                 data.fee,
                 false,
             )
