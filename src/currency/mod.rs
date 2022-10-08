@@ -56,13 +56,8 @@ pub trait Currency {
     fn get_signer(&self) -> &dyn Signer;
     async fn get_id(&self, item: ()) -> String;
     async fn price(&self) -> String;
-    async fn get_current_height(&self) -> BigUint;
-    async fn get_fee(
-        &self,
-        _amount: &BigUint,
-        _to: &str,
-        multiplier: Option<BigRational>,
-    ) -> BigUint;
-    async fn create_tx(&self, _amount: &BigUint, _to: &str, _fee: &BigUint) -> Tx;
+    async fn get_current_height(&self) -> u128;
+    async fn get_fee(&self, amount: u64, to: &str, multiplier: f64) -> u64;
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Tx;
     async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError>;
 }

@@ -9,6 +9,7 @@ use clap::Parser;
 use futures::Future;
 use num::BigUint;
 use num_traits::Zero;
+use reqwest::Url;
 
 #[derive(Clone, Debug, Parser)]
 #[clap(name = "cli")]
@@ -21,7 +22,7 @@ struct Args {
     address: Option<String>,
 
     #[clap(value_parser)]
-    amount: Option<BigUint>,
+    amount: Option<u64>,
 
     #[clap(long = "timeout")]
     timeout: Option<u64>,
@@ -30,7 +31,7 @@ struct Args {
     wallet: Option<String>,
 
     #[clap(short = 'h', long = "host")]
-    host: String,
+    host: Url,
 
     #[clap(short = 'c', long = "currency")]
     currency: CurrencyType,
@@ -46,7 +47,7 @@ pub async fn main() {
     };
     let amount = match method {
         Method::Fund => args.amount.expect("Argument <Amount> not provided"),
-        _ => Zero::zero(),
+        _ => 0,
     };
     let wallet = match method {
         Method::Balance => "".to_string(),
@@ -60,14 +61,8 @@ pub async fn main() {
         &str,
         Pin<Box<dyn Future<Output = Result<String, BundlrError>>>>,
     ) = match method {
-        Method::Balance => (
-            "Balance: ",
-            Box::pin(run_balance(&url, &address, &currency)),
-        ),
-        Method::Fund => (
-            "Fund: ",
-            Box::pin(run_fund(amount, &url, &wallet, currency)),
-        ),
+        Method::Balance => ("Balance: ", Box::pin(run_balance(url, &address, &currency))),
+        Method::Fund => ("Fund: ", Box::pin(run_fund(amount, url, &wallet, currency))),
         Method::Withdraw => todo!("Method {:?} not implemented yet", method),
         Method::Help => todo!("Method {:?} not implemented yet", method),
         Method::Upload => todo!("Method {:?} not implemented yet", method),

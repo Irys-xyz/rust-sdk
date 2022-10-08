@@ -1,41 +1,58 @@
-use std::str::FromStr;
+use arweave_rs::{crypto::base64::Base64, Arweave as ArweaveSdk};
+use reqwest::Url;
+use std::{path::PathBuf, str::FromStr};
 
-use crate::{error::BundlrError, transaction::Tx, ArweaveSigner, Signer};
-use num::{BigRational, BigUint, CheckedMul};
-use serde_json::Value;
+use crate::{error::BundlrError, transaction::Tx, Signer};
 
 use super::{Currency, CurrencyType, TxResponse};
 
-pub struct Arweave<'a> {
+pub struct Arweave {
+    sdk: ArweaveSdk,
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
     name: CurrencyType,
     ticker: String,
-    signer: Option<&'a ArweaveSigner>,
     min_confirm: i16,
-    url: String,
+    url: Url,
     client: reqwest::Client, //TODO: change this field type to Url
 }
 
-impl<'a> Arweave<'a> {
-    pub fn new(signer: Option<&'a ArweaveSigner>) -> Self {
+impl Default for Arweave {
+    fn default() -> Self {
         Self {
+            sdk: ArweaveSdk::default(),
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
             name: CurrencyType::Arweave,
             ticker: "ar".to_string(),
-            signer,
             min_confirm: 5,
-            url: "http://arweave.net/v2/transactions".to_string(), //TODO: add url
+            url: Url::from_str("http://arweave.net/v2/transactions").unwrap(),
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+impl Arweave {
+    pub fn new(keypair_path: PathBuf, base_url: Url) -> Self {
+        Self {
+            sdk: ArweaveSdk::from_keypair_path(keypair_path, base_url.clone())
+                .expect("Invalid path or url"),
+            needs_fee: true,
+            is_slow: false,
+            base: ("winston".to_string(), 0),
+            name: CurrencyType::Arweave,
+            ticker: "ar".to_string(),
+            min_confirm: 5,
+            url: base_url,
             client: reqwest::Client::new(),
         }
     }
 }
 
 #[async_trait::async_trait]
-impl<'a> Currency for Arweave<'a> {
+impl Currency for Arweave {
     fn get_type(&self) -> CurrencyType {
         self.name
     }
@@ -45,15 +62,15 @@ impl<'a> Currency for Arweave<'a> {
     }
 
     fn get_tx(&self, tx_id: String) -> Tx {
-        todo!();
+        todo!()
     }
 
     fn owner_to_address(&self, owner: String) -> String {
         todo!()
     }
 
-    fn get_signer(&self) -> &'a dyn Signer {
-        self.signer.expect("No signer present")
+    fn get_signer(&self) -> &dyn Signer {
+        todo!()
     }
 
     async fn get_id(&self, item: ()) -> String {
@@ -64,49 +81,37 @@ impl<'a> Currency for Arweave<'a> {
         todo!();
     }
 
-    async fn get_current_height(&self) -> BigUint {
+    async fn get_current_height(&self) -> u128 {
         todo!();
     }
 
-    async fn get_fee(
-        &self,
-        _amount: &BigUint,
-        _to: &str,
-        multiplier: Option<BigRational>,
-    ) -> BigUint {
-        let res = self.client.get(&self.url).send().await;
-        let base_fee = match res {
-            Ok(r) => r
-                .json::<Value>()
-                .await
-                .map_err(|e| BundlrError::ResponseError(e.to_string()))
-                .map(|val| {
-                    let base = &val
-                        .get("min-fee")
-                        .expect("Error getting min-fee from response")
-                        .to_string();
-                    BigUint::from_str(base).expect("Error converting response to BigUint")
-                }),
-            Err(err) => Err(BundlrError::ResponseError(err.to_string())),
-        };
-        let base_fee = base_fee.expect("Error getting base fee");
+    async fn get_fee(&self, _amount: u64, _to: &str, multiplier: f64) -> u64 {
+        todo!()
+    }
 
-        if multiplier.is_some() {
-            let multiplier = multiplier.unwrap();
-            let base_fee = BigRational::from_str(&base_fee.to_string())
-                .expect("Error converting BigUInt to BigFloat");
-            let base_fee = base_fee
-                .checked_mul(&multiplier)
-                .expect("Error multiplying two BigRational numbers");
-            let base_fee = base_fee.ceil();
-            BigUint::from_str(&base_fee.to_string()).expect("Error converting BigInt to BigUint")
-        } else {
-            base_fee.clone()
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Tx {
+        let tx = self
+            .sdk
+            .create_transaction(
+                Base64::from_str(to).unwrap(),
+                vec![],
+                vec![],
+                amount,
+                fee,
+                false,
+            )
+            .await
+            .expect("Could not create transaction");
+
+        Tx {
+            id: tx.id.to_string(),
+            from: tx.owner.to_string(),
+            to: tx.target.to_string(),
+            amount: u64::from_str(&tx.quantity.to_string()).expect("Could not parse amount"),
+            block_height: Default::default(),
+            pending: true,
+            confirmed: false,
         }
-    }
-
-    async fn create_tx(&self, _amount: &BigUint, _to: &str, _fee: &BigUint) -> Tx {
-        todo!();
     }
 
     async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError> {

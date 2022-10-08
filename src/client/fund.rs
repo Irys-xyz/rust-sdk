@@ -1,3 +1,5 @@
+use std::{path::PathBuf, str::FromStr};
+
 use crate::{
     currency::{arweave::Arweave, Currency, CurrencyType},
     error::BundlrError,
@@ -6,27 +8,27 @@ use crate::{
 };
 use num::BigUint;
 use num_traits::Zero;
+use reqwest::Url;
 
 pub async fn run_fund(
-    amount: BigUint,
-    url: &str,
+    amount: u64,
+    url: Url,
     wallet: &str,
     currency: CurrencyType,
 ) -> Result<String, BundlrError> {
-    if amount.le(&Zero::zero()) {
+    if amount.is_zero() {
         return Err(BundlrError::InvalidAmount);
     }
 
-    let jwk = load_from_file(wallet).unwrap();
-    let signer = ArweaveSigner::from_jwk(jwk);
+    let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
     let currency: Box<dyn Currency> = match currency {
-        CurrencyType::Arweave => Box::new(Arweave::new(Some(&signer))),
+        CurrencyType::Arweave => Box::new(Arweave::new(wallet, url.clone())),
         CurrencyType::Solana => todo!(),
         CurrencyType::Ethereum => todo!(),
         CurrencyType::Erc20 => todo!(),
         CurrencyType::Cosmos => todo!(),
     };
-    let bundlr = Bundlr::new(url.to_string(), currency.as_ref()).await;
+    let bundlr = Bundlr::new(url, currency.as_ref()).await;
 
     bundlr.fund(amount, None).await.map(|res| res.to_string())
 }
