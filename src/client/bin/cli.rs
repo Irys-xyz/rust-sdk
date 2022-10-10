@@ -1,7 +1,10 @@
 use std::{pin::Pin, time::Duration};
 
 use bundlr_sdk::{
-    client::{balance::run_balance, fund::run_fund, method::Method, price::run_price},
+    client::{
+        balance::run_balance, fund::run_fund, method::Method, price::run_price,
+        withdraw::run_withdraw,
+    },
     currency::CurrencyType,
     error::BundlrError,
 };
@@ -74,7 +77,13 @@ pub async fn main() {
                 Box::pin(run_fund(amount, bundlr_url, &wallet, currency)),
             )
         }
-        Method::Withdraw => todo!("Method {:?} not implemented yet", method),
+        Method::Withdraw => {
+            let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
+            (
+                "Withdraw: ",
+                Box::pin(run_withdraw(amount, bundlr_url, &wallet, currency)),
+            )
+        }
         Method::Help => todo!("Method {:?} not implemented yet", method),
         Method::Upload => todo!("Method {:?} not implemented yet", method),
         Method::UploadDir => todo!("Method {:?} not implemented yet", method),

@@ -108,6 +108,31 @@ impl Bundlr<'_> {
         Bundlr::get_balance_public(&self.url, self.currency, &address, &self.client).await
     }
 
+    pub async fn get_price(&self, byte_amount: u64) -> Result<BigUint, BundlrError> {
+        Bundlr::get_price_public(&self.url, self.currency, &self.client, byte_amount).await
+    }
+
+    pub async fn get_price_public(
+        url: &Url,
+        currency: &dyn Currency,
+        client: &reqwest::Client,
+        byte_amount: u64,
+    ) -> Result<BigUint, BundlrError> {
+        let currency = currency.get_type().to_string().to_lowercase();
+        let response = client
+            .get(
+                url.join(&format!("/price/{}/{}", currency, byte_amount))
+                    .expect("Could not join url with /price/{}/{}"),
+            )
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+
+        check_and_return::<u64>(response)
+            .await
+            .map(|d| BigUint::from_u64(d).expect("Error converting from string to BigUint"))
+    }
+
     pub async fn fund(&self, amount: u64, multiplier: Option<f64>) -> Result<bool, BundlrError> {
         let multiplier = multiplier.unwrap_or(1.0);
         let curr_str = &self.currency.get_type().to_string().to_lowercase();
@@ -143,29 +168,8 @@ impl Bundlr<'_> {
         check_and_return::<String>(post_tx_res).await.map(|_| true)
     }
 
-    pub async fn get_price(&self, byte_amount: u64) -> Result<BigUint, BundlrError> {
-        Bundlr::get_price_public(&self.url, self.currency, &self.client, byte_amount).await
-    }
-
-    pub async fn get_price_public(
-        url: &Url,
-        currency: &dyn Currency,
-        client: &reqwest::Client,
-        byte_amount: u64,
-    ) -> Result<BigUint, BundlrError> {
-        let currency = currency.get_type().to_string().to_lowercase();
-        let response = client
-            .get(
-                url.join(&format!("/price/{}/{}", currency, byte_amount))
-                    .expect("Could not join url with /price/{}/{}"),
-            )
-            .header("Content-Type", "application/json")
-            .send()
-            .await;
-
-        check_and_return::<u64>(response)
-            .await
-            .map(|d| BigUint::from_u64(d).expect("Error converting from string to BigUint"))
+    pub async fn withdraw(&self, amount: u64) -> Result<bool, BundlrError> {
+        todo!();
     }
 }
 
