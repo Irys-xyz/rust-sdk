@@ -11,6 +11,7 @@ use crate::{
 
 use super::{Currency, CurrencyType, TxResponse};
 
+const ARWEAVE_BASE_UNIT: &str = "winston";
 const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
 pub struct Arweave {
@@ -58,6 +59,10 @@ impl Arweave {
 
 #[async_trait::async_trait]
 impl Currency for Arweave {
+    fn get_min_unit_name(&self) -> String {
+        ARWEAVE_BASE_UNIT.to_string()
+    }
+
     fn get_type(&self) -> CurrencyType {
         self.name
     }

@@ -54,6 +54,7 @@ impl FromStr for CurrencyType {
 
 #[async_trait::async_trait]
 pub trait Currency {
+    fn get_min_unit_name(&self) -> String;
     fn get_type(&self) -> CurrencyType;
     fn needs_fee(&self) -> bool;
     async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError>;

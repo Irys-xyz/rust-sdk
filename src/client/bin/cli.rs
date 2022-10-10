@@ -1,7 +1,7 @@
 use std::{pin::Pin, time::Duration};
 
 use bundlr_sdk::{
-    client::{balance::run_balance, fund::run_fund, method::Method},
+    client::{balance::run_balance, fund::run_fund, method::Method, price::run_price},
     currency::CurrencyType,
     error::BundlrError,
 };
@@ -19,10 +19,10 @@ struct Args {
     method: Method,
 
     #[clap(value_parser)]
-    address: Option<String>,
+    first_arg: Option<String>,
 
     #[clap(value_parser)]
-    amount: Option<u64>,
+    second_arg: Option<String>,
 
     #[clap(long = "timeout")]
     timeout: Option<u64>,
@@ -41,16 +41,18 @@ struct Args {
 pub async fn main() {
     let args = Args::parse();
     let method = args.method;
-    let address = match method {
-        Method::Balance => args.address.expect("Argument <Address> not provided"),
+    let first_arg = match method {
+        Method::Balance => args.first_arg.expect("Argument <Address> not provided"),
+        Method::Price => args.first_arg.expect("Argument <Amount> not provided"),
         _ => "".to_string(),
     };
-    let amount = match method {
-        Method::Fund => args.amount.expect("Argument <Amount> not provided"),
-        _ => 0,
+    let second_arg = match method {
+        Method::Fund => args.second_arg.expect("Argument <Amount> not provided"),
+        _ => "0".to_string(),
     };
     let wallet = match method {
         Method::Balance => "".to_string(),
+        Method::Price => "".to_string(),
         _ => args.wallet.expect("Argument <Wallet> not provided"),
     };
     let bundlr_url = args.host;
@@ -63,18 +65,24 @@ pub async fn main() {
     ) = match method {
         Method::Balance => (
             "Balance: ",
-            Box::pin(run_balance(bundlr_url, &address, &currency)),
+            Box::pin(run_balance(bundlr_url, &first_arg, &currency)),
         ),
-        Method::Fund => (
-            "Fund: ",
-            Box::pin(run_fund(amount, bundlr_url, &wallet, currency)),
-        ),
+        Method::Fund => {
+            let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
+            (
+                "Fund: ",
+                Box::pin(run_fund(amount, bundlr_url, &wallet, currency)),
+            )
+        }
         Method::Withdraw => todo!("Method {:?} not implemented yet", method),
         Method::Help => todo!("Method {:?} not implemented yet", method),
         Method::Upload => todo!("Method {:?} not implemented yet", method),
         Method::UploadDir => todo!("Method {:?} not implemented yet", method),
         Method::Deploy => todo!("Method {:?} not implemented yet", method),
-        Method::Price => todo!("Method {:?} not implemented yet", method),
+        Method::Price => {
+            let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
+            ("Price: ", Box::pin(run_price(bundlr_url, currency, amount)))
+        }
     };
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {

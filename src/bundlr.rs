@@ -6,7 +6,7 @@ use crate::tags::Tag;
 use crate::utils::check_and_return;
 use crate::BundlrTx;
 use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
-use num::BigUint;
+use num::{BigUint, FromPrimitive};
 use num_traits::Zero;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -142,13 +142,42 @@ impl Bundlr<'_> {
 
         check_and_return::<String>(post_tx_res).await.map(|_| true)
     }
+
+    pub async fn get_price(&self, byte_amount: u64) -> Result<BigUint, BundlrError> {
+        Bundlr::get_price_public(&self.url, self.currency, &self.client, byte_amount).await
+    }
+
+    pub async fn get_price_public(
+        url: &Url,
+        currency: &dyn Currency,
+        client: &reqwest::Client,
+        byte_amount: u64,
+    ) -> Result<BigUint, BundlrError> {
+        let currency = currency.get_type().to_string().to_lowercase();
+        let response = client
+            .get(
+                url.join(&format!("/price/{}/{}", currency, byte_amount))
+                    .expect("Could not join url with /price/{}/{}"),
+            )
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+
+        check_and_return::<u64>(response)
+            .await
+            .map(|d| BigUint::from_u64(d).expect("Error converting from string to BigUint"))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::{currency::arweave::Arweave, tags::Tag, Bundlr};
+    use crate::{
+        currency::{arweave::Arweave, CurrencyType},
+        tags::Tag,
+        Bundlr,
+    };
     use httpmock::{
         Method::{GET, POST},
         MockServer,
@@ -218,6 +247,34 @@ mod tests {
         mock.assert();
         mock_2.assert();
         assert_eq!(balance, "10".parse::<BigUint>().unwrap());
+    }
+
+    #[tokio::test]
+    async fn should_fetch_price_correctly() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/price/arweave/123123123");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body("321321321");
+        });
+        let mock_2 = server.mock(|when, then| {
+            when.method(GET)
+                .path("/info");
+            then.status(200)
+                .body("{ \"version\": \"0\", \"gateway\": \"gateway\", \"addresses\": { \"arweave\": \"address\" }}");  
+        });
+
+        let url = Url::from_str(&server.url("")).unwrap();
+        let path = PathBuf::from_str("res/test_wallet.json").unwrap();
+        println!("{:?}", &path);
+        let currency = Arweave::new(path, Some(url.clone()));
+        let bundler = &Bundlr::new(url, &currency).await;
+        let balance = bundler.get_price(123123123).await.unwrap();
+
+        mock.assert();
+        mock_2.assert();
+        assert_eq!(balance, "321321321".parse::<BigUint>().unwrap());
     }
 
     #[tokio::test]
