@@ -2,7 +2,7 @@
 pub mod arweave;
 
 use core::fmt;
-use num::{BigRational, BigUint};
+
 use num_derive::FromPrimitive;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};

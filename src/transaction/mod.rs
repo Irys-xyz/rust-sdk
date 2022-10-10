@@ -1,5 +1,3 @@
-use num::BigUint;
-
 pub mod bundlr;
 pub mod poll;
 

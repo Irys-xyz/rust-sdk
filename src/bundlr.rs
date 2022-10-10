@@ -6,7 +6,7 @@ use crate::tags::Tag;
 use crate::utils::check_and_return;
 use crate::BundlrTx;
 use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
-use num::{BigRational, BigUint, ToPrimitive};
+use num::BigUint;
 use num_traits::Zero;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};

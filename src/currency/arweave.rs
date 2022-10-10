@@ -43,7 +43,7 @@ impl Arweave {
     pub fn new(keypair_path: PathBuf, base_url: Option<Url>) -> Self {
         let base_url = base_url.unwrap_or(Url::from_str(ARWEAVE_BASE_URL).unwrap());
         Self {
-            sdk: ArweaveSdk::from_keypair_path(keypair_path, base_url.clone())
+            sdk: ArweaveSdk::from_keypair_path(keypair_path, base_url)
                 .expect("Invalid path or url"),
             needs_fee: true,
             is_slow: false,
@@ -119,7 +119,7 @@ impl Currency for Arweave {
         }
     }
 
-    fn owner_to_address(&self, owner: String) -> String {
+    fn owner_to_address(&self, _owner: String) -> String {
         todo!()
     }
 
@@ -127,7 +127,7 @@ impl Currency for Arweave {
         todo!()
     }
 
-    async fn get_id(&self, item: ()) -> String {
+    async fn get_id(&self, _item: ()) -> String {
         todo!();
     }
 
