@@ -1,3 +1,5 @@
+use std::{fs, path::PathBuf, str::FromStr};
+
 use crate::{error::BundlrError, index::SignerMap, Verifier};
 use bytes::Bytes;
 use data_encoding::BASE64URL;
@@ -15,17 +17,31 @@ pub struct ArweaveSigner {
     priv_key: RsaPrivateKey,
 }
 
+impl Default for ArweaveSigner {
+    fn default() -> Self {
+        let path = PathBuf::from_str(".wallet.json").expect("Could not open .wallet.json");
+        Self::from_keypair_path(path).expect("Could not create Arweave Signer")
+    }
+}
+
 #[allow(unused)]
 impl ArweaveSigner {
-    fn new(priv_key: RsaPrivateKey) -> ArweaveSigner {
+    fn new(priv_key: RsaPrivateKey) -> Self {
         Self { priv_key }
     }
 
-    pub fn from_jwk(jwk: jwk::JsonWebKey) -> ArweaveSigner {
+    pub fn from_jwk(jwk: jwk::JsonWebKey) -> Self {
         let pem = jwk.key.to_pem();
         let priv_key = RsaPrivateKey::from_pkcs8_pem(&pem).unwrap();
 
-        ArweaveSigner::new(priv_key)
+        Self::new(priv_key)
+    }
+
+    pub fn from_keypair_path(keypair_path: PathBuf) -> Result<Self, BundlrError> {
+        let data = fs::read_to_string(keypair_path).expect("Could not open file");
+        let jwk_parsed: jwk::JsonWebKey = data.parse().expect("Could not parse key");
+
+        Ok(Self::from_jwk(jwk_parsed))
     }
 }
 
