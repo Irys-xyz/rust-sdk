@@ -47,12 +47,10 @@ pub async fn main() {
     let first_arg = match method {
         Method::Balance => args.first_arg.expect("Argument <Address> not provided"),
         Method::Price => args.first_arg.expect("Argument <Amount> not provided"),
+        Method::Withdraw => args.first_arg.expect("Argument <Amount> not provided"),
         _ => "".to_string(),
     };
-    let second_arg = match method {
-        Method::Fund => args.second_arg.expect("Argument <Amount> not provided"),
-        _ => "0".to_string(),
-    };
+
     let wallet = match method {
         Method::Balance => "".to_string(),
         Method::Price => "".to_string(),

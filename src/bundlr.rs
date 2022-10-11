@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::error::BundlrError;
 use crate::tags::Tag;
-use crate::utils::check_and_return;
+use crate::utils::{check_and_return, get_nonce};
 use crate::BundlrTx;
 use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
+use arweave_rs::crypto::base64::Base64;
+use bytes::Bytes;
 use num::{BigUint, FromPrimitive};
 use num_traits::Zero;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 #[allow(unused)]
 pub struct Bundlr<'a> {
@@ -34,6 +37,17 @@ pub struct PubInfo {
 #[derive(Serialize, Deserialize)]
 pub struct FundBody {
     tx_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WithdrawBody {
+    public_key: Base64,
+    currency: String,
+    amount: String,
+    nonce: u64,
+    signature: Base64,
+    sig_type: u16,
 }
 
 impl Bundlr<'_> {
@@ -62,7 +76,7 @@ impl Bundlr<'_> {
     }
 
     pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
-        BundlrTx::create_with_tags(data, tags, self.currency.get_signer())
+        todo!()
     }
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
@@ -169,7 +183,55 @@ impl Bundlr<'_> {
     }
 
     pub async fn withdraw(&self, amount: u64) -> Result<bool, BundlrError> {
-        todo!();
+        let currency_type = self.currency.get_type().to_string().to_lowercase();
+        let public_key = Base64(self.currency.get_pub_key().to_vec());
+        let wallet_address = self.currency.wallet_address();
+        let nonce = get_nonce(
+            &self.client,
+            &self.url,
+            wallet_address,
+            currency_type.clone(),
+        )
+        .await
+        .expect("Could not get nonce");
+
+        let data = DeepHashChunk::Chunks(vec![
+            DeepHashChunk::Chunk(Bytes::copy_from_slice(currency_type.as_bytes())),
+            DeepHashChunk::Chunk(Bytes::copy_from_slice(amount.to_string().as_bytes())),
+            DeepHashChunk::Chunk(Bytes::copy_from_slice(&nonce.to_string().as_bytes())),
+        ]);
+
+        let dh = deep_hash(data).await.expect("Could not deep hash item");
+        let signature = Base64(self.currency.sign_message(&dh));
+        self.currency
+            .verify(&public_key.0, &dh, &signature.0)
+            .expect("Signature not ok");
+
+        let data = WithdrawBody {
+            public_key: Base64(public_key.to_string().into_bytes()),
+            currency: self.currency.get_type().to_string().to_lowercase(),
+            amount: amount.to_string(),
+            nonce,
+            signature: Base64(signature.to_string().into_bytes()),
+            sig_type: self.currency.get_type() as u16,
+        };
+        dbg!(json!(data));
+
+        let res = self
+            .client
+            .post(
+                self.url
+                    .join("/account/withdraw")
+                    .expect("Could not join url with /account/withdraw"),
+            )
+            .body(json!(data).to_string())
+            .send()
+            .await;
+
+        check_and_return::<String>(res).await.map(|op| {
+            dbg!(op);
+            true
+        })
     }
 }
 

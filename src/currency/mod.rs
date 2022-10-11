@@ -3,6 +3,7 @@ pub mod arweave;
 
 use core::fmt;
 
+use bytes::Bytes;
 use num_derive::FromPrimitive;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -63,7 +64,10 @@ pub trait Currency {
         tx_id: String,
     ) -> Result<(StatusCode, Option<TxStatus>), BundlrError>;
     fn owner_to_address(&self, owner: String) -> String;
-    fn get_signer(&self) -> &dyn Signer;
+    fn get_pub_key(&self) -> Bytes;
+    fn wallet_address(&self) -> String;
+    fn sign_message(&self, message: &[u8]) -> Vec<u8>;
+    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError>;
     async fn get_id(&self, item: ()) -> String;
     async fn price(&self) -> String;
     async fn get_current_height(&self) -> u128;

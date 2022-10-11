@@ -1,4 +1,5 @@
 use arweave_rs::{crypto::base64::Base64, Arweave as ArweaveSdk};
+use bytes::Bytes;
 use num::ToPrimitive;
 use reqwest::{StatusCode, Url};
 use std::{ops::Mul, path::PathBuf, str::FromStr};
@@ -6,7 +7,7 @@ use std::{ops::Mul, path::PathBuf, str::FromStr};
 use crate::{
     error::BundlrError,
     transaction::{Tx, TxStatus},
-    Signer,
+    ArweaveSigner, Signer, Verifier,
 };
 
 use super::{Currency, CurrencyType, TxResponse};
@@ -16,6 +17,7 @@ const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
 pub struct Arweave {
     sdk: ArweaveSdk,
+    signer: ArweaveSigner,
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
@@ -29,6 +31,7 @@ impl Default for Arweave {
     fn default() -> Self {
         Self {
             sdk: ArweaveSdk::default(),
+            signer: ArweaveSigner::default(),
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
@@ -44,8 +47,9 @@ impl Arweave {
     pub fn new(keypair_path: PathBuf, base_url: Option<Url>) -> Self {
         let base_url = base_url.unwrap_or(Url::from_str(ARWEAVE_BASE_URL).unwrap());
         Self {
-            sdk: ArweaveSdk::from_keypair_path(keypair_path, base_url)
+            sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
                 .expect("Invalid path or url"),
+            signer: ArweaveSigner::from_keypair_path(keypair_path).expect("Invalid path"),
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
@@ -128,8 +132,28 @@ impl Currency for Arweave {
         todo!()
     }
 
-    fn get_signer(&self) -> &dyn Signer {
-        todo!()
+    fn sign_message(&self, message: &[u8]) -> Vec<u8> {
+        self.signer
+            .sign(Bytes::copy_from_slice(message))
+            .expect("Could not sign message")
+            .to_vec()
+    }
+
+    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
+        ArweaveSigner::verify(
+            Bytes::copy_from_slice(pub_key),
+            Bytes::copy_from_slice(message),
+            Bytes::copy_from_slice(signature),
+        )
+        .map(|_| ())
+    }
+
+    fn get_pub_key(&self) -> Bytes {
+        self.signer.pub_key()
+    }
+
+    fn wallet_address(&self) -> String {
+        self.sdk.get_wallet_address()
     }
 
     async fn get_id(&self, _item: ()) -> String {
@@ -216,6 +240,26 @@ impl Currency for Arweave {
 
 #[cfg(test)]
 mod tests {
+    use std::{path::PathBuf, str::FromStr};
+
+    use crate::currency::{arweave::Arweave, Currency};
+
+    #[test]
+    fn should_sign_and_verify() {
+        let msg = [
+            9, 214, 233, 210, 242, 45, 194, 247, 28, 234, 14, 86, 105, 40, 41, 251, 52, 39, 236,
+            214, 54, 13, 53, 254, 179, 53, 220, 205, 129, 37, 244, 142, 230, 32, 209, 103, 68, 75,
+            39, 178, 10, 186, 24, 160, 179, 143, 211, 151,
+        ];
+        let path = PathBuf::from_str("res/test_wallet.json").expect("Could not load path");
+        let c = Arweave::new(path, None);
+
+        let sig = c.sign_message(&msg);
+        let pub_key = c.get_pub_key();
+
+        assert!(c.verify(&pub_key, &msg, &sig).is_ok());
+    }
+
     #[tokio::test]
     async fn should_get_fee_correctly() {}
 }

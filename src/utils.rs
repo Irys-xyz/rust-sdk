@@ -1,4 +1,4 @@
-use reqwest::Response;
+use reqwest::{Response, Url};
 use serde::Deserialize;
 
 use crate::error::BundlrError;
@@ -16,4 +16,23 @@ pub async fn check_and_return<T: for<'de> Deserialize<'de>>(
         }
         Err(err) => Err(BundlrError::ResponseError(err.to_string())),
     }
+}
+
+pub async fn get_nonce(
+    client: &reqwest::Client,
+    url: &Url,
+    address: String,
+    currency: String,
+) -> Result<u64, BundlrError> {
+    let res = client
+        .get(
+            url.join(&format!(
+                "/account/withdrawals/{}?address={}",
+                currency, address
+            ))
+            .expect("Could not join url with /account/withdrawals/{}?address={}"),
+        )
+        .send()
+        .await;
+    check_and_return::<u64>(res).await
 }
