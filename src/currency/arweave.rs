@@ -172,7 +172,7 @@ impl Currency for Arweave {
         let base64_address = Base64::from_str(to).expect("Could not convert target to base64");
         let base_fee = self
             .sdk
-            .get_fee(base64_address)
+            .get_fee(base64_address, vec![])
             .await
             .expect("Could not get fee");
         multiplier

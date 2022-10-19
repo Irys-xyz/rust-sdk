@@ -43,7 +43,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "arweave-rs"
 version = "0.1.0"
-source = "git+https://github.com/bluekirby1111/arweave-rs#6ef5ccca23ead99f85ced1f7150d01de0fc4bd9b"
+source = "git+https://github.com/bluekirby1111/arweave-rs#a72d1f6920131dd9ee73701b52a31f28d0b3eedd"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -58,6 +58,7 @@ dependencies = [
  "infer",
  "jsonwebkey",
  "lazy_static",
+ "mime_guess",
  "num",
  "paris",
  "pretend",
@@ -494,6 +495,7 @@ dependencies = [
  "httpmock",
  "jsonwebkey",
  "lazy_static",
+ "mime_guess",
  "num",
  "num-derive",
  "num-traits",
@@ -1760,6 +1762,16 @@ name = "mime"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
+
+[[package]]
+name = "mime_guess"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4192263c238a5f0d0c6bfd21f336a313a4ce1c450542449ca191bb657b4642ef"
+dependencies = [
+ "mime",
+ "unicase",
+]
 
 [[package]]
 name = "mio"
@@ -3251,6 +3263,15 @@ dependencies = [
  "crunchy",
  "hex",
  "static_assertions",
+]
+
+[[package]]
+name = "unicase"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]

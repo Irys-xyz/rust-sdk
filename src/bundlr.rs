@@ -1,9 +1,12 @@
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::error::BundlrError;
 use crate::tags::Tag;
+use crate::upload::Uploader;
 use crate::utils::{check_and_return, get_nonce};
 use crate::BundlrTx;
 use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
@@ -21,6 +24,7 @@ pub struct Bundlr<'a> {
     currency: &'a dyn Currency,
     client: reqwest::Client,
     pub_info: PubInfo,
+    uploader: Uploader,
 }
 #[derive(Deserialize)]
 pub struct BalanceResData {
@@ -55,12 +59,14 @@ impl Bundlr<'_> {
         let pub_info = Bundlr::get_pub_info(&url)
             .await
             .unwrap_or_else(|_| panic!("Could not fetch public info from url: {}", url));
+        let uploader = Uploader::new(url.clone(), reqwest::Client::new(), currency.get_type());
 
         Bundlr {
             url,
             currency,
             client: reqwest::Client::new(),
             pub_info,
+            uploader,
         }
     }
 
@@ -232,6 +238,30 @@ impl Bundlr<'_> {
             dbg!(op);
             true
         })
+    }
+
+    pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<(), BundlrError> {
+        let mut auto_content_tag = true;
+        let mut status_content_type = mime_guess::mime::OCTET_STREAM.to_string();
+        let mut tags = vec![];
+        if let Some(content_type) = mime_guess::from_path(file_path.clone()).first() {
+            status_content_type = content_type.to_string();
+            auto_content_tag = false;
+            let content_tag: Tag = Tag::new("Content-Type".to_string(), content_type.to_string());
+            tags.push(content_tag);
+        }
+
+        let data = fs::read(&file_path).expect("Could not read file");
+
+        self.uploader.upload(data).await
+    }
+
+    pub async fn upload_directory(
+        &self,
+        directory_path: PathBuf,
+        manifest_path: PathBuf,
+    ) -> Result<(), BundlrError> {
+        todo!();
     }
 }
 
