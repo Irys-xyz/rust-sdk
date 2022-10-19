@@ -15,7 +15,6 @@ use clap::ValueEnum;
 use crate::{
     error::BundlrError,
     transaction::{Tx, TxStatus},
-    Signer,
 };
 
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]

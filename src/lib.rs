@@ -17,7 +17,6 @@ pub mod tags;
 pub mod upload;
 pub mod utils;
 pub mod verify;
-pub mod wallet;
 
 pub use bundlr::Bundlr;
 pub use signers::Signer;

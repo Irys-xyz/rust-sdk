@@ -1,17 +1,13 @@
 use std::{str::FromStr, thread::sleep, time::Duration};
 
 use futures::{stream, Stream, StreamExt};
-use reqwest::{
-    header::{ACCEPT, CONTENT_TYPE},
-    Client, Url,
-};
+use reqwest::{header::ACCEPT, Client, Url};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     consts::{BUNDLR_DEFAULT_URL, CHUNKS_RETRIES, CHUNKS_RETRY_SLEEP, CHUNK_SIZE},
     currency::CurrencyType,
     error::BundlrError,
-    Bundlr,
 };
 
 #[derive(Serialize, Deserialize)]

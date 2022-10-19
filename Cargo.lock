@@ -43,7 +43,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "arweave-rs"
 version = "0.1.0"
-source = "git+https://github.com/bluekirby1111/arweave-rs#a72d1f6920131dd9ee73701b52a31f28d0b3eedd"
+source = "git+https://github.com/bluekirby1111/arweave-rs#5e0b1721aeee2b4527ad6a71a21b06622a69349c"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -59,15 +59,15 @@ dependencies = [
  "jsonwebkey",
  "lazy_static",
  "mime_guess",
- "num",
  "paris",
  "pretend",
  "pretend-reqwest",
  "rand 0.8.5",
  "reqwest",
- "ring",
+ "rsa",
  "serde",
  "serde_json",
+ "sha2 0.10.6",
  "thiserror",
  "tokio",
  "url",
@@ -493,7 +493,6 @@ dependencies = [
  "ed25519-dalek",
  "futures",
  "httpmock",
- "jsonwebkey",
  "lazy_static",
  "mime_guess",
  "num",
@@ -504,7 +503,6 @@ dependencies = [
  "rand 0.8.5",
  "reqwest",
  "ring",
- "rsa",
  "secp256k1 0.22.1",
  "serde",
  "serde_json",
@@ -1843,7 +1841,6 @@ dependencies = [
  "autocfg",
  "num-integer",
  "num-traits",
- "serde",
 ]
 
 [[package]]
@@ -1870,7 +1867,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ae39348c8bc5fbd7f40c727a9925f03517afd2ab27d46702108b6a7e5414c19"
 dependencies = [
  "num-traits",
- "serde",
 ]
 
 [[package]]
@@ -1915,7 +1911,6 @@ dependencies = [
  "num-bigint 0.4.3",
  "num-integer",
  "num-traits",
- "serde",
 ]
 
 [[package]]

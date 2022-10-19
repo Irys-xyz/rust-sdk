@@ -269,15 +269,8 @@ impl Bundlr<'_> {
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::{
-        currency::{arweave::Arweave, CurrencyType},
-        tags::Tag,
-        Bundlr,
-    };
-    use httpmock::{
-        Method::{GET, POST},
-        MockServer,
-    };
+    use crate::{currency::arweave::Arweave, Bundlr};
+    use httpmock::{Method::GET, MockServer};
     use num::BigUint;
     use reqwest::Url;
 
