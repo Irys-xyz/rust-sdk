@@ -81,12 +81,20 @@ impl Bundlr<'_> {
         check_and_return::<PubInfo>(response).await
     }
 
-    pub fn create_transaction_with_tags(&self, data: Vec<u8>, tags: Vec<Tag>) -> BundlrTx {
+    pub fn create_transaction(&self, data: Vec<u8>, additional_tags: Vec<Tag>) -> BundlrTx {
+        BundlrTx::new(vec![], data, additional_tags)
+    }
+
+    pub fn sign_transaction(tx: BundlrTx) -> Result<BundlrTx, BundlrError> {
+        todo!()
+    }
+
+    pub fn sign_transaction_mut(tx: &mut BundlrTx) -> Result<(), BundlrError> {
         todo!()
     }
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
-        let tx = tx.into_inner();
+        let tx = tx.as_bytes().expect("Could not serialize transaction");
 
         let response = self
             .client

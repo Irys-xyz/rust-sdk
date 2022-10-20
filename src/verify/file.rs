@@ -1,20 +1,18 @@
 use super::types::{Header, Item};
+use crate::consts::CHUNK_SIZE;
 use crate::tags::AvroDecode;
+use crate::utils::read_offset;
 use crate::{
     deep_hash::{deep_hash, DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER},
     error::BundlrError,
     index::{Config, SignerMap},
 };
 use async_stream::try_stream;
-use bytes::Bytes;
 use data_encoding::BASE64URL;
+use futures::stream;
 use num_traits::FromPrimitive;
 use primitive_types::U256;
-use std::{
-    cmp,
-    fs::File,
-    io::{Read, Seek, SeekFrom},
-};
+use std::{cmp, fs::File};
 
 impl From<std::io::Error> for BundlrError {
     fn from(e: std::io::Error) -> Self {
@@ -60,6 +58,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         } = signer.get_config();
 
         let sig = &buffer[2..2 + sig_length];
+        dbg!(sig);
 
         let pub_key = &buffer[2 + sig_length..2 + sig_length + pub_length];
 
@@ -70,7 +69,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         let target = match target_present {
             0 => &[],
             1 => &buffer[target_start + 1..target_start + 33],
-            _ => return Err(BundlrError::InvalidPresenceByte),
+            b => return Err(BundlrError::InvalidPresenceByte(b.to_string())),
         };
         let anchor_start = target_start + 1 + target.len();
         let anchor_present = u8::from_le_bytes(
@@ -79,7 +78,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         let anchor = match anchor_present {
             0 => &[],
             1 => &buffer[anchor_start + 1..anchor_start + 33],
-            _ => return Err(BundlrError::InvalidPresenceByte),
+            b => return Err(BundlrError::InvalidPresenceByte(b.to_string())),
         };
 
         let tags_start = anchor_start + 1 + anchor.len();
@@ -109,7 +108,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
         let mut file_clone = file.try_clone().unwrap();
         let file_stream = try_stream! {
-            let chunk_size = 256u64 * 1024;
+            let chunk_size = CHUNK_SIZE;
             let mut read = 0;
             while read < data_size {
                 let b = read_offset(&mut file_clone, offset + data_start + read, cmp::min(data_size - read, chunk_size) as usize).unwrap();
@@ -147,20 +146,6 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     }
 
     Ok(items)
-}
-
-// Reads `length` bytes at `offset` within `file`
-#[allow(clippy::uninit_vec)]
-#[allow(clippy::unused_io_amount)]
-fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes, std::io::Error> {
-    let mut b = Vec::with_capacity(length);
-    unsafe { b.set_len(length) };
-    file.seek(SeekFrom::Start(offset))?;
-
-    b.fill(0);
-
-    file.read(&mut b)?;
-    Ok(b.into())
 }
 
 #[cfg(test)]

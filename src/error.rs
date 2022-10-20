@@ -8,8 +8,8 @@ pub enum BundlrError {
     #[error("Invalid signer type used.")]
     InvalidSignerType,
 
-    #[error("Invalid presence byte.")]
-    InvalidPresenceByte,
+    #[error("Invalid presence byte {0}")]
+    InvalidPresenceByte(String),
 
     #[error("No bytes left.")]
     NoBytesLeft,
@@ -55,4 +55,10 @@ pub enum BundlrError {
 
     #[error("Error posting chunk: {0}")]
     PostChunkError(String),
+
+    #[error("No signature present")]
+    NoSignature,
+
+    #[error("Cannot convert file stream to known bytes. Try using another method")]
+    InvalidDataType,
 }

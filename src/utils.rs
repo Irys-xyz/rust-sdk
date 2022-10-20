@@ -1,3 +1,9 @@
+use std::{
+    fs::File,
+    io::{Read, Seek, SeekFrom},
+};
+
+use bytes::Bytes;
 use reqwest::{Response, Url};
 use serde::Deserialize;
 
@@ -35,4 +41,18 @@ pub async fn get_nonce(
         .send()
         .await;
     check_and_return::<u64>(res).await
+}
+
+// Reads `length` bytes at `offset` within `file`
+#[allow(clippy::uninit_vec)]
+#[allow(clippy::unused_io_amount)]
+pub fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes, std::io::Error> {
+    let mut b = Vec::with_capacity(length);
+    unsafe { b.set_len(length) };
+    file.seek(SeekFrom::Start(offset))?;
+
+    b.fill(0);
+
+    file.read(&mut b)?;
+    Ok(b.into())
 }

@@ -10,6 +10,7 @@ pub struct Ed25519Signer {
     keypair: Keypair,
 }
 
+//TODO: add validation for secret keys
 impl Ed25519Signer {
     pub fn new(keypair: Keypair) -> Ed25519Signer {
         Ed25519Signer { keypair }
@@ -93,6 +94,7 @@ mod tests {
         let signer = Ed25519Signer::from_base58(base58_secret_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
+        println!("{:?}", pub_key.to_vec());
         assert!(Ed25519Signer::verify(pub_key, msg.clone(), sig).unwrap());
 
         let keypair = Keypair::from_bytes(&[
