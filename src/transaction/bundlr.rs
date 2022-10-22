@@ -324,6 +324,7 @@ mod tests {
     }
     #[test]
     fn test_create_sign_verify_load_ed25519() {
+        let path = "./res/test_bundles/test_data_item_ed25519";
         let secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
         let signer = Ed25519Signer::from_base58(secret_key);
         let mut data_item_1 = BundlrTx::new(
@@ -334,11 +335,11 @@ mod tests {
         let res = data_item_1.sign(&signer);
         assert!(res.is_ok());
 
-        let mut f = File::create("test_data_item_ed25519").unwrap();
+        let mut f = File::create(path).unwrap();
         let data_item_1_bytes = data_item_1.as_bytes().unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
-        let buffer = fs::read("test_data_item_ed25519").expect("Could not read file");
+        let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
 
@@ -348,8 +349,9 @@ mod tests {
     #[test]
     fn test_create_sign_verify_load_rsa4096() {
         return; //TODO: fix
-        let path = PathBuf::from_str("res/test_wallet.json").unwrap();
-        let signer = ArweaveSigner::from_keypair_path(path).unwrap();
+        let path = "./res/test_bundles/test_data_item_rsa4096";
+        let key_path = PathBuf::from_str("res/test_wallet.json").unwrap();
+        let signer = ArweaveSigner::from_keypair_path(key_path).unwrap();
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),
@@ -358,11 +360,11 @@ mod tests {
         let res = data_item_1.sign(&signer);
         assert!(res.is_ok());
 
-        let mut f = File::create("test_data_item_rsa4096").unwrap();
+        let mut f = File::create(path).unwrap();
         let data_item_1_bytes = data_item_1.as_bytes().unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
-        let buffer = fs::read("test_data_item_rsa4096").expect("Could not read file");
+        let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
@@ -371,6 +373,7 @@ mod tests {
     #[test]
     fn test_create_sign_verify_load_cosmos() {
         return; //TODO: fix
+        let path = "./res/test_bundles/test_data_item_cosmos";
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = CosmosSigner::new(secret_key);
         let mut data_item_1 = BundlrTx::new(
@@ -381,11 +384,11 @@ mod tests {
         let res = data_item_1.sign(&signer);
         assert!(res.is_ok());
 
-        let mut f = File::create("test_data_item_cosmos").unwrap();
+        let mut f = File::create(path).unwrap();
         let data_item_1_bytes = data_item_1.as_bytes().unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
-        let buffer = fs::read("test_data_item_cosmos").expect("Could not read file");
+        let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
@@ -393,6 +396,7 @@ mod tests {
 
     #[test]
     fn test_create_sign_verify_load_secp256k1() {
+        let path = "./res/test_bundles/test_data_item_secp256k1";
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = Secp256k1Signer::new(secret_key);
         let mut data_item_1 = BundlrTx::new(
@@ -402,12 +406,11 @@ mod tests {
         );
         let res = data_item_1.sign(&signer);
         assert!(res.is_ok());
-
-        let mut f = File::create("test_data_item_secp256k1").unwrap();
+        let mut f = File::create(path).unwrap();
         let data_item_1_bytes = data_item_1.as_bytes().unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
-        let buffer = fs::read("test_data_item_secp256k1").expect("Could not read file");
+        let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());

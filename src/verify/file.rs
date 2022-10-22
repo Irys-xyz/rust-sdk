@@ -163,10 +163,9 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/test_bundle".to_string()
+                "./res/test_bundles/test_bundle".to_string()
             ))
         );
-        assert_eq!(1, 1)
     }
 
     #[test]
@@ -174,11 +173,9 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/arweave_sig".to_string()
+                "./res/test_bundles/arweave_sig".to_string()
             ))
         );
-
-        assert_eq!(1, 1)
     }
 
     #[test]
@@ -187,49 +184,47 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/ethereum_sig".to_string()
+                "./res/test_bundles/ethereum_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/arbitrum_sig".to_string()
+                "./res/test_bundles/arbitrum_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/avalanche_sig".to_string()
+                "./res/test_bundles/avalanche_sig".to_string()
+            ))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle("./res/test_bundles/bnb_sig".to_string()))
+        );
+        println!(
+            "{:?}",
+            aw!(verify_file_bundle(
+                "./res/test_bundles/boba-eth_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/bnb_sig".to_string()
+                "./res/test_bundles/chainlink_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/boba-eth_sig".to_string()
+                "./res/test_bundles/kyve_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/chainlink_sig".to_string()
-            ))
-        );
-        println!(
-            "{:?}",
-            aw!(verify_file_bundle(
-                "./src/verify/test_bundles/kyve_sig".to_string()
-            ))
-        );
-        println!(
-            "{:?}",
-            aw!(verify_file_bundle(
-                "./src/verify/test_bundles/matic_sig".to_string()
+                "./res/test_bundles/matic_sig".to_string()
             ))
         );
     }
@@ -240,10 +235,9 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/cosmos_sig".to_string()
+                "./res/test_bundles/cosmos_sig".to_string()
             ))
         );
-        assert_eq!(1, 1)
     }
 
     #[test]
@@ -252,19 +246,19 @@ mod tests {
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/solana_sig".to_string()
+                "./res/test_bundles/solana_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/algorand_sig".to_string()
+                "./res/test_bundles/algorand_sig".to_string()
             ))
         );
         println!(
             "{:?}",
             aw!(verify_file_bundle(
-                "./src/verify/test_bundles/near_sig".to_string()
+                "./res/test_bundles/near_sig".to_string()
             ))
         );
     }
