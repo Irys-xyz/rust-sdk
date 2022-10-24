@@ -4,12 +4,10 @@ use futures::Stream;
 use ring::rand::SecureRandom;
 use std::cmp;
 use std::fs::File;
-use std::path::PathBuf;
 use std::pin::Pin;
 
-use crate::bundlr;
 use crate::consts::CHUNK_SIZE;
-use crate::deep_hash::{DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
+use crate::deep_hash::{deep_hash, DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
 use crate::deep_hash_sync::deep_hash_sync;
 use crate::error::BundlrError;
 use crate::index::{Config, SignerMap};
@@ -20,7 +18,7 @@ use crate::utils::read_offset;
 enum Data {
     None,
     Bytes(Vec<u8>),
-    //Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>)
+    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
 }
 
 pub struct BundlrTx {
@@ -135,6 +133,7 @@ impl BundlrTx {
         let (bundlr_tx, data_start) =
             BundlrTx::from_info_bytes(&buffer).expect("Could not gather info from bytes");
         let data = &buffer[data_start..buffer.len()];
+        println!("data: {:?}", data);
 
         Ok(BundlrTx {
             data: Data::Bytes(data.to_vec()),
@@ -142,13 +141,15 @@ impl BundlrTx {
         })
     }
 
-    /*
-    pub fn from_file(path_buf: PathBuf, size: u64, offset: u64) -> Result<Self, BundlrError> {
-        let mut file = File::open(&path_buf).unwrap();
-        let buffer = read_offset(&mut file, offset, 4096)
-            .expect("Could not read offset");
-            let (bundlr_tx, data_start) = BundlrTx::from_info_bytes(buffer.to_vec())
-            .expect("Could not gather info from bytes");
+    pub fn from_file_position(
+        file: &mut File,
+        size: u64,
+        offset: u64,
+        length: usize,
+    ) -> Result<Self, BundlrError> {
+        let buffer = read_offset(file, offset, length).expect("Could not read offset");
+        let (bundlr_tx, data_start) =
+            BundlrTx::from_info_bytes(&buffer.to_vec()).expect("Could not gather info from bytes");
 
         let data_start = data_start as u64;
         let data_size = size - data_start;
@@ -168,7 +169,6 @@ impl BundlrTx {
             ..bundlr_tx
         })
     }
-    */
 
     pub fn is_signed(&self) -> bool {
         !self.signature.is_empty() && self.signature_type != SignerMap::None
@@ -179,7 +179,7 @@ impl BundlrTx {
             return Err(BundlrError::NoSignature);
         }
         let data = match &self.data {
-            //Data::Stream(_) => return Err(BundlrError::InvalidDataType),
+            Data::Stream(_) => return Err(BundlrError::InvalidDataType),
             Data::None => return Err(BundlrError::InvalidDataType),
             Data::Bytes(data) => data,
         };
@@ -236,72 +236,75 @@ impl BundlrTx {
         todo!();
     }
 
-    pub fn sign(&mut self, signer: &dyn Signer) -> Result<(), BundlrError> {
+    async fn get_message(&mut self) -> Bytes {
         let encoded_tags = if !self.tags.is_empty() {
             self.tags.encode().unwrap()
         } else {
             Bytes::default()
         };
 
-        let data_chunk = match &self.data {
-            Data::None => return Err(BundlrError::InvalidDataType),
-            Data::Bytes(data) => DeepHashChunk::Chunk(data.clone().into()),
-            //Data::Stream(file_stream) => DeepHashChunk::Stream(Box::pin(file_stream)),
-        };
+        match &mut self.data {
+            Data::None => Bytes::new(),
+            Data::Bytes(data) => {
+                let data_chunk = DeepHashChunk::Chunk(data.clone().into());
+                let sig_type = &self.signature_type;
+                let sig_type_bytes = sig_type.as_u16().to_string().as_bytes().to_vec();
+                deep_hash_sync(DeepHashChunk::Chunks(vec![
+                    DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
+                    DeepHashChunk::Chunk(ONE_AS_BUFFER.into()),
+                    DeepHashChunk::Chunk(sig_type_bytes.to_vec().into()),
+                    DeepHashChunk::Chunk(self.owner.to_vec().into()),
+                    DeepHashChunk::Chunk(self.target.to_vec().into()),
+                    DeepHashChunk::Chunk(self.anchor.to_vec().into()),
+                    DeepHashChunk::Chunk(encoded_tags.clone()),
+                    data_chunk,
+                ]))
+                .expect("Could not deep hash message")
+            }
+            Data::Stream(file_stream) => {
+                let data_chunk = DeepHashChunk::Stream(file_stream);
+                let sig_type = &self.signature_type;
+                let sig_type_bytes = sig_type.as_u16().to_string().as_bytes().to_vec();
+                deep_hash(DeepHashChunk::Chunks(vec![
+                    DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
+                    DeepHashChunk::Chunk(ONE_AS_BUFFER.into()),
+                    DeepHashChunk::Chunk(sig_type_bytes.to_vec().into()),
+                    DeepHashChunk::Chunk(self.owner.to_vec().into()),
+                    DeepHashChunk::Chunk(self.target.to_vec().into()),
+                    DeepHashChunk::Chunk(self.anchor.to_vec().into()),
+                    DeepHashChunk::Chunk(encoded_tags.clone()),
+                    data_chunk,
+                ]))
+                .await
+                .expect("Could not deep hash message")
+            }
+        }
+    }
 
-        let sig_type = signer.sig_type();
-        let sig_type_bytes = sig_type.to_string().as_bytes().to_vec();
-        let message = deep_hash_sync(DeepHashChunk::Chunks(vec![
-            DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
-            DeepHashChunk::Chunk(ONE_AS_BUFFER.into()),
-            DeepHashChunk::Chunk(sig_type_bytes.to_vec().into()),
-            DeepHashChunk::Chunk(signer.pub_key().to_vec().into()),
-            DeepHashChunk::Chunk(self.target.to_vec().into()),
-            DeepHashChunk::Chunk(self.anchor.to_vec().into()),
-            DeepHashChunk::Chunk(encoded_tags.clone()),
-            data_chunk,
-        ]))
-        .unwrap();
+    pub async fn sign(&mut self, signer: &dyn Signer) -> Result<(), BundlrError> {
+        self.signature_type = signer.sig_type();
+        self.owner = signer.pub_key().to_vec();
+
+        let message = self.get_message().await;
 
         let sig = signer.sign(message.clone()).unwrap();
         self.signature = sig.to_vec();
-        self.signature_type = sig_type;
-        self.owner = signer.pub_key().to_vec();
 
-        self.verify().map(|_| ())
+        Ok(())
     }
 
-    pub fn verify(&self) -> Result<bool, BundlrError> {
+    pub async fn verify(&mut self) -> Result<bool, BundlrError> {
+        let message = self.get_message().await;
+        println!("msg: {:?}", message.to_vec());
         let pub_key = &self.owner;
         let signature = &self.signature;
 
-        let sig_type_bytes = self.signature_type.to_string().as_bytes().to_vec();
-        let encoded_tags = if !self.tags.is_empty() {
-            self.tags.encode().unwrap()
-        } else {
-            Bytes::default()
-        };
-
-        let data_chunk = match &self.data {
-            Data::None => return Err(BundlrError::InvalidDataType),
-            Data::Bytes(data) => DeepHashChunk::Chunk(data.clone().into()),
-            //Data::Stream(file_stream) => DeepHashChunk::Stream(Box::pin(*file_stream)),
-        };
-
-        let message = deep_hash_sync(DeepHashChunk::Chunks(vec![
-            DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
-            DeepHashChunk::Chunk(ONE_AS_BUFFER.into()),
-            DeepHashChunk::Chunk(sig_type_bytes.to_vec().into()),
-            DeepHashChunk::Chunk(self.owner.to_vec().into()),
-            DeepHashChunk::Chunk(self.target.to_vec().into()),
-            DeepHashChunk::Chunk(self.anchor.to_vec().into()),
-            DeepHashChunk::Chunk(encoded_tags.clone()),
-            data_chunk,
-        ]))
-        .unwrap();
-
         let verifier = &self.signature_type;
         verifier.verify(&pub_key, &message, &signature)
+    }
+
+    pub fn get_signarure(&self) -> Vec<u8> {
+        self.signature.clone()
     }
 }
 
@@ -322,8 +325,8 @@ mod tests {
             tokio_test::block_on($e)
         };
     }
-    #[test]
-    fn test_create_sign_verify_load_ed25519() {
+    #[tokio::test]
+    async fn test_create_sign_verify_load_ed25519() {
         let path = "./res/test_bundles/test_data_item_ed25519";
         let secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
         let signer = Ed25519Signer::from_base58(secret_key);
@@ -332,7 +335,7 @@ mod tests {
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
         );
-        let res = data_item_1.sign(&signer);
+        let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
 
         let mut f = File::create(path).unwrap();
@@ -346,8 +349,8 @@ mod tests {
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
     }
 
-    #[test]
-    fn test_create_sign_verify_load_rsa4096() {
+    #[tokio::test]
+    async fn test_create_sign_verify_load_rsa4096() {
         return; //TODO: fix
         let path = "./res/test_bundles/test_data_item_rsa4096";
         let key_path = PathBuf::from_str("res/test_wallet.json").unwrap();
@@ -357,7 +360,7 @@ mod tests {
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
         );
-        let res = data_item_1.sign(&signer);
+        let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
 
         let mut f = File::create(path).unwrap();
@@ -370,8 +373,8 @@ mod tests {
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
     }
 
-    #[test]
-    fn test_create_sign_verify_load_cosmos() {
+    #[tokio::test]
+    async fn test_create_sign_verify_load_cosmos() {
         return; //TODO: fix
         let path = "./res/test_bundles/test_data_item_cosmos";
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
@@ -381,7 +384,7 @@ mod tests {
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
         );
-        let res = data_item_1.sign(&signer);
+        let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
 
         let mut f = File::create(path).unwrap();
@@ -394,8 +397,8 @@ mod tests {
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
     }
 
-    #[test]
-    fn test_create_sign_verify_load_secp256k1() {
+    #[tokio::test]
+    async fn test_create_sign_verify_load_secp256k1() {
         let path = "./res/test_bundles/test_data_item_secp256k1";
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = Secp256k1Signer::new(secret_key);
@@ -404,7 +407,7 @@ mod tests {
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],
         );
-        let res = data_item_1.sign(&signer);
+        let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
         let mut f = File::create(path).unwrap();
         let data_item_1_bytes = data_item_1.as_bytes().unwrap();

@@ -53,6 +53,16 @@ impl From<u16> for SignerMap {
 }
 
 impl SignerMap {
+    pub fn as_u16(&self) -> u16 {
+        match self {
+            SignerMap::Arweave => 1,
+            SignerMap::Ed25519 => 2,
+            SignerMap::Secp256k1 => 3,
+            SignerMap::Cosmos => 4,
+            _ => panic!("Invalid signer map"),
+        }
+    }
+
     pub fn get_config(&self) -> Config {
         match *self {
             #[cfg(feature = "arweave")]
