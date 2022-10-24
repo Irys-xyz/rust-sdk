@@ -2,7 +2,7 @@ use std::{pin::Pin, time::Duration};
 
 use bundlr_sdk::{
     client::{
-        balance::run_balance, fund::run_fund, method::Method, price::run_price,
+        balance::run_balance, fund::run_fund, method::Method, price::run_price, upload::run_upload,
         withdraw::run_withdraw,
     },
     currency::CurrencyType,
@@ -48,6 +48,7 @@ pub async fn main() {
         Method::Balance => args.first_arg.expect("Argument <Address> not provided"),
         Method::Price => args.first_arg.expect("Argument <Amount> not provided"),
         Method::Withdraw => args.first_arg.expect("Argument <Amount> not provided"),
+        Method::Upload => args.first_arg.expect("Argument <File> not provided"),
         _ => "".to_string(),
     };
 
@@ -83,7 +84,13 @@ pub async fn main() {
             )
         }
         Method::Help => todo!("Method {:?} not implemented yet", method),
-        Method::Upload => todo!("Method {:?} not implemented yet", method),
+        Method::Upload => {
+            let file = first_arg.to_string();
+            (
+                "Upload: ",
+                Box::pin(run_upload(file, bundlr_url, &wallet, currency)),
+            )
+        }
         Method::UploadDir => todo!("Method {:?} not implemented yet", method),
         Method::Deploy => todo!("Method {:?} not implemented yet", method),
         Method::Price => {

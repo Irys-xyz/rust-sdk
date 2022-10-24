@@ -156,6 +156,10 @@ impl Currency for Arweave {
         self.sdk.get_wallet_address()
     }
 
+    fn get_signer(&self) -> &dyn Signer {
+        &self.signer
+    }
+
     async fn get_id(&self, _item: ()) -> String {
         todo!();
     }

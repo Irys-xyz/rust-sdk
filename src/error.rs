@@ -61,4 +61,7 @@ pub enum BundlrError {
 
     #[error("Cannot convert file stream to known bytes. Try using another method")]
     InvalidDataType,
+
+    #[error("Upload error: {0}")]
+    UploadError(String),
 }

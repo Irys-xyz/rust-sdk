@@ -85,12 +85,8 @@ impl Bundlr<'_> {
         BundlrTx::new(vec![], data, additional_tags)
     }
 
-    pub fn sign_transaction(tx: BundlrTx) -> Result<BundlrTx, BundlrError> {
-        todo!()
-    }
-
-    pub fn sign_transaction_mut(tx: &mut BundlrTx) -> Result<(), BundlrError> {
-        todo!()
+    pub async fn sign_transaction(&self, tx: &mut BundlrTx) -> Result<(), BundlrError> {
+        tx.sign(self.currency.get_signer()).await
     }
 
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {

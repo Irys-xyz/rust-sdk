@@ -15,6 +15,7 @@ use clap::ValueEnum;
 use crate::{
     error::BundlrError,
     transaction::{Tx, TxStatus},
+    Signer,
 };
 
 #[derive(FromPrimitive, Debug, Copy, Clone, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -67,6 +68,7 @@ pub trait Currency {
     fn wallet_address(&self) -> String;
     fn sign_message(&self, message: &[u8]) -> Vec<u8>;
     fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError>;
+    fn get_signer(&self) -> &dyn Signer;
     async fn get_id(&self, item: ()) -> String;
     async fn price(&self) -> String;
     async fn get_current_height(&self) -> u128;
