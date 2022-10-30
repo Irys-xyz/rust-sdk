@@ -225,7 +225,6 @@ impl Bundlr<'_> {
             signature: Base64(signature.to_string().into_bytes()),
             sig_type: self.currency.get_type() as u16,
         };
-        dbg!(json!(data));
 
         let res = self
             .client
@@ -234,14 +233,11 @@ impl Bundlr<'_> {
                     .join("/account/withdraw")
                     .expect("Could not join url with /account/withdraw"),
             )
-            .body(json!(data).to_string())
+            .json(&data)
             .send()
             .await;
 
-        check_and_return::<String>(res).await.map(|op| {
-            dbg!(op);
-            true
-        })
+        check_and_return::<String>(res).await.map(|op| true)
     }
 
     pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<(), BundlrError> {

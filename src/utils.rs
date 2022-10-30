@@ -6,6 +6,7 @@ use std::{
 use bytes::Bytes;
 use reqwest::{Response, Url};
 use serde::Deserialize;
+use serde_json::Value;
 
 use crate::error::BundlrError;
 
@@ -15,7 +16,13 @@ pub async fn check_and_return<T: for<'de> Deserialize<'de>>(
     match res {
         Ok(r) => {
             if !r.status().is_success() {
-                let msg = format!("Status: {}", r.status());
+                let status = r.status();
+                let text = r
+                    .text()
+                    .await
+                    .expect("Could not get error text")
+                    .replace('\"', "");
+                let msg = format!("Status: {}:{:?}", status, text);
                 return Err(BundlrError::ResponseError(msg));
             };
             Ok(r.json::<T>().await.expect("Could not convert to type"))

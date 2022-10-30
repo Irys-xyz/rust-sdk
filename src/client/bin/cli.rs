@@ -66,20 +66,20 @@ pub async fn main() {
         Pin<Box<dyn Future<Output = Result<String, BundlrError>>>>,
     ) = match method {
         Method::Balance => (
-            "Balance: ",
+            "Balance:",
             Box::pin(run_balance(bundlr_url, &first_arg, &currency)),
         ),
         Method::Fund => {
             let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
             (
-                "Fund: ",
+                "Fund:",
                 Box::pin(run_fund(amount, bundlr_url, &wallet, currency)),
             )
         }
         Method::Withdraw => {
             let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
             (
-                "Withdraw: ",
+                "Withdraw:",
                 Box::pin(run_withdraw(amount, bundlr_url, &wallet, currency)),
             )
         }
@@ -87,7 +87,7 @@ pub async fn main() {
         Method::Upload => {
             let file = first_arg.to_string();
             (
-                "Upload: ",
+                "Upload:",
                 Box::pin(run_upload(file, bundlr_url, &wallet, currency)),
             )
         }
@@ -95,12 +95,15 @@ pub async fn main() {
         Method::Deploy => todo!("Method {:?} not implemented yet", method),
         Method::Price => {
             let amount = u64::from_str_radix(&first_arg, 10).expect("Invalid amount");
-            ("Price: ", Box::pin(run_price(bundlr_url, currency, amount)))
+            ("Price:", Box::pin(run_price(bundlr_url, currency, amount)))
         }
     };
 
     match tokio::time::timeout(Duration::from_millis(timeout), work).await {
-        Ok(res) => println!("{}{:?}", info, res.unwrap()),
-        Err(err) => println!("Error: {}", err.to_string()),
+        Ok(res) => match res {
+            Ok(ok) => println!("[Ok] {} {:?}", info, ok),
+            Err(err) => println!("[Err] {} {:?}", info, err),
+        },
+        Err(err) => println!("Error running task: {} {}", info, err.to_string()),
     }
 }
