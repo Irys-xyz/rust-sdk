@@ -12,7 +12,7 @@ pub struct ArweaveSigner {
 
 impl Default for ArweaveSigner {
     fn default() -> Self {
-        let path = PathBuf::from_str(".wallet.json").expect("Could not open .wallet.json");
+        let path = PathBuf::from_str("wallet.json").expect("Could not open wallet.json");
         Self::from_keypair_path(path).expect("Could not create Arweave Signer")
     }
 }

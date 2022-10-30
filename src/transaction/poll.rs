@@ -19,7 +19,6 @@ impl ConfirmationPoll {
                 .await
                 .expect("Could not get tx status");
 
-            dbg!(&status, &tx_status);
             if let Some(tx_status) = tx_status {
                 confirmations = tx_status.confirmations
             }

@@ -26,12 +26,12 @@ pub struct Bundlr<'a> {
     pub_info: PubInfo,
     uploader: Uploader,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct BalanceResData {
     balance: String,
 }
 #[allow(unused)]
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct PubInfo {
     version: String,
     gateway: String,
@@ -177,7 +177,6 @@ impl Bundlr<'_> {
             .await
             .expect("Error while sending transaction");
 
-        ConfirmationPoll::await_confirmation(&tx_res.tx_id, self.currency).await;
         let post_tx_res = self
             .client
             .post(
@@ -185,7 +184,9 @@ impl Bundlr<'_> {
                     .join(&format!("account/balance/{}", self.currency.get_type()))
                     .expect("Could not join url with /account/balance/{}"),
             )
-            .body(format!("{{\"tx_id\":{}}}", &tx_res.tx_id))
+            .json(&FundBody {
+                tx_id: tx_res.tx_id,
+            })
             .send()
             .await;
 

@@ -7,7 +7,6 @@ pub enum Method {
     Withdraw = 2,
     Upload = 3,
     UploadDir = 4,
-    Deploy = 5,
-    Fund = 6,
-    Price = 7,
+    Fund = 5,
+    Price = 6,
 }
