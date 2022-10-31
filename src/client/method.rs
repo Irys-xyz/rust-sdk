@@ -10,3 +10,5 @@ pub enum Method {
     Fund = 5,
     Price = 6,
 }
+
+pub const USE_JS_SDK: &str = "Use js-sdk to perform this operation";

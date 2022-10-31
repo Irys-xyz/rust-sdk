@@ -4,17 +4,17 @@ use reqwest::{StatusCode, Url};
 use crate::{
     error::BundlrError,
     transaction::{Tx, TxStatus},
-    Ed25519Signer, Signer, Verifier,
+    Ed25519Signer, Secp256k1Signer, Signer, Verifier,
 };
 
 use super::{Currency, CurrencyType, TxResponse};
 
-const SOLANA_TICKER: &str = "SOL";
-const SOLANA_BASE_UNIT: &str = "lamport";
-const SOLANA_BASE_URL: &str = "https://explorer.solana.com/";
+const ETHEREUM_TICKER: &str = "ETH";
+const ETHEREUM_BASE_UNIT: &str = "wei";
+const ETHEREUM_BASE_URL: &str = "https://etherscan.io/";
 
-pub struct Solana {
-    signer: Option<Ed25519Signer>,
+pub struct Ethereum {
+    signer: Option<Secp256k1Signer>,
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
@@ -25,17 +25,17 @@ pub struct Solana {
     url: Url,
 }
 
-impl Default for Solana {
+impl Default for Ethereum {
     fn default() -> Self {
-        let url = Url::parse(SOLANA_BASE_URL).unwrap();
+        let url = Url::parse(ETHEREUM_BASE_URL).unwrap();
         //TODO: update these parameters
         Self {
             signer: None,
             needs_fee: true,
             is_slow: false,
-            base: (SOLANA_BASE_UNIT.to_string(), 0),
-            name: CurrencyType::Arweave,
-            ticker: SOLANA_TICKER.to_string(),
+            base: (ETHEREUM_BASE_UNIT.to_string(), 0),
+            name: CurrencyType::Ethereum,
+            ticker: ETHEREUM_TICKER.to_string(),
             min_confirm: 10,
             client: reqwest::Client::new(),
             url,
@@ -43,21 +43,21 @@ impl Default for Solana {
     }
 }
 
-impl Solana {
+impl Ethereum {
     pub fn new(wallet: &str, url: Option<Url>) -> Self {
-        let signer = Ed25519Signer::from_base58(&wallet);
+        let signer = Secp256k1Signer::from_base58(&wallet);
         Self {
+            url: url.unwrap_or(Url::parse(ETHEREUM_BASE_URL).expect("Could not parse Url")),
             signer: Some(signer),
-            url: url.unwrap_or(Url::parse(SOLANA_BASE_URL).expect("Could not parse Url")),
             ..Self::default()
         }
     }
 }
 
 #[async_trait::async_trait]
-impl Currency for Solana {
+impl Currency for Ethereum {
     fn get_min_unit_name(&self) -> String {
-        SOLANA_BASE_UNIT.to_string()
+        ETHEREUM_BASE_UNIT.to_string()
     }
 
     fn get_type(&self) -> CurrencyType {

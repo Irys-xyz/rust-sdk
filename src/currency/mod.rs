@@ -3,6 +3,9 @@ pub mod arweave;
 #[cfg(feature = "solana")]
 pub mod solana;
 
+#[cfg(feature = "ethereum")]
+pub mod ethereum;
+
 use core::fmt;
 
 use bytes::Bytes;

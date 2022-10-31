@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use crate::currency::CurrencyType;
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::error::BundlrError;
 use crate::tags::Tag;
@@ -109,14 +110,17 @@ impl Bundlr<'_> {
 
     pub async fn get_balance_public(
         url: &Url,
-        currency: &dyn Currency,
+        currency: CurrencyType,
         address: &str,
         client: &reqwest::Client,
     ) -> Result<BigUint, BundlrError> {
         let response = client
             .get(
-                url.join(&format!("account/balance/{}", currency.get_type()))
-                    .expect("Could not join url with /account/balance/{}"),
+                url.join(&format!(
+                    "account/balance/{}",
+                    currency.to_string().to_lowercase()
+                ))
+                .expect("Could not join url with /account/balance/{}"),
             )
             .query(&[("address", address)])
             .header("Content-Type", "application/json")
@@ -129,20 +133,26 @@ impl Bundlr<'_> {
     }
 
     pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
-        Bundlr::get_balance_public(&self.url, self.currency, &address, &self.client).await
+        Bundlr::get_balance_public(&self.url, self.currency.get_type(), &address, &self.client)
+            .await
     }
 
     pub async fn get_price(&self, byte_amount: u64) -> Result<BigUint, BundlrError> {
-        Bundlr::get_price_public(&self.url, self.currency, &self.client, byte_amount).await
+        Bundlr::get_price_public(
+            &self.url,
+            self.currency.get_type(),
+            &self.client,
+            byte_amount,
+        )
+        .await
     }
 
     pub async fn get_price_public(
         url: &Url,
-        currency: &dyn Currency,
+        currency: CurrencyType,
         client: &reqwest::Client,
         byte_amount: u64,
     ) -> Result<BigUint, BundlrError> {
-        let currency = currency.get_type().to_string().to_lowercase();
         let response = client
             .get(
                 url.join(&format!("/price/{}/{}", currency, byte_amount))

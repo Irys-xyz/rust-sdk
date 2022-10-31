@@ -1,7 +1,7 @@
 use reqwest::Url;
 
 use crate::{
-    currency::{arweave::Arweave, solana::Solana, Currency, CurrencyType},
+    currency::{arweave::Arweave, ethereum::Ethereum, solana::Solana, Currency, CurrencyType},
     error::BundlrError,
     Bundlr,
 };
@@ -9,17 +9,10 @@ use crate::{
 pub async fn run_balance(
     url: Url,
     address: &str,
-    currency: &CurrencyType,
+    currency: CurrencyType,
 ) -> Result<String, BundlrError> {
-    let currency: Box<dyn Currency> = match currency {
-        CurrencyType::Arweave => Box::new(Arweave::default()),
-        CurrencyType::Solana => Box::new(Solana::default()),
-        CurrencyType::Ethereum => todo!(),
-        CurrencyType::Erc20 => todo!(),
-        CurrencyType::Cosmos => todo!(),
-    };
     let client = reqwest::Client::new();
-    Bundlr::get_balance_public(&url, currency.as_ref(), &address, &client)
+    Bundlr::get_balance_public(&url, currency, &address, &client)
         .await
         .map(|balance| balance.to_string())
 }

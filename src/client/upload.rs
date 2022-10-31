@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     consts::VERSION,
-    currency::{arweave::Arweave, solana::Solana, Currency, CurrencyType},
+    currency::{arweave::Arweave, ethereum::Ethereum, solana::Solana, Currency, CurrencyType},
     error::BundlrError,
     tags::Tag,
     Bundlr,
@@ -25,8 +25,8 @@ pub async fn run_upload(
             let wallet = PathBuf::from_str(&wallet).expect("Invalid wallet path");
             Box::new(Arweave::new(wallet, None))
         }
-        CurrencyType::Solana => Box::new(Solana::new(wallet.to_string(), None)),
-        CurrencyType::Ethereum => todo!(),
+        CurrencyType::Solana => Box::new(Solana::new(wallet, None)),
+        CurrencyType::Ethereum => Box::new(Ethereum::new(wallet, None)),
         CurrencyType::Erc20 => todo!(),
         CurrencyType::Cosmos => todo!(),
     };

@@ -12,6 +12,7 @@ use crate::{
 
 use super::{Currency, CurrencyType, TxResponse};
 
+const ARWEAVE_TICKER: &str = "AR";
 const ARWEAVE_BASE_UNIT: &str = "winston";
 const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
@@ -34,9 +35,9 @@ impl Default for Arweave {
             signer: None,
             needs_fee: true,
             is_slow: false,
-            base: ("winston".to_string(), 0),
+            base: (ARWEAVE_BASE_UNIT.to_string(), 0),
             name: CurrencyType::Arweave,
-            ticker: "ar".to_string(),
+            ticker: ARWEAVE_TICKER.to_string(),
             min_confirm: 5,
             client: reqwest::Client::new(),
         }
@@ -50,13 +51,7 @@ impl Arweave {
             sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
                 .expect("Invalid path or url"),
             signer: Some(ArweaveSigner::from_keypair_path(keypair_path).expect("Invalid path")),
-            needs_fee: true,
-            is_slow: false,
-            base: ("winston".to_string(), 0),
-            name: CurrencyType::Arweave,
-            ticker: "ar".to_string(),
-            min_confirm: 5,
-            client: reqwest::Client::new(),
+            ..Self::default()
         }
     }
 }

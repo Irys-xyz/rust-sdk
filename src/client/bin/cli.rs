@@ -136,7 +136,7 @@ impl Command {
                 host,
                 currency,
             } => {
-                let work = run_balance(host, &address, &currency);
+                let work = run_balance(host, &address, currency);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
