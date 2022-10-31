@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use avro_rs::{from_avro_datum, to_avro_datum, Schema};
 use bytes::Bytes;
 use lazy_static::lazy_static;
@@ -12,8 +14,11 @@ pub struct Tag {
 }
 
 impl Tag {
-    pub fn new(name: String, value: String) -> Self {
-        Tag { name, value }
+    pub fn new(name: &str, value: &str) -> Self {
+        Tag {
+            name: String::from_str(name).expect("Could not convert &str to String"),
+            value: String::from_str(value).expect("Could not convert &str to String"),
+        }
     }
 }
 

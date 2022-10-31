@@ -37,10 +37,7 @@ pub async fn run_upload(
     // Read file into vector.
     reader.read_to_end(&mut buffer)?;
 
-    let base_tag = Tag::new(
-        "User-Agent".to_string(),
-        format!("bundlr-sdk-rs/{}", VERSION),
-    );
+    let base_tag = Tag::new("User-Agent", &format!("bundlr-sdk-rs/{}", VERSION));
 
     // Read.
     let bundlr = Bundlr::new(url, currency.as_ref()).await;

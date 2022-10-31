@@ -56,6 +56,21 @@ pub struct WithdrawBody {
 }
 
 impl Bundlr<'_> {
+    /// Creates a new Bundlr client, based in a currency.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave};
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let bundlr = Bundlr::new(url, &currency).await;
+    /// # })
+    /// ```
     pub async fn new(url: Url, currency: &dyn Currency) -> Bundlr {
         let pub_info = Bundlr::get_pub_info(&url)
             .await
@@ -71,6 +86,18 @@ impl Bundlr<'_> {
         }
     }
 
+    /// Gets the public info from a Bundlr node.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use bundlr_sdk::Bundlr;
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network/").unwrap();
+    /// Bundlr::get_pub_info(&url).await;
+    /// # });
+    /// ```
     pub async fn get_pub_info(url: &Url) -> Result<PubInfo, BundlrError> {
         let client = reqwest::Client::new();
         let response = client
@@ -82,14 +109,73 @@ impl Bundlr<'_> {
         check_and_return::<PubInfo>(response).await
     }
 
+    /// Creates an unsigned transaction for posting.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// # let currency = Arweave::new(wallet, None);
+    /// # let bundlr = Bundlr::new(url, &currency).await;
+    /// let data = b"Hello".to_vec();
+    /// let tags = vec![Tag::new("name", "value")];
+    /// let tx = bundlr.create_transaction(data, tags);
+    /// # });
+    /// ```
     pub fn create_transaction(&self, data: Vec<u8>, additional_tags: Vec<Tag>) -> BundlrTx {
         BundlrTx::new(vec![], data, additional_tags)
     }
 
+    /// Signs a transaction
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// # let currency = Arweave::new(wallet, None);
+    /// # let bundlr = Bundlr::new(url, &currency).await;
+    /// # let data = b"Hello".to_vec();
+    /// # let tags = vec![Tag::new("name", "value")];
+    /// let mut tx = bundlr.create_transaction(data, tags);
+    /// let sig = bundlr.sign_transaction(&mut tx).await;
+    /// assert!(sig.is_ok());
+    /// # });
+    /// ```
     pub async fn sign_transaction(&self, tx: &mut BundlrTx) -> Result<(), BundlrError> {
         tx.sign(self.currency.get_signer()).await
     }
 
+    /// Sends a signed transaction
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// # let currency = Arweave::new(wallet, None);
+    /// # let bundlr = Bundlr::new(url, &currency).await;
+    /// # let data = b"Hello".to_vec();
+    /// # let tags = vec![Tag::new("name", "value")];
+    /// let mut tx = bundlr.create_transaction(data, tags);
+    /// let sig = bundlr.sign_transaction(&mut tx).await;
+    /// assert!(sig.is_ok());
+    /// let result = bundlr.send_transaction(tx).await;
+    /// # });
+    /// ```
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
         let tx = tx.as_bytes().expect("Could not serialize transaction");
 
@@ -108,6 +194,19 @@ impl Bundlr<'_> {
         check_and_return::<Value>(response).await
     }
 
+    /// Get balance from address in a Bundlr node
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// let currency = CurrencyType::Solana;
+    /// let address = "address";
+    /// let res = Bundlr::get_balance_public(&url, currency, &address, &reqwest::Client::new()).await;
+    /// assert!(res.is_ok());
+    /// # })
     pub async fn get_balance_public(
         url: &Url,
         currency: CurrencyType,
@@ -132,11 +231,41 @@ impl Bundlr<'_> {
             .map(|d| BigUint::from_str(&d.balance).expect("Error converting from u128 to BigUint"))
     }
 
-    pub async fn get_balance(&self, address: String) -> Result<BigUint, BundlrError> {
+    /// Get balance from address in a Bundlr node
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use reqwest::Url;
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let bundlr = Bundlr::new(url, &currency).await;
+    /// let res = bundlr.get_balance("address").await;
+    /// assert!(res.is_ok());
+    /// # })
+    pub async fn get_balance(&self, address: &str) -> Result<BigUint, BundlrError> {
         Bundlr::get_balance_public(&self.url, self.currency.get_type(), &address, &self.client)
             .await
     }
 
+    /// Get the cost for determined amount of bytes, measured in the currency's base unit
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use reqwest::Url;
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let bundlr = Bundlr::new(url, &currency).await;
+    /// let res = bundlr.get_price(2560000).await;
+    /// assert!(res.is_ok());
+    /// # })
     pub async fn get_price(&self, byte_amount: u64) -> Result<BigUint, BundlrError> {
         Bundlr::get_price_public(
             &self.url,
@@ -147,6 +276,19 @@ impl Bundlr<'_> {
         .await
     }
 
+    /// Get the cost for determined amount of bytes, measured in the currency's base unit
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr};
+    /// # use reqwest::Url;
+    /// # tokio_test::block_on(async {
+    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// let currency = CurrencyType::Solana;
+    /// let address = "address";
+    /// let res = Bundlr::get_price_public(&url, currency, &reqwest::Client::new(), 256000).await;
+    /// assert!(res.is_ok());
+    /// # })
     pub async fn get_price_public(
         url: &Url,
         currency: CurrencyType,
@@ -167,6 +309,21 @@ impl Bundlr<'_> {
             .map(|d| BigUint::from_u64(d).expect("Error converting from string to BigUint"))
     }
 
+    /// Sends determined amount to fund an account in the Bundlr node
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use reqwest::Url;
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let bundlr = Bundlr::new(url, &currency).await;
+    /// let res = bundlr.fund(10000, None).await;
+    /// assert!(res.is_ok());
+    /// # })
     pub async fn fund(&self, amount: u64, multiplier: Option<f64>) -> Result<bool, BundlrError> {
         let multiplier = multiplier.unwrap_or(1.0);
         let curr_str = &self.currency.get_type().to_string().to_lowercase();
@@ -203,6 +360,20 @@ impl Bundlr<'_> {
         check_and_return::<String>(post_tx_res).await.map(|_| true)
     }
 
+    /// Sends a request for withdrawing an amount from Bundlr node
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use reqwest::Url;
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let bundlr = Bundlr::new(url, &currency).await;
+    /// let res = bundlr.withdraw(10000).await;
+    /// # })
     pub async fn withdraw(&self, amount: u64) -> Result<bool, BundlrError> {
         let currency_type = self.currency.get_type().to_string().to_lowercase();
         let public_key = Base64(self.currency.get_pub_key().to_vec());
@@ -251,14 +422,27 @@ impl Bundlr<'_> {
         check_and_return::<String>(res).await.map(|op| true)
     }
 
+    /// Upload file on specified path
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use reqwest::Url;
+    /// # use std::{path::PathBuf, str::FromStr};
+    /// # tokio_test::block_on(async {
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+    /// let currency = Arweave::new(wallet, None);
+    /// let mut bundlr = Bundlr::new(url, &currency).await;
+    /// let file = PathBuf::from_str("res/test_image.jpg").expect("Invalid wallet path");
+    /// let result = bundlr.upload_file(file).await;
+    /// # })
+    /// ```
     pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<(), BundlrError> {
-        let mut auto_content_tag = true;
-        let mut status_content_type = mime_guess::mime::OCTET_STREAM.to_string();
         let mut tags = vec![];
         if let Some(content_type) = mime_guess::from_path(file_path.clone()).first() {
-            status_content_type = content_type.to_string();
-            auto_content_tag = false;
-            let content_tag: Tag = Tag::new("Content-Type".to_string(), content_type.to_string());
+            let content_tag: Tag = Tag::new("Content-Type", &content_type.to_string());
             tags.push(content_tag);
         }
 
@@ -342,7 +526,7 @@ mod tests {
         println!("{:?}", &path);
         let currency = Arweave::new(path, Some(url.clone()));
         let bundler = &Bundlr::new(url, &currency).await;
-        let balance = bundler.get_balance(address.to_string()).await.unwrap();
+        let balance = bundler.get_balance(address).await.unwrap();
 
         mock.assert();
         mock_2.assert();

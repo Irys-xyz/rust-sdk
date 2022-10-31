@@ -333,7 +333,7 @@ mod tests {
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
+            vec![Tag::new("name", "value")],
         );
         let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
@@ -358,7 +358,7 @@ mod tests {
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
+            vec![Tag::new("name", "value")],
         );
         let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
@@ -382,7 +382,7 @@ mod tests {
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
+            vec![Tag::new("name", "value")],
         );
         let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
@@ -405,7 +405,7 @@ mod tests {
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),
-            vec![Tag::new("name".to_string(), "value".to_string())],
+            vec![Tag::new("name", "value")],
         );
         let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
