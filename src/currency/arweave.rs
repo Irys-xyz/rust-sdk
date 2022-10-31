@@ -17,21 +17,21 @@ const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
 pub struct Arweave {
     sdk: ArweaveSdk,
-    signer: ArweaveSigner,
+    signer: Option<ArweaveSigner>,
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
     name: CurrencyType,
     ticker: String,
     min_confirm: i16,
-    client: reqwest::Client, //TODO: change this field type to Url
+    client: reqwest::Client,
 }
 
 impl Default for Arweave {
     fn default() -> Self {
         Self {
             sdk: ArweaveSdk::default(),
-            signer: ArweaveSigner::default(),
+            signer: None,
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
@@ -49,7 +49,7 @@ impl Arweave {
         Self {
             sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
                 .expect("Invalid path or url"),
-            signer: ArweaveSigner::from_keypair_path(keypair_path).expect("Invalid path"),
+            signer: Some(ArweaveSigner::from_keypair_path(keypair_path).expect("Invalid path")),
             needs_fee: true,
             is_slow: false,
             base: ("winston".to_string(), 0),
@@ -128,12 +128,10 @@ impl Currency for Arweave {
         }
     }
 
-    fn owner_to_address(&self, _owner: String) -> String {
-        todo!()
-    }
-
     fn sign_message(&self, message: &[u8]) -> Vec<u8> {
         self.signer
+            .as_ref()
+            .expect("No signer present")
             .sign(Bytes::copy_from_slice(message))
             .expect("Could not sign message")
             .to_vec()
@@ -149,7 +147,7 @@ impl Currency for Arweave {
     }
 
     fn get_pub_key(&self) -> Bytes {
-        self.signer.pub_key()
+        self.signer.as_ref().expect("No signer present").pub_key()
     }
 
     fn wallet_address(&self) -> String {
@@ -157,7 +155,7 @@ impl Currency for Arweave {
     }
 
     fn get_signer(&self) -> &dyn Signer {
-        &self.signer
+        self.signer.as_ref().expect("No signer present")
     }
 
     async fn get_id(&self, _item: ()) -> String {

@@ -1,7 +1,7 @@
 use reqwest::Url;
 
 use crate::{
-    currency::{arweave::Arweave, Currency, CurrencyType},
+    currency::{arweave::Arweave, solana::Solana, Currency, CurrencyType},
     error::BundlrError,
     Bundlr,
 };
@@ -13,7 +13,7 @@ pub async fn run_price(
 ) -> Result<String, BundlrError> {
     let currency: Box<dyn Currency> = match currency {
         CurrencyType::Arweave => Box::new(Arweave::default()),
-        CurrencyType::Solana => todo!(),
+        CurrencyType::Solana => Box::new(Solana::default()),
         CurrencyType::Ethereum => todo!(),
         CurrencyType::Erc20 => todo!(),
         CurrencyType::Cosmos => todo!(),

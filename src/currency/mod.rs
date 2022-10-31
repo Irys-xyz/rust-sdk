@@ -1,5 +1,7 @@
 #[cfg(feature = "arweave")]
 pub mod arweave;
+#[cfg(feature = "solana")]
+pub mod solana;
 
 use core::fmt;
 
@@ -63,7 +65,6 @@ pub trait Currency {
         &self,
         tx_id: String,
     ) -> Result<(StatusCode, Option<TxStatus>), BundlrError>;
-    fn owner_to_address(&self, owner: String) -> String;
     fn get_pub_key(&self) -> Bytes;
     fn wallet_address(&self) -> String;
     fn sign_message(&self, message: &[u8]) -> Vec<u8>;
