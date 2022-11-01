@@ -28,7 +28,6 @@ pub struct Ethereum {
 impl Default for Ethereum {
     fn default() -> Self {
         let url = Url::parse(ETHEREUM_BASE_URL).unwrap();
-        //TODO: update these parameters
         Self {
             signer: None,
             needs_fee: true,

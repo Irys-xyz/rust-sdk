@@ -28,7 +28,6 @@ pub struct Solana {
 impl Default for Solana {
     fn default() -> Self {
         let url = Url::parse(SOLANA_BASE_URL).unwrap();
-        //TODO: update these parameters
         Self {
             signer: None,
             needs_fee: true,

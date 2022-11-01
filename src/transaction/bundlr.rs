@@ -2,6 +2,7 @@ use async_stream::try_stream;
 use bytes::{BufMut, Bytes};
 use futures::Stream;
 use ring::rand::SecureRandom;
+use serde_json::json;
 use std::cmp;
 use std::fs::File;
 use std::pin::Pin;
@@ -351,7 +352,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_sign_verify_load_rsa4096() {
-        return; //TODO: fix
         let path = "./res/test_bundles/test_data_item_rsa4096";
         let key_path = PathBuf::from_str("res/test_wallet.json").unwrap();
         let signer = ArweaveSigner::from_keypair_path(key_path).unwrap();
@@ -375,10 +375,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_sign_verify_load_cosmos() {
-        return; //TODO: fix
         let path = "./res/test_bundles/test_data_item_cosmos";
-        let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
-        let signer = CosmosSigner::new(secret_key);
+        let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
+        let signer = CosmosSigner::from_base58(base58_secret_key).unwrap();
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
             Vec::from("hello"),

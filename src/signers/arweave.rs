@@ -21,7 +21,15 @@ impl Default for ArweaveSigner {
 impl ArweaveSigner {
     pub fn from_keypair_path(keypair_path: PathBuf) -> Result<Self, BundlrError> {
         let sdk = SdkSigner::from_keypair_path(keypair_path).expect("Invalid path");
-        Ok(Self { sdk })
+        let pub_key = sdk.get_public_key().0;
+        if pub_key.len() as u16 == PUB_LENGTH {
+            Ok(Self { sdk })
+        } else {
+            Err(BundlrError::InvalidKey(format!(
+                "Public key length should be of {}",
+                PUB_LENGTH
+            )))
+        }
     }
 }
 

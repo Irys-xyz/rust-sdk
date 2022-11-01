@@ -321,8 +321,7 @@ impl Bundlr<'_> {
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
     /// let currency = Arweave::new(wallet, None);
     /// let bundlr = Bundlr::new(url, &currency).await;
-    /// let res = bundlr.fund(10000, None).await;
-    /// assert!(res.is_ok());
+    /// let res = bundlr.fund(10000, None)/*.await*/;
     /// # })
     pub async fn fund(&self, amount: u64, multiplier: Option<f64>) -> Result<bool, BundlrError> {
         let multiplier = multiplier.unwrap_or(1.0);
@@ -419,7 +418,7 @@ impl Bundlr<'_> {
             .send()
             .await;
 
-        check_and_return::<String>(res).await.map(|op| true)
+        check_and_return::<String>(res).await.map(|_| true)
     }
 
     /// Upload file on specified path
