@@ -2,7 +2,6 @@ use async_stream::try_stream;
 use bytes::{BufMut, Bytes};
 use futures::Stream;
 use ring::rand::SecureRandom;
-use serde_json::json;
 use std::cmp;
 use std::fs::File;
 use std::pin::Pin;
@@ -28,22 +27,12 @@ pub struct BundlrTx {
     owner: Vec<u8>,
     target: Vec<u8>,
     anchor: Vec<u8>,
-    number_of_tags: u64,
-    number_of_tags_bytes: u64,
     tags: Vec<Tag>,
     data: Data,
 }
 
 impl BundlrTx {
     pub fn new(target: Vec<u8>, data: Vec<u8>, tags: Vec<Tag>) -> Self {
-        let encoded_tags = if !tags.is_empty() {
-            tags.encode().unwrap()
-        } else {
-            Bytes::default()
-        };
-        let number_of_tags = tags.len() as u64;
-        let number_of_tags_bytes = encoded_tags.len() as u64;
-
         let mut randoms: [u8; 32] = [0; 32];
         let sr = ring::rand::SystemRandom::new();
         sr.fill(&mut randoms).unwrap();
@@ -55,8 +44,6 @@ impl BundlrTx {
             owner: vec![],
             target,
             anchor,
-            number_of_tags,
-            number_of_tags_bytes,
             tags,
             data: Data::Bytes(data),
         }
@@ -121,8 +108,6 @@ impl BundlrTx {
             owner: owner.to_vec(),
             target: target.to_vec(),
             anchor: anchor.to_vec(),
-            number_of_tags,
-            number_of_tags_bytes,
             tags,
             data: Data::None,
         };

@@ -16,6 +16,7 @@ const ARWEAVE_TICKER: &str = "AR";
 const ARWEAVE_BASE_UNIT: &str = "winston";
 const ARWEAVE_BASE_URL: &str = "https://arweave.net/";
 
+#[allow(unused)]
 pub struct Arweave {
     sdk: ArweaveSdk,
     signer: Option<ArweaveSigner>,

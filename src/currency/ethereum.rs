@@ -13,6 +13,7 @@ const ETHEREUM_TICKER: &str = "ETH";
 const ETHEREUM_BASE_UNIT: &str = "wei";
 const ETHEREUM_BASE_URL: &str = "https://etherscan.io/";
 
+#[allow(unused)]
 pub struct Ethereum {
     signer: Option<Secp256k1Signer>,
     is_slow: bool,
@@ -53,6 +54,7 @@ impl Ethereum {
     }
 }
 
+#[allow(unused)]
 #[async_trait::async_trait]
 impl Currency for Ethereum {
     fn get_min_unit_name(&self) -> String {

@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
-    currency::{arweave::Arweave, ethereum::Ethereum, solana::Solana, Currency, CurrencyType},
+    currency::{arweave::Arweave, Currency, CurrencyType},
     error::BundlrError,
     Bundlr,
 };

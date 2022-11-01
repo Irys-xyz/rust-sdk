@@ -11,3 +11,9 @@ pub const CHUNKS_RETRIES: u16 = 10;
 
 /// Number of seconds to wait between retying to post a failed chunk.
 pub const CHUNKS_RETRY_SLEEP: u64 = 1;
+
+/// Number of seconds to wait between retying to post a failed chunk.
+pub const RETRY_SLEEP: u64 = 10;
+
+/// Number of confirmations needed to consider a transaction funded
+pub const CONFIRMATIONS_NEEDED: u64 = 5;

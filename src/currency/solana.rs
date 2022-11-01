@@ -13,6 +13,7 @@ const SOLANA_TICKER: &str = "SOL";
 const SOLANA_BASE_UNIT: &str = "lamport";
 const SOLANA_BASE_URL: &str = "https://explorer.solana.com/";
 
+#[allow(unused)]
 pub struct Solana {
     signer: Option<Ed25519Signer>,
     is_slow: bool,
@@ -53,6 +54,7 @@ impl Solana {
     }
 }
 
+#[allow(unused)]
 #[async_trait::async_trait]
 impl Currency for Solana {
     fn get_min_unit_name(&self) -> String {

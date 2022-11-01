@@ -1,15 +1,13 @@
 use std::{thread::sleep, time::Duration};
 
-use crate::currency::Currency;
-
-/// Number of seconds to wait between retying to post a failed chunk.
-pub const RETRY_SLEEP: u64 = 10;
-
-/// Number of confirmations needed to consider a transaction funded
-pub const CONFIRMATIONS_NEEDED: u64 = 5;
+use crate::{
+    consts::{CONFIRMATIONS_NEEDED, RETRY_SLEEP},
+    currency::Currency,
+};
 
 pub struct ConfirmationPoll();
 
+#[allow(unused)]
 impl ConfirmationPoll {
     pub async fn await_confirmation(tx_id: &String, currency: &dyn Currency) {
         let mut confirmations = 0;

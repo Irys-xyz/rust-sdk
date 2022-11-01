@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use crate::currency::Currency;
 use crate::currency::CurrencyType;
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::error::BundlrError;
@@ -10,14 +11,13 @@ use crate::tags::Tag;
 use crate::upload::Uploader;
 use crate::utils::{check_and_return, get_nonce};
 use crate::BundlrTx;
-use crate::{currency::Currency, transaction::poll::ConfirmationPoll};
 use arweave_rs::crypto::base64::Base64;
 use bytes::Bytes;
 use num::{BigUint, FromPrimitive};
 use num_traits::Zero;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 
 #[allow(unused)]
 pub struct Bundlr<'a> {
@@ -450,6 +450,7 @@ impl Bundlr<'_> {
         self.uploader.upload(data).await
     }
 
+    /*
     pub async fn upload_directory(
         &self,
         directory_path: PathBuf,
@@ -457,6 +458,7 @@ impl Bundlr<'_> {
     ) -> Result<(), BundlrError> {
         todo!();
     }
+    */
 }
 
 #[cfg(test)]

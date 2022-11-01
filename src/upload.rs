@@ -1,7 +1,6 @@
 use std::{str::FromStr, thread::sleep, time::Duration};
 
-use futures::{stream, Stream, StreamExt};
-use reqwest::{header::ACCEPT, Client, Url};
+use reqwest::{header::ACCEPT, Url};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -50,7 +49,7 @@ impl Uploader {
         }
     }
 
-    pub async fn upload(&mut self, data: Vec<u8>) -> Result<(), BundlrError> {
+    pub async fn upload(&mut self, _data: Vec<u8>) -> Result<(), BundlrError> {
         let (max, min) = if let Some(upload_id) = self.upload_id.clone() {
             let url = self
                 .url
@@ -100,12 +99,12 @@ impl Uploader {
         Ok(())
     }
 
+    /*
     fn upload_transaction_chunks_stream<'a>(
         uploader: &'a Uploader,
         chunks: Vec<Vec<u8>>,
         buffer: usize,
     ) -> impl Stream<Item = Result<usize, BundlrError>> + 'a {
-        let client = Client::new();
         stream::iter(0..chunks.len())
             .map(move |i| {
                 let chunk = chunks[i].clone();
@@ -113,6 +112,7 @@ impl Uploader {
             })
             .buffer_unordered(buffer)
     }
+    */
 
     pub async fn post_chunk_with_retries(
         &self,

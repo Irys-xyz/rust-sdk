@@ -1,10 +1,6 @@
 use reqwest::Url;
 
-use crate::{
-    currency::{arweave::Arweave, ethereum::Ethereum, solana::Solana, Currency, CurrencyType},
-    error::BundlrError,
-    Bundlr,
-};
+use crate::{currency::CurrencyType, error::BundlrError, Bundlr};
 
 pub async fn run_balance(
     url: Url,
