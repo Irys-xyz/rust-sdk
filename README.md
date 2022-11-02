@@ -40,11 +40,11 @@ SUBCOMMANDS:
 
 # Roadmap
 Some functionalities are still work in progress. If you need to use one of them, you may want to have a look in the [js-sdk](https://github.com/Bundlr-Network/js-sdk), or open an issue in this repository.
-| Item            | Arweave   | Solana     | Ethereum  | ERC20     | Cosmos     |
-|-----------------|-----------|------------|-----------|-----------|------------|
-| Balance         | [x]       | [x]        | [x]       | [ ]       | [ ]        |
-| Price           | [x]       | [x]        | [x]       | [ ]       | [ ]        |
-| Fund            | [x]       | [ ]        | [ ]       | [ ]       | [ ]        |
-| Withdraw        | [x]       | [ ]        | [ ]       | [ ]       | [ ]        |
-| Upload          | [x]       | [x]        | [x]       | [ ]       | [ ]        |
-| Upload Directory| [ ]       | [ ]        | [ ]       | [ ]       | [ ]        |
+| Item            | Arweave   | Solana     | Ethereum  | ERC20     | Cosmos     | Aptos      |
+|-----------------|-----------|------------|-----------|-----------|------------|------------|
+| Balance         | [x]       | [x]        | [x]       | [ ]       | [ ]        | [ ]        |
+| Price           | [x]       | [x]        | [x]       | [ ]       | [ ]        | [ ]        |
+| Fund            | [x]       | [ ]        | [ ]       | [ ]       | [ ]        | [ ]        |
+| Withdraw        | [x]       | [ ]        | [ ]       | [ ]       | [ ]        | [ ]        |
+| Upload          | [x]       | [x]        | [x]       | [ ]       | [ ]        | [ ]        |
+| Upload Directory| [ ]       | [ ]        | [ ]       | [ ]       | [ ]        | [ ]        |
