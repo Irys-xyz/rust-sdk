@@ -45,10 +45,10 @@ impl Default for Solana {
 
 impl Solana {
     pub fn new(wallet: &str, url: Option<Url>) -> Self {
-        let signer = Ed25519Signer::from_base58(&wallet);
+        let signer = Ed25519Signer::from_base58(wallet);
         Self {
             signer: Some(signer),
-            url: url.unwrap_or(Url::parse(SOLANA_BASE_URL).expect("Could not parse Url")),
+            url: url.unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).expect("Could not parse Url")),
             ..Self::default()
         }
     }

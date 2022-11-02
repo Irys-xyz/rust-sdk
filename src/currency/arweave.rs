@@ -47,7 +47,7 @@ impl Default for Arweave {
 
 impl Arweave {
     pub fn new(keypair_path: PathBuf, base_url: Option<Url>) -> Self {
-        let base_url = base_url.unwrap_or(Url::from_str(ARWEAVE_BASE_URL).unwrap());
+        let base_url = base_url.unwrap_or_else(|| Url::from_str(ARWEAVE_BASE_URL).unwrap());
         Self {
             sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
                 .expect("Invalid path or url"),
@@ -230,9 +230,7 @@ impl Currency for Arweave {
             .await
             .expect("Could not send transaction");
 
-        Ok(TxResponse {
-            tx_id: tx_id.to_string(),
-        })
+        Ok(TxResponse { tx_id })
     }
 }
 

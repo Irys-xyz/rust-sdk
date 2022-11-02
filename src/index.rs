@@ -19,7 +19,7 @@ use crate::CosmosSigner;
 
 use crate::error::BundlrError;
 
-#[derive(FromPrimitive, Display, PartialEq, Debug, Clone)]
+#[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
 pub enum SignerMap {
     None = -1,
     Arweave = 1,

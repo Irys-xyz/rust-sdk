@@ -53,11 +53,7 @@ impl Uploader {
         let (max, min) = if let Some(upload_id) = self.upload_id.clone() {
             let url = self
                 .url
-                .join(&format!(
-                    "/chunks/{}/{}/-1",
-                    self.currency.to_string(),
-                    upload_id
-                ))
+                .join(&format!("/chunks/{}/{}/-1", self.currency, upload_id))
                 .expect("Could not join url");
             let res = self
                 .client
@@ -74,7 +70,7 @@ impl Uploader {
         } else {
             let url = self
                 .url
-                .join(&format!("/chunks/{}/-1/-1", self.currency.to_string()))
+                .join(&format!("/chunks/{}/-1/-1", self.currency))
                 .expect("Could not join url");
             let res = self
                 .client

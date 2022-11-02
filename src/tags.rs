@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BundlrError;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Tag {
     name: String,
     value: String,

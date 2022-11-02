@@ -45,9 +45,9 @@ impl Default for Ethereum {
 
 impl Ethereum {
     pub fn new(wallet: &str, url: Option<Url>) -> Self {
-        let signer = Secp256k1Signer::from_base58(&wallet);
+        let signer = Secp256k1Signer::from_base58(wallet);
         Self {
-            url: url.unwrap_or(Url::parse(ETHEREUM_BASE_URL).expect("Could not parse Url")),
+            url: url.unwrap_or_else(|| Url::parse(ETHEREUM_BASE_URL).expect("Could not parse Url")),
             signer: Some(signer),
             ..Self::default()
         }

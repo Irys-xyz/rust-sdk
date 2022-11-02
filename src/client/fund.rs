@@ -1,14 +1,13 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
+    consts::USE_JS_SDK,
     currency::{arweave::Arweave, Currency, CurrencyType},
     error::BundlrError,
     Bundlr,
 };
 use num_traits::Zero;
 use reqwest::Url;
-
-use super::method::USE_JS_SDK;
 
 pub async fn run_fund(
     amount: u64,

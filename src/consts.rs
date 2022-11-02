@@ -1,4 +1,4 @@
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const BUNDLR_DEFAULT_URL: &str = "https://node1.bundlr.network/";
 pub const CHUNK_SIZE: u64 = 256u64 * 1024;
@@ -17,3 +17,10 @@ pub const RETRY_SLEEP: u64 = 10;
 
 /// Number of confirmations needed to consider a transaction funded
 pub const CONFIRMATIONS_NEEDED: u64 = 5;
+
+pub const USE_JS_SDK: &str = "Use js-sdk to perform this operation";
+
+pub const LIST_AS_BUFFER: &[u8] = "list".as_bytes();
+pub const BLOB_AS_BUFFER: &[u8] = "blob".as_bytes();
+pub const DATAITEM_AS_BUFFER: &[u8] = "dataitem".as_bytes();
+pub const ONE_AS_BUFFER: &[u8] = "1".as_bytes();

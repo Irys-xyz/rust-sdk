@@ -247,8 +247,7 @@ impl Bundlr<'_> {
     /// assert!(res.is_ok());
     /// # })
     pub async fn get_balance(&self, address: &str) -> Result<BigUint, BundlrError> {
-        Bundlr::get_balance_public(&self.url, self.currency.get_type(), &address, &self.client)
-            .await
+        Bundlr::get_balance_public(&self.url, self.currency.get_type(), address, &self.client).await
     }
 
     /// Get the cost for determined amount of bytes, measured in the currency's base unit
@@ -389,7 +388,7 @@ impl Bundlr<'_> {
         let data = DeepHashChunk::Chunks(vec![
             DeepHashChunk::Chunk(Bytes::copy_from_slice(currency_type.as_bytes())),
             DeepHashChunk::Chunk(Bytes::copy_from_slice(amount.to_string().as_bytes())),
-            DeepHashChunk::Chunk(Bytes::copy_from_slice(&nonce.to_string().as_bytes())),
+            DeepHashChunk::Chunk(Bytes::copy_from_slice(nonce.to_string().as_bytes())),
         ]);
 
         let dh = deep_hash(data).await.expect("Could not deep hash item");
@@ -441,7 +440,7 @@ impl Bundlr<'_> {
     pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<(), BundlrError> {
         let mut tags = vec![];
         if let Some(content_type) = mime_guess::from_path(file_path.clone()).first() {
-            let content_tag: Tag = Tag::new("Content-Type", &content_type.to_string());
+            let content_tag: Tag = Tag::new("Content-Type", content_type.as_ref());
             tags.push(content_tag);
         }
 

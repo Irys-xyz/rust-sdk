@@ -6,8 +6,8 @@ use std::cmp;
 use std::fs::File;
 use std::pin::Pin;
 
-use crate::consts::CHUNK_SIZE;
-use crate::deep_hash::{deep_hash, DeepHashChunk, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
+use crate::consts::{CHUNK_SIZE, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
+use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::deep_hash_sync::deep_hash_sync;
 use crate::error::BundlrError;
 use crate::index::{Config, SignerMap};
@@ -49,7 +49,7 @@ impl BundlrTx {
         }
     }
 
-    fn from_info_bytes(buffer: &Vec<u8>) -> Result<(Self, usize), BundlrError> {
+    fn from_info_bytes(buffer: &[u8]) -> Result<(Self, usize), BundlrError> {
         let sig_type_b = &buffer[0..2];
         let signature_type = u16::from_le_bytes(<[u8; 2]>::try_from(sig_type_b).unwrap());
         let signer = SignerMap::from(signature_type);
@@ -135,7 +135,7 @@ impl BundlrTx {
     ) -> Result<Self, BundlrError> {
         let buffer = read_offset(file, offset, length).expect("Could not read offset");
         let (bundlr_tx, data_start) =
-            BundlrTx::from_info_bytes(&buffer.to_vec()).expect("Could not gather info from bytes");
+            BundlrTx::from_info_bytes(&buffer).expect("Could not gather info from bytes");
 
         let data_start = data_start as u64;
         let data_size = size - data_start;
@@ -273,7 +273,7 @@ impl BundlrTx {
 
         let message = self.get_message().await;
 
-        let sig = signer.sign(message.clone()).unwrap();
+        let sig = signer.sign(message).unwrap();
         self.signature = sig.to_vec();
 
         Ok(())
@@ -286,7 +286,7 @@ impl BundlrTx {
         let signature = &self.signature;
 
         let verifier = &self.signature_type;
-        verifier.verify(&pub_key, &message, &signature)
+        verifier.verify(pub_key, &message, signature)
     }
 
     pub fn get_signarure(&self) -> Vec<u8> {
