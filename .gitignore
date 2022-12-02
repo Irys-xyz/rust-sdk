@@ -2,3 +2,5 @@
 /target
 test_item
 wallet.json
+.wallet.json
+test_data_item*

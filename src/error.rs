@@ -8,8 +8,8 @@ pub enum BundlrError {
     #[error("Invalid signer type used.")]
     InvalidSignerType,
 
-    #[error("Invalid presence byte.")]
-    InvalidPresenceByte,
+    #[error("Invalid presence byte {0}")]
+    InvalidPresenceByte(String),
 
     #[error("No bytes left.")]
     NoBytesLeft,
@@ -26,8 +26,11 @@ pub enum BundlrError {
     #[error("Invalid value for funding.")]
     InvalidFundingValue,
 
-    #[error("Invalid wallet")]
-    InvalidWallet,
+    #[error("Invalid amount, must be a integer bigger than zero")]
+    InvalidAmount,
+
+    #[error("Invalid wallet {0}")]
+    InvalidKey(String),
 
     #[error("Invalid currency: {0}")]
     InvalidCurrency(String),
@@ -40,4 +43,25 @@ pub enum BundlrError {
 
     #[error("Request error: {0}.")]
     RequestError(String),
+
+    #[error("Tx not found")]
+    TxNotFound,
+
+    #[error("Tx status not confirmed")]
+    TxStatusNotConfirmed,
+
+    #[error("Chunk size out of allowed range: {0} - {0}")]
+    ChunkSizeOutOfRange(u64, u64),
+
+    #[error("Error posting chunk: {0}")]
+    PostChunkError(String),
+
+    #[error("No signature present")]
+    NoSignature,
+
+    #[error("Cannot convert file stream to known bytes. Try using another method")]
+    InvalidDataType,
+
+    #[error("Upload error: {0}")]
+    UploadError(String),
 }

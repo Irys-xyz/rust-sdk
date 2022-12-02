@@ -19,8 +19,9 @@ use crate::CosmosSigner;
 
 use crate::error::BundlrError;
 
-#[derive(FromPrimitive, Display)]
+#[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
 pub enum SignerMap {
+    None = -1,
     Arweave = 1,
     Ed25519 = 2,
     Secp256k1 = 3,
@@ -39,7 +40,29 @@ impl Config {
     }
 }
 
+impl From<u16> for SignerMap {
+    fn from(t: u16) -> Self {
+        match t {
+            1 => SignerMap::Arweave,
+            2 => SignerMap::Ed25519,
+            3 => SignerMap::Secp256k1,
+            4 => SignerMap::Cosmos,
+            _ => panic!("Invalid signer map"),
+        }
+    }
+}
+
 impl SignerMap {
+    pub fn as_u16(&self) -> u16 {
+        match self {
+            SignerMap::Arweave => 1,
+            SignerMap::Ed25519 => 2,
+            SignerMap::Secp256k1 => 3,
+            SignerMap::Cosmos => 4,
+            _ => panic!("Invalid signer map"),
+        }
+    }
+
     pub fn get_config(&self) -> Config {
         match *self {
             #[cfg(feature = "arweave")]

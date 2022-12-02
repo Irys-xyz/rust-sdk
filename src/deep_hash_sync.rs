@@ -1,13 +1,12 @@
 use bytes::Bytes;
 use sha2::{Digest, Sha384};
 
-use crate::{deep_hash::DeepHashChunk, error::BundlrError};
+use crate::{
+    consts::{BLOB_AS_BUFFER, LIST_AS_BUFFER},
+    deep_hash::DeepHashChunk,
+    error::BundlrError,
+};
 use futures::{Stream, TryStream};
-
-const LIST_AS_BUFFER: &[u8] = "list".as_bytes();
-const BLOB_AS_BUFFER: &[u8] = "blob".as_bytes();
-pub const DATAITEM_AS_BUFFER: &[u8] = "dataitem".as_bytes();
-pub const ONE_AS_BUFFER: &[u8] = "1".as_bytes();
 
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 

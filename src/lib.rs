@@ -7,18 +7,21 @@ mod transaction;
 #[cfg(feature = "build-binary")]
 pub mod client;
 
+pub mod consts;
 pub mod currency;
 pub mod deep_hash;
 pub mod deep_hash_sync;
 pub mod error;
 pub mod index;
 pub mod tags;
+pub mod upload;
+pub mod utils;
 pub mod verify;
-pub mod wallet;
 
 pub use bundlr::Bundlr;
-pub use signers::signer::{Signer, Verifier};
-pub use transaction::BundlrTx;
+pub use signers::Signer;
+pub use transaction::bundlr::BundlrTx;
+pub use verify::Verifier;
 
 #[cfg(feature = "arweave")]
 pub use signers::arweave::ArweaveSigner;

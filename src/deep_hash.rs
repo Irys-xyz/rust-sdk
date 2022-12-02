@@ -4,30 +4,28 @@ use async_recursion::async_recursion;
 use bytes::Bytes;
 use sha2::{Digest, Sha384};
 
-use crate::error::BundlrError;
+use crate::{
+    consts::{BLOB_AS_BUFFER, LIST_AS_BUFFER},
+    error::BundlrError,
+};
 use futures::{Stream, TryStream, TryStreamExt};
 
-const LIST_AS_BUFFER: &[u8] = "list".as_bytes();
-const BLOB_AS_BUFFER: &[u8] = "blob".as_bytes();
-pub const DATAITEM_AS_BUFFER: &[u8] = "dataitem".as_bytes();
-pub const ONE_AS_BUFFER: &[u8] = "1".as_bytes();
-
-pub enum DeepHashChunk {
+pub enum DeepHashChunk<'a> {
     Chunk(Bytes),
-    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
-    Chunks(Vec<DeepHashChunk>),
+    Stream(&'a mut Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
+    Chunks(Vec<DeepHashChunk<'a>>),
 }
 
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
-pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
+pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlrError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
             let tag = [BLOB_AS_BUFFER, b.len().to_string().as_bytes()].concat();
             let c = [sha384hash(tag.into()), sha384hash(b)].concat();
             Ok(Bytes::copy_from_slice(&sha384hash(c.into())))
         }
-        DeepHashChunk::Stream(mut s) => {
+        DeepHashChunk::Stream(s) => {
             let mut hasher = Sha384::new();
             let mut length = 0;
             while let Some(chunk) = s
@@ -50,21 +48,21 @@ pub async fn deep_hash(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 
             Ok(sha384hash(tagged_hash.into()))
         }
-        DeepHashChunk::Chunks(chunks) => {
+        DeepHashChunk::Chunks(mut chunks) => {
             // Be careful of truncation
             let len = chunks.len() as f64;
             let tag = [LIST_AS_BUFFER, len.to_string().as_bytes()].concat();
 
             let acc = sha384hash(tag.into());
 
-            deep_hash_chunks(chunks, acc).await
+            deep_hash_chunks(&mut chunks, acc).await
         }
     }
 }
 
 #[async_recursion(?Send)]
 pub async fn deep_hash_chunks(
-    mut chunks: Vec<DeepHashChunk>,
+    chunks: &mut Vec<DeepHashChunk<'_>>,
     acc: Bytes,
 ) -> Result<Bytes, BundlrError> {
     if chunks.is_empty() {
