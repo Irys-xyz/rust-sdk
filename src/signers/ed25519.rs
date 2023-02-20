@@ -29,7 +29,7 @@ impl Ed25519Signer {
     }
 }
 
-const SIG_TYPE: SignerMap = SignerMap::Ed25519;
+const SIG_TYPE: SignerMap = SignerMap::ED25519;
 const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 

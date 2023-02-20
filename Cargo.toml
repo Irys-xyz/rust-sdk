@@ -54,12 +54,13 @@ default-features = false
 features = ["user-hooks"]
 
 [features]
-default = ["solana", "ethereum", "erc20", "cosmos", "arweave"]
+default = ["solana", "ethereum", "erc20", "cosmos", "arweave", "algorand"]
 arweave = ["arweave-rs"]
 cosmos = ["secp256k1"]
 erc20 = ["secp256k1", "web3"]
 ethereum = ["secp256k1", "web3"]
 solana = ["ed25519-dalek"]
+algorand = ["ed25519-dalek"]
 build-binary = ["clap"]
 
 [[bin]]

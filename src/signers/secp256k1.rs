@@ -44,7 +44,7 @@ impl Secp256k1Signer {
     }
 }
 
-const SIG_TYPE: SignerMap = SignerMap::Secp256k1;
+const SIG_TYPE: SignerMap = SignerMap::Ethereum;
 const SIG_LENGTH: u16 = (COMPACT_SIGNATURE_SIZE + 1) as u16;
 const PUB_LENGTH: u16 = UNCOMPRESSED_PUBLIC_KEY_SIZE as u16;
 
