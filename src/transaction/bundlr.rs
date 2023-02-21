@@ -120,7 +120,6 @@ impl BundlrTx {
         let (bundlr_tx, data_start) =
             BundlrTx::from_info_bytes(&buffer).expect("Could not gather info from bytes");
         let data = &buffer[data_start..buffer.len()];
-        println!("data: {:?}", data);
 
         Ok(BundlrTx {
             data: Data::Bytes(data.to_vec()),
@@ -282,7 +281,6 @@ impl BundlrTx {
 
     pub async fn verify(&mut self) -> Result<bool, BundlrError> {
         let message = self.get_message().await;
-        println!("msg: {:?}", message.to_vec());
         let pub_key = &self.owner;
         let signature = &self.signature;
 

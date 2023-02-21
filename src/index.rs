@@ -17,6 +17,9 @@ use crate::Secp256k1Signer;
 #[cfg(feature = "cosmos")]
 use crate::CosmosSigner;
 
+#[cfg(feature = "aptos")]
+use crate::AptosSigner;
+
 use crate::error::BundlrError;
 
 #[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
@@ -51,6 +54,8 @@ impl From<u16> for SignerMap {
             2 => SignerMap::ED25519,
             3 => SignerMap::Ethereum,
             4 => SignerMap::Solana,
+            5 => SignerMap::InjectedAptos,
+            6 => SignerMap::MultiAptos,
             _ => panic!("Invalid signer map"),
         }
     }
@@ -63,6 +68,8 @@ impl SignerMap {
             SignerMap::ED25519 => 2,
             SignerMap::Ethereum => 3,
             SignerMap::Solana => 4,
+            SignerMap::InjectedAptos => 5,
+            SignerMap::MultiAptos => 6,
             _ => panic!("Invalid signer map"),
         }
     }
@@ -92,6 +99,18 @@ impl SignerMap {
                 sig_length: ed25519_dalek::SIGNATURE_LENGTH,
                 pub_length: ed25519_dalek::PUBLIC_KEY_LENGTH,
                 sig_name: "solana".to_owned(),
+            },
+            #[cfg(feature = "aptos")]
+            SignerMap::InjectedAptos => Config {
+                sig_length: ed25519_dalek::SIGNATURE_LENGTH,
+                pub_length: ed25519_dalek::PUBLIC_KEY_LENGTH,
+                sig_name: "injectedAptos".to_owned(),
+            },
+            #[cfg(feature = "aptos")]
+            SignerMap::MultiAptos => Config {
+                sig_length: ed25519_dalek::SIGNATURE_LENGTH * 32 + 4, // max 32 64 byte signatures, +4 for 32-bit bitmap
+                pub_length: ed25519_dalek::PUBLIC_KEY_LENGTH * 32 + 1, // max 64 32 byte keys, +1 for 8-bit threshold value
+                sig_name: "multiAptos".to_owned(),
             },
             #[cfg(feature = "cosmos")]
             SignerMap::Cosmos => Config {
@@ -130,6 +149,14 @@ impl SignerMap {
                 Bytes::copy_from_slice(message),
                 Bytes::copy_from_slice(signature),
             ),
+            #[cfg(feature = "aptos")]
+            SignerMap::InjectedAptos => AptosSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
+            #[cfg(feature = "aptos")]
+            SignerMap::MultiAptos => todo!(),
             #[cfg(feature = "cosmos")]
             SignerMap::Cosmos => CosmosSigner::verify(
                 Bytes::copy_from_slice(pk),

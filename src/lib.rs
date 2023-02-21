@@ -34,3 +34,6 @@ pub use signers::secp256k1::Secp256k1Signer;
 
 #[cfg(feature = "cosmos")]
 pub use signers::cosmos::CosmosSigner;
+
+#[cfg(feature = "aptos")]
+pub use signers::aptos::AptosSigner;
