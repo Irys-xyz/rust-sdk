@@ -153,10 +153,6 @@ mod tests {
                 .await
                 .is_ok()
         );
-    }
-
-    #[tokio::test]
-    async fn should_verify_aptos() {
         assert!(
             verify_file_bundle("./res/test_bundles/aptos_multisig".to_string())
                 .await
