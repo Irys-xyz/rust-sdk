@@ -6,6 +6,7 @@ use crate::{index::SignerMap, Ed25519Signer};
 use bytes::Bytes;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::{Keypair, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
+use num::Integer;
 
 pub struct AptosSigner {
     signer: Ed25519Signer,
@@ -13,7 +14,7 @@ pub struct AptosSigner {
 
 impl AptosSigner {
     pub fn new(keypair: Keypair) -> Self {
-        AptosSigner {
+        Self {
             signer: Ed25519Signer::new(keypair),
         }
     }
@@ -25,7 +26,7 @@ impl AptosSigner {
     }
 }
 
-const SIG_TYPE: SignerMap = SignerMap::ED25519;
+const SIG_TYPE: SignerMap = SignerMap::InjectedAptos;
 const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
@@ -83,6 +84,104 @@ impl VerifierTrait for AptosSigner {
     }
 }
 
+const SIG_TYPE_M: SignerMap = SignerMap::MultiAptos;
+const SIG_LENGTH_M: u16 = (SIGNATURE_LENGTH * 32 + 4) as u16; // max 32 64 byte signatures, +4 for 32-bit bitmap
+const PUB_LENGTH_M: u16 = (PUBLIC_KEY_LENGTH * 32 + 1) as u16; // max 64 32 byte keys, +1 for 8-bit threshold value
+
+pub struct MultiAptosSigner {
+    signer: Ed25519Signer,
+}
+
+impl MultiAptosSigner {
+    pub fn collect_signatures(
+        &self,
+        _eamessage: bytes::Bytes,
+    ) -> Result<(Vec<bytes::Bytes>, Vec<u64>), crate::error::BundlrError> {
+        //TODO: implement
+        todo!()
+    }
+}
+
+impl MultiAptosSigner {
+    pub fn new(keypair: Keypair) -> Self {
+        Self {
+            signer: Ed25519Signer::new(keypair),
+        }
+    }
+
+    pub fn from_base58(s: &str) -> Self {
+        Self {
+            signer: Ed25519Signer::from_base58(s),
+        }
+    }
+}
+
+impl SignerTrait for MultiAptosSigner {
+    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
+        //TODO: implement
+        let (_signatures, _bitmap) = self.collect_signatures(message)?;
+        todo!()
+    }
+
+    fn pub_key(&self) -> bytes::Bytes {
+        self.signer.pub_key()
+    }
+
+    fn sig_type(&self) -> SignerMap {
+        SIG_TYPE_M
+    }
+    fn get_sig_length(&self) -> u16 {
+        SIG_LENGTH_M
+    }
+    fn get_pub_length(&self) -> u16 {
+        PUB_LENGTH_M
+    }
+}
+
+impl VerifierTrait for MultiAptosSigner {
+    fn verify(
+        pk: Bytes,
+        message: Bytes,
+        signature: Bytes,
+    ) -> Result<bool, crate::error::BundlrError> {
+        let sig_len = SIG_LENGTH_M;
+        let bitmap_pos = sig_len - 4;
+        let signatures = signature.slice(0..(bitmap_pos as usize));
+        let encode_bitmap = signature.slice((bitmap_pos as usize)..signature.len());
+
+        let mut one_false = false;
+        for i in 0..32 {
+            let bucket = i.div_floor(&8);
+            let bucket_pos = i - bucket * 8;
+            let sig_included = (encode_bitmap[bucket] & (128 >> bucket_pos)) != 0;
+
+            if sig_included {
+                let signature = signatures.slice((i * 64)..((i + 1) * 64));
+                let pub_key_slc = pk.slice((i * 32)..((i + 1) * 32));
+                let public_key =
+                    ed25519_dalek::PublicKey::from_bytes(&pub_key_slc).unwrap_or_else(|_| {
+                        panic!(
+                            "ED25519 public keys must be {} bytes long",
+                            ed25519_dalek::PUBLIC_KEY_LENGTH
+                        )
+                    });
+                let sig = ed25519_dalek::Signature::from_bytes(&signature).unwrap_or_else(|_| {
+                    panic!(
+                        "ED22519 signatures keys must be {} bytes long",
+                        ed25519_dalek::SIGNATURE_LENGTH
+                    )
+                });
+                match public_key.verify(&message, &sig) {
+                    Ok(()) => (),
+                    Err(_err) => one_false = false,
+                }
+            }
+        }
+
+        Ok(one_false)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{AptosSigner, Signer, Verifier};
@@ -112,5 +211,10 @@ mod tests {
         let pub_key = signer.pub_key();
 
         assert!(AptosSigner::verify(pub_key, msg, sig).unwrap());
+    }
+
+    #[test]
+    fn should_sign_and_verify_multisig() {
+        //TODO: implement
     }
 }

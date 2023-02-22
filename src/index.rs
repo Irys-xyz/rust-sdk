@@ -20,6 +20,9 @@ use crate::CosmosSigner;
 #[cfg(feature = "aptos")]
 use crate::AptosSigner;
 
+#[cfg(feature = "aptos")]
+use crate::MultiAptosSigner;
+
 use crate::error::BundlrError;
 
 #[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
@@ -156,7 +159,11 @@ impl SignerMap {
                 Bytes::copy_from_slice(signature),
             ),
             #[cfg(feature = "aptos")]
-            SignerMap::MultiAptos => todo!(),
+            SignerMap::MultiAptos => MultiAptosSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
             #[cfg(feature = "cosmos")]
             SignerMap::Cosmos => CosmosSigner::verify(
                 Bytes::copy_from_slice(pk),

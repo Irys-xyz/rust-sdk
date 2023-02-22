@@ -37,3 +37,6 @@ pub use signers::cosmos::CosmosSigner;
 
 #[cfg(feature = "aptos")]
 pub use signers::aptos::AptosSigner;
+
+#[cfg(feature = "aptos")]
+pub use signers::aptos::MultiAptosSigner;
