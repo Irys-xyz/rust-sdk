@@ -26,7 +26,7 @@ pub struct Uploader {
 
 impl Default for Uploader {
     fn default() -> Self {
-        let url = Url::from_str(BUNDLR_DEFAULT_URL).unwrap();
+        let url = Url::from_str(BUNDLR_DEFAULT_URL).unwrap(); //Unwrap ok, never fails
         let client = reqwest::Client::new();
         Self {
             url,
@@ -54,34 +54,34 @@ impl Uploader {
             let url = self
                 .url
                 .join(&format!("/chunks/{}/{}/-1", self.currency, upload_id))
-                .expect("Could not join url");
+                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
             let res = self
                 .client
                 .get(url)
                 .header("x-chunking-version", "2")
                 .send()
                 .await
-                .expect("Could not get upload id")
+                .map_err(|err| BundlrError::UploadError(err.to_string()))?
                 .json::<IdRes>()
                 .await
-                .expect("Could not convert to json");
+                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
             (res.max, res.min)
         } else {
             let url = self
                 .url
                 .join(&format!("/chunks/{}/-1/-1", self.currency))
-                .expect("Could not join url");
+                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
             let res = self
                 .client
                 .get(url)
                 .header("x-chunking-version", "2")
                 .send()
                 .await
-                .expect("Could not get upload id")
+                .map_err(|err| BundlrError::UploadError(err.to_string()))?
                 .json::<IdRes>()
                 .await
-                .expect("Could not convert to json");
+                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
             self.upload_id = Some(res.id);
 
@@ -139,14 +139,17 @@ impl Uploader {
         offset: usize,
         headers: Vec<(String, String)>,
     ) -> Result<usize, BundlrError> {
-        let upload_id = self.upload_id.as_ref().expect("No upload id").clone();
+        let upload_id = match &self.upload_id {
+            Some(id) => id,
+            None => return Err(BundlrError::UploadError("No upload id".to_string())),
+        };
         let url = self
             .url
             .join(&format!(
                 "/chunks/{}/{}/{}",
                 self.currency, upload_id, offset
             ))
-            .expect("Could not join url");
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
         let mut req = self
             .client

@@ -4,8 +4,7 @@ use crate::Verifier as VerifierTrait;
 use crate::{index::SignerMap, Ed25519Signer};
 
 use bytes::Bytes;
-use ed25519_dalek::Verifier;
-use ed25519_dalek::{Keypair, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
+use ed25519_dalek::{Keypair, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use num::Integer;
 
 pub struct AptosSigner {
@@ -19,10 +18,10 @@ impl AptosSigner {
         }
     }
 
-    pub fn from_base58(s: &str) -> Self {
-        Self {
-            signer: Ed25519Signer::from_base58(s),
-        }
+    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+        Ok(Self {
+            signer: Ed25519Signer::from_base58(s)?,
+        })
     }
 }
 
@@ -60,18 +59,10 @@ impl VerifierTrait for AptosSigner {
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).unwrap_or_else(|_| {
-            panic!(
-                "ED25519 public keys must be {} bytes long",
-                ed25519_dalek::PUBLIC_KEY_LENGTH
-            )
-        });
-        let sig = ed25519_dalek::Signature::from_bytes(&signature).unwrap_or_else(|_| {
-            panic!(
-                "ED22519 signatures keys must be {} bytes long",
-                ed25519_dalek::SIGNATURE_LENGTH
-            )
-        });
+        let public_key =
+            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
+        let sig =
+            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
         let aptos_message =
             Bytes::copy_from_slice(&[b"APTOS\nmessage: ".as_ref(), &message[..]].concat());
         let nonce = Bytes::from(b"\nnonce: bundlr".to_vec());
@@ -109,10 +100,10 @@ impl MultiAptosSigner {
         }
     }
 
-    pub fn from_base58(s: &str) -> Self {
-        Self {
-            signer: Ed25519Signer::from_base58(s),
-        }
+    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+        Ok(Self {
+            signer: Ed25519Signer::from_base58(s)?,
+        })
     }
 }
 
@@ -158,19 +149,10 @@ impl VerifierTrait for MultiAptosSigner {
             if sig_included {
                 let signature = signatures.slice((i * 64)..((i + 1) * 64));
                 let pub_key_slc = pk.slice((i * 32)..((i + 1) * 32));
-                let public_key =
-                    ed25519_dalek::PublicKey::from_bytes(&pub_key_slc).unwrap_or_else(|_| {
-                        panic!(
-                            "ED25519 public keys must be {} bytes long",
-                            ed25519_dalek::PUBLIC_KEY_LENGTH
-                        )
-                    });
-                let sig = ed25519_dalek::Signature::from_bytes(&signature).unwrap_or_else(|_| {
-                    panic!(
-                        "ED22519 signatures keys must be {} bytes long",
-                        ed25519_dalek::SIGNATURE_LENGTH
-                    )
-                });
+                let public_key = ed25519_dalek::PublicKey::from_bytes(&pub_key_slc)
+                    .map_err(BundlrError::ED25519Error)?;
+                let sig = ed25519_dalek::Signature::from_bytes(&signature)
+                    .map_err(BundlrError::ED25519Error)?;
                 match public_key.verify(&message, &sig) {
                     Ok(()) => (),
                     Err(_err) => one_false = false,
@@ -193,7 +175,7 @@ mod tests {
         let msg = Bytes::from(b"Message".to_vec());
 
         let base58_secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
-        let signer = AptosSigner::from_base58(base58_secret_key);
+        let signer = AptosSigner::from_base58(base58_secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
         println!("{:?}", pub_key.to_vec());

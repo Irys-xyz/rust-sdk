@@ -59,7 +59,7 @@ impl From<u16> for SignerMap {
             4 => SignerMap::Solana,
             5 => SignerMap::InjectedAptos,
             6 => SignerMap::MultiAptos,
-            _ => panic!("Invalid signer map"),
+            _ => SignerMap::None,
         }
     }
 }
@@ -73,7 +73,7 @@ impl SignerMap {
             SignerMap::Solana => 4,
             SignerMap::InjectedAptos => 5,
             SignerMap::MultiAptos => 6,
-            _ => panic!("Invalid signer map"),
+            _ => u16::MAX,
         }
     }
 
@@ -122,7 +122,7 @@ impl SignerMap {
                 sig_name: "cosmos".to_owned(),
             },
             #[allow(unreachable_patterns)]
-            _ => panic!("{:?} get_config not implemented in SignerMap yet", self),
+            _ => panic!("{:?} get_config has no", self),
         }
     }
 

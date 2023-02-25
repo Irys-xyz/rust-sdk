@@ -9,8 +9,11 @@ async fn main() {
     let currency = Solana::new(
         "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb",
         None,
-    );
-    let mut bundlr = Bundlr::new(url, &currency).await;
+    )
+    .expect("Could not create Solana instance");
+    let mut bundlr = Bundlr::new(url, &currency)
+        .await
+        .expect("Could not create bundlr");
 
     let file = PathBuf::from_str("res/test_image.jpg").unwrap();
     let res = bundlr.upload_file(file).await;

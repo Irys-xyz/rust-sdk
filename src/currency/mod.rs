@@ -79,19 +79,19 @@ pub trait Currency {
     ) -> Result<(StatusCode, Option<TxStatus>), BundlrError>;
 
     /// Gets public key
-    fn get_pub_key(&self) -> Bytes;
+    fn get_pub_key(&self) -> Result<Bytes, BundlrError>;
 
     /// Gets wallet address, usually a hash from public key
-    fn wallet_address(&self) -> String;
+    fn wallet_address(&self) -> Result<String, BundlrError>;
 
     /// Signs a given message
-    fn sign_message(&self, message: &[u8]) -> Vec<u8>;
+    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlrError>;
 
     /// Verifies if public key, message and signature matches
     fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError>;
 
     /// Gets signer for more specific operations
-    fn get_signer(&self) -> &dyn Signer;
+    fn get_signer(&self) -> Result<&dyn Signer, BundlrError>;
 
     /// Gets currency Id
     async fn get_id(&self, item: ()) -> String;
@@ -103,10 +103,10 @@ pub trait Currency {
     async fn get_current_height(&self) -> u128;
 
     /// Get fee for transaction
-    async fn get_fee(&self, amount: u64, to: &str, multiplier: f64) -> u64;
+    async fn get_fee(&self, amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlrError>;
 
     /// Creates a new transaction
-    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Tx;
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlrError>;
 
     /// Send a signed transaction
     async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError>;

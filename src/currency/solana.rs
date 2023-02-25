@@ -44,13 +44,13 @@ impl Default for Solana {
 }
 
 impl Solana {
-    pub fn new(wallet: &str, url: Option<Url>) -> Self {
-        let signer = Ed25519Signer::from_base58(wallet);
-        Self {
+    pub fn new(wallet: &str, url: Option<Url>) -> Result<Self, BundlrError> {
+        let signer = Ed25519Signer::from_base58(wallet)?;
+        Ok(Self {
             signer: Some(signer),
-            url: url.unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).expect("Could not parse Url")),
+            url: url.unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).unwrap()),
             ..Self::default()
-        }
+        })
     }
 }
 
@@ -80,13 +80,13 @@ impl Currency for Solana {
         todo!()
     }
 
-    fn sign_message(&self, message: &[u8]) -> Vec<u8> {
-        self.signer
-            .as_ref()
-            .expect("No signer present")
-            .sign(Bytes::copy_from_slice(message))
-            .expect("Could not sign message")
-            .to_vec()
+    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlrError> {
+        match &self.signer {
+            Some(signer) => Ok(signer.sign(Bytes::copy_from_slice(message))?.to_vec()),
+            None => Err(BundlrError::CurrencyError(
+                "No private key present".to_string(),
+            )),
+        }
     }
 
     fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
@@ -98,16 +98,26 @@ impl Currency for Solana {
         .map(|_| ())
     }
 
-    fn get_pub_key(&self) -> Bytes {
-        self.signer.as_ref().expect("No signer present").pub_key()
+    fn get_pub_key(&self) -> Result<Bytes, BundlrError> {
+        match &self.signer {
+            Some(signer) => Ok(signer.pub_key()),
+            None => Err(BundlrError::CurrencyError(
+                "No private key present".to_string(),
+            )),
+        }
     }
 
-    fn wallet_address(&self) -> String {
+    fn wallet_address(&self) -> Result<String, BundlrError> {
         todo!();
     }
 
-    fn get_signer(&self) -> &dyn Signer {
-        self.signer.as_ref().expect("No signer present")
+    fn get_signer(&self) -> Result<&dyn Signer, BundlrError> {
+        match &self.signer {
+            Some(signer) => Ok(signer),
+            None => Err(BundlrError::CurrencyError(
+                "No private key present".to_string(),
+            )),
+        }
     }
 
     async fn get_id(&self, _item: ()) -> String {
@@ -122,11 +132,11 @@ impl Currency for Solana {
         todo!();
     }
 
-    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> u64 {
+    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlrError> {
         todo!();
     }
 
-    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Tx {
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlrError> {
         todo!();
     }
 

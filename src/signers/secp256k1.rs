@@ -1,3 +1,5 @@
+use std::array::TryFromSliceError;
+
 use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
@@ -21,16 +23,19 @@ impl Secp256k1Signer {
         Secp256k1Signer { sec_key, pub_key }
     }
 
-    pub fn from_base58(s: &str) -> Self {
-        let k = bs58::decode(s).into_vec().expect("Invalid base58 encoding");
+    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+        let k = bs58::decode(s)
+            .into_vec()
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
         let key: &[u8; 64] = k
             .as_slice()
             .try_into()
-            .expect("Couldn't convert base58 key to bytes");
+            .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
 
-        let sec_key = SecretKey::from_slice(&key[..32]).expect("32 bytes, within curve order");
+        let sec_key = SecretKey::from_slice(&key[..32])
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
-        Self::new(sec_key)
+        Ok(Self::new(sec_key))
     }
 
     pub fn eth_hash_message(msg: &[u8]) -> [u8; 32] {
@@ -54,7 +59,8 @@ impl Signer for Secp256k1Signer {
     }
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        let msg = Message::from_slice(&Secp256k1Signer::eth_hash_message(&message[..])).unwrap();
+        let msg = Message::from_slice(&Secp256k1Signer::eth_hash_message(&message[..]))
+            .map_err(BundlrError::Secp256k1Error)?;
         let (recovery_id, signature) = secp256k1::Secp256k1::signing_only()
             .sign_ecdsa_recoverable(&msg, &self.sec_key)
             .serialize_compact();
@@ -88,10 +94,10 @@ impl Verifier for Secp256k1Signer {
         let msg = Secp256k1Signer::eth_hash_message(&message);
 
         let recovery_address = recover(&msg, &signature[0..64], signature[64] as i32 - 27)
-            .expect("Invalid message or signature, could not recover address");
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
         let pubkey = PublicKey::from_slice(&public_key)
-            .unwrap()
+            .map_err(BundlrError::Secp256k1Error)?
             .serialize_uncompressed();
         assert_eq!(pubkey[0], 0x04);
         let pubkey_hash = keccak256(&public_key[1..]);
@@ -133,7 +139,7 @@ mod tests {
         assert!(Secp256k1Signer::verify(pub_key, msg.clone(), sig).unwrap());
 
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
-        let signer = Secp256k1Signer::from_base58(base58_secret_key);
+        let signer = Secp256k1Signer::from_base58(base58_secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
         assert!(Secp256k1Signer::verify(pub_key, msg, sig).unwrap());

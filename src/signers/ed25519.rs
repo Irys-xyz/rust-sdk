@@ -1,3 +1,5 @@
+use std::array::TryFromSliceError;
+
 use crate::error::BundlrError;
 use crate::index::SignerMap;
 use crate::Signer as SignerTrait;
@@ -16,16 +18,18 @@ impl Ed25519Signer {
         Ed25519Signer { keypair }
     }
 
-    pub fn from_base58(s: &str) -> Self {
-        let k = bs58::decode(s).into_vec().expect("Invalid base58 encoding");
+    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+        let k = bs58::decode(s)
+            .into_vec()
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
         let key: &[u8; 64] = k
             .as_slice()
             .try_into()
-            .expect("Couldn't convert base58 key to bytes");
+            .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
 
-        Self {
-            keypair: Keypair::from_bytes(key).unwrap(),
-        }
+        Ok(Self {
+            keypair: Keypair::from_bytes(key).map_err(BundlrError::ED25519Error)?,
+        })
     }
 }
 
@@ -61,18 +65,10 @@ impl VerifierTrait for Ed25519Signer {
         message: Bytes,
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
-        let public_key = ed25519_dalek::PublicKey::from_bytes(&pk).unwrap_or_else(|_| {
-            panic!(
-                "ED25519 public keys must be {} bytes long",
-                ed25519_dalek::PUBLIC_KEY_LENGTH
-            )
-        });
-        let sig = ed25519_dalek::Signature::from_bytes(&signature).unwrap_or_else(|_| {
-            panic!(
-                "ED22519 signatures keys must be {} bytes long",
-                ed25519_dalek::SIGNATURE_LENGTH
-            )
-        });
+        let public_key =
+            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
+        let sig =
+            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
         public_key
             .verify(&message, &sig)
             .map(|_| true)
@@ -91,7 +87,7 @@ mod tests {
         let msg = Bytes::from(b"Message".to_vec());
 
         let base58_secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
-        let signer = Ed25519Signer::from_base58(base58_secret_key);
+        let signer = Ed25519Signer::from_base58(base58_secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
         println!("{:?}", pub_key.to_vec());

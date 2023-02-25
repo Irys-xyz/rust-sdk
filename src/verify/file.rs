@@ -13,7 +13,7 @@ impl From<std::io::Error> for BundlrError {
 }
 
 pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrError> {
-    let mut file = File::open(&filename).unwrap();
+    let mut file = File::open(&filename)?;
 
     let bundle_length = U256::from_little_endian(&read_offset(&mut file, 0, 32)?).as_u64();
 
@@ -22,7 +22,11 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     // This will use ~100 bytes per header. So 1 GB is 1e+7 headers
     let mut headers = Vec::with_capacity(cmp::min(bundle_length as usize, 1000));
 
-    for i in (0..(64 * usize::try_from(bundle_length).unwrap())).step_by(64) {
+    for i in (0..(64
+        * usize::try_from(bundle_length)
+            .map_err(|err| BundlrError::TypeParseError(err.to_string()))?))
+        .step_by(64)
+    {
         let h = Header(
             U256::from_little_endian(&header_bytes[i..i + 32]).as_u64(),
             BASE64URL.encode(&header_bytes[i + 32..i + 64]),
@@ -36,8 +40,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     for Header(size, id) in headers {
         // Read 4 KiB - max data-less Bundlr tx
         // We do it all at once to improve performance - by lowering fs ops and doing ops in memory
-        let mut tx = BundlrTx::from_file_position(&mut file, size, offset, 4096)
-            .expect("Could not create data item");
+        let mut tx = BundlrTx::from_file_position(&mut file, size, offset, 4096)?;
 
         match tx.verify().await {
             Err(_) => return Err(BundlrError::InvalidSignature),

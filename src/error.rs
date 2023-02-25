@@ -62,6 +62,39 @@ pub enum BundlrError {
     #[error("Cannot convert file stream to known bytes. Try using another method")]
     InvalidDataType,
 
+    #[error("Arweave Sdk error: {0}")]
+    ArweaveSdkError(arweave_rs::error::Error),
+
+    #[error("Currency error: {0}")]
+    CurrencyError(String),
+
+    #[error("Error reading/writting bytes: {0}")]
+    BytesError(String),
+
+    #[error("Error converting type: {0}")]
+    TypeParseError(String),
+
+    #[error("Parse error error: {0}")]
+    ParseError(String),
+
     #[error("Upload error: {0}")]
     UploadError(String),
+
+    #[error("Unknown: {0}")]
+    Unknown(String),
+
+    #[error("Unsupported: {0}")]
+    Unsupported(String),
+
+    #[error("ED25519 error: {0}")]
+    ED25519Error(ed25519_dalek::ed25519::Error),
+
+    #[error("Secp256k1 error: {0}")]
+    Secp256k1Error(secp256k1::Error),
+
+    #[error("Base64 error: {0}")]
+    Base64Error(String),
+
+    #[error("Io error: {0}")]
+    IoError(std::io::Error),
 }

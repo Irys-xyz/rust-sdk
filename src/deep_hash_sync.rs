@@ -26,7 +26,9 @@ pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 
             deep_hash_chunks_sync(chunks, acc)
         }
-        _ => panic!("Streaming is not supported for sync"),
+        _ => Err(BundlrError::Unsupported(
+            "Streaming is not supported for sync".to_owned(),
+        )),
     }
 }
 

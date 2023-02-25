@@ -1,19 +1,21 @@
 use core::slice::SlicePattern;
-use std::{vec, cmp, any::TypeId, ops::Sub, rc::Rc};
+use std::{any::TypeId, cmp, ops::Sub, rc::Rc, vec};
 
 use async_stream::stream;
-use bytes::{Bytes, BytesMut, BufMut, Buf};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use data_encoding::BASE64URL;
-use futures::{Stream};
-use primitive_types::U256;
-use serde::{Serialize, Deserialize};
 use derive_more::{Display, Error};
 use futures::stream::TryStreamExt;
+use futures::Stream;
 use num_traits::FromPrimitive;
+use primitive_types::U256;
+use serde::{Deserialize, Serialize};
 
-use crate::{error::BundleError, tags::AvroDecode, index::SignerMap};
+use crate::{error::BundleError, index::SignerMap, tags::AvroDecode};
 
-async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin) -> Result<Vec<Item>, BundleError> {
+async fn verify_and_index_stream(
+    mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin,
+) -> Result<Vec<Item>, BundleError> {
     // Assume average number of items to be 500
     let mut header_bytes = BytesMut::with_capacity(32 + (64 * 500));
 
@@ -39,7 +41,6 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
 
     let mut item_bytes = BytesMut::from(&header_bytes[32 + (length * 64)..]);
 
-
     // Free header bytes
     drop(header_bytes);
 
@@ -48,12 +49,12 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
     for Header(size, id) in headers {
         // Get sig type
         read(&mut item_bytes, 2, &mut s).await?;
-        let signature_type = u16::from_le_bytes(item_bytes[0..2].try_into().unwrap());
+        let signature_type = u16::from_le_bytes(item_bytes[0..2].try_into()?);
 
-        let signer: SignerMap = SignerMap::from_u16(signature_type).unwrap();
+        let signer: SignerMap = SignerMap::from_u16(signature_type)?;
         let signer_config = signer.get_config();
         item_bytes.advance(2);
-        
+
         // Get sig
         read(&mut item_bytes, signer_config.sig_length.into(), &mut s).await?;
         let signature = &item_bytes[..signer_config.sig_length.into()];
@@ -66,8 +67,8 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
 
         // Get tags
         read(&mut item_bytes, 16, &mut s).await?;
-        let number_of_tags = u8::from_le_bytes(item_bytes[0..8].try_into().unwrap());
-        let number_of_tags_bytes = u16::from_le_bytes(item_bytes[8..16].try_into().unwrap());
+        let number_of_tags = u8::from_le_bytes(item_bytes[0..8].try_into()?);
+        let number_of_tags_bytes = u16::from_le_bytes(item_bytes[8..16].try_into()?);
         item_bytes.advance(16);
 
         let tags = (&item_bytes[..number_of_tags_bytes as usize]).decode()?;
@@ -76,10 +77,10 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
         }
 
         let non_data_size = 2 + signer_config.total_length() + 16 + number_of_tags_bytes as u32;
-        item_bytes.advance(non_data_size.try_into().unwrap());
+        item_bytes.advance(non_data_size.try_into()?);
 
         let data_size = size.sub(non_data_size);
-        
+
         let data_stream = stream! {
             let data_count = U256::zero();
             while (data_count < data_size) {
@@ -91,7 +92,7 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
                     }
                 };
             };
-            
+
             if data_size > data_count {
                 println!("{}", "Bad sizes");
             };
@@ -99,9 +100,8 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
             item_bytes.advance((data_count - data_size).as_usize());
         };
 
-
         let item = Item {
-            id: "id".to_string()
+            id: "id".to_string(),
         };
 
         items.push(item);
@@ -110,24 +110,31 @@ async fn verify_and_index_stream(mut s: impl Stream<Item = Result<Bytes, anyhow:
     Ok(vec![])
 }
 
-async fn read(b: &mut BytesMut, len: usize, mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin) -> Result<(), BundleError> {
-    if b.len() >= len { return Ok(()); };
+async fn read(
+    b: &mut BytesMut,
+    len: usize,
+    mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin,
+) -> Result<(), BundleError> {
+    if b.len() >= len {
+        return Ok(());
+    };
 
     while b.len() < len {
         let next = &s.try_next().await;
-       let new_bytes = match next.as_ref().map_err(|_| BundleError::NoBytesLeft)? {
+        let new_bytes = match next.as_ref().map_err(|_| BundleError::NoBytesLeft)? {
             Some(bytess) => bytess,
-            None => return Err(BundleError::NoBytesLeft)
+            None => return Err(BundleError::NoBytesLeft),
         };
 
-        b.extend(new_bytes); 
+        b.extend(new_bytes);
     }
-    
+
     Ok(())
 }
 
-async fn produce_data_stream(mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin) -> Result<(), BundleError> {
-    
+async fn produce_data_stream(
+    mut s: impl Stream<Item = Result<Bytes, anyhow::Error>> + Unpin,
+) -> Result<(), BundleError> {
 }
 
 #[cfg(test)]
@@ -141,7 +148,7 @@ mod tests {
         //         .get("https://google.com")
         //         .send()
         //         .await.unwrap();
-        
+
         // assert!(verify_and_index_stream(stream).await.is_err());
     }
 }

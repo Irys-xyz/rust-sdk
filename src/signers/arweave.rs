@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
 
 use crate::{error::BundlrError, index::SignerMap, Verifier};
 use arweave_rs::ArweaveSigner as SdkSigner;
@@ -10,17 +10,11 @@ pub struct ArweaveSigner {
     sdk: SdkSigner,
 }
 
-impl Default for ArweaveSigner {
-    fn default() -> Self {
-        let path = PathBuf::from_str("wallet.json").expect("Could not open wallet.json");
-        Self::from_keypair_path(path).expect("Could not create Arweave Signer")
-    }
-}
-
 #[allow(unused)]
 impl ArweaveSigner {
     pub fn from_keypair_path(keypair_path: PathBuf) -> Result<Self, BundlrError> {
-        let sdk = SdkSigner::from_keypair_path(keypair_path).expect("Invalid path");
+        let sdk =
+            SdkSigner::from_keypair_path(keypair_path).map_err(BundlrError::ArweaveSdkError)?;
         let pub_key = sdk.get_public_key().0;
         if pub_key.len() as u16 == PUB_LENGTH {
             Ok(Self { sdk })
@@ -81,6 +75,6 @@ mod tests {
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 
-        assert!(ArweaveSigner::verify(pub_key, msg.clone(), sig).is_ok());
+        assert!(ArweaveSigner::verify(pub_key, msg, sig).is_ok());
     }
 }

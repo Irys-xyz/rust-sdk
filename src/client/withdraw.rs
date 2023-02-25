@@ -22,13 +22,13 @@ pub async fn run_withdraw(
     let currency: Box<dyn Currency> = match currency {
         CurrencyType::Arweave => {
             let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
-            Box::new(Arweave::new(wallet, None))
+            Box::new(Arweave::new(wallet, None)?)
         }
         CurrencyType::Solana => todo!("{}", USE_JS_SDK),
         CurrencyType::Ethereum => todo!("{}", USE_JS_SDK),
         CurrencyType::Erc20 => todo!("{}", USE_JS_SDK),
         CurrencyType::Cosmos => todo!("{}", USE_JS_SDK),
     };
-    let bundlr = Bundlr::new(url, currency.as_ref()).await;
+    let bundlr = Bundlr::new(url, currency.as_ref()).await?;
     bundlr.withdraw(amount).await.map(|res| res.to_string())
 }

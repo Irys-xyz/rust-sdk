@@ -22,11 +22,12 @@ pub async fn run_upload(
 ) -> Result<String, BundlrError> {
     let currency: Box<dyn Currency> = match currency {
         CurrencyType::Arweave => {
-            let wallet = PathBuf::from_str(&wallet).expect("Invalid wallet path");
-            Box::new(Arweave::new(wallet, None))
+            let wallet = PathBuf::from_str(&wallet)
+                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            Box::new(Arweave::new(wallet, None)?)
         }
-        CurrencyType::Solana => Box::new(Solana::new(wallet, None)),
-        CurrencyType::Ethereum => Box::new(Ethereum::new(wallet, None)),
+        CurrencyType::Solana => Box::new(Solana::new(wallet, None)?),
+        CurrencyType::Ethereum => Box::new(Ethereum::new(wallet, None)?),
         CurrencyType::Erc20 => todo!(),
         CurrencyType::Cosmos => todo!(),
     };
@@ -40,8 +41,8 @@ pub async fn run_upload(
     let base_tag = Tag::new("User-Agent", &format!("bundlr-sdk-rs/{}", VERSION));
 
     // Read.
-    let bundlr = Bundlr::new(url, currency.as_ref()).await;
-    let mut tx = bundlr.create_transaction(buffer, vec![base_tag]);
+    let bundlr = Bundlr::new(url, currency.as_ref()).await?;
+    let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
     let sig = bundlr.sign_transaction(&mut tx).await;
     assert!(sig.is_ok());
     match bundlr.send_transaction(tx).await {

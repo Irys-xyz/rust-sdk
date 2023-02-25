@@ -1,3 +1,5 @@
+use std::array::TryFromSliceError;
+
 use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
@@ -26,13 +28,16 @@ impl CosmosSigner {
     }
 
     pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
-        let k = bs58::decode(s).into_vec().expect("Invalid base58 encoding");
+        let k = bs58::decode(s)
+            .into_vec()
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
         let key: &[u8; 64] = k
             .as_slice()
             .try_into()
-            .expect("Couldn't convert base58 key to bytes");
+            .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
 
-        let sec_key = SecretKey::from_slice(&key[..32]).expect("32 bytes, within curve order");
+        let sec_key = SecretKey::from_slice(&key[..32])
+            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
 
         Self::new(sec_key)
     }
@@ -41,7 +46,7 @@ impl CosmosSigner {
         let mut hasher = sha2::Sha256::new();
         hasher.update(msg);
         let result = hasher.finalize();
-        result.try_into().unwrap()
+        result.into()
     }
 }
 
@@ -57,7 +62,8 @@ impl Signer for CosmosSigner {
     }
 
     fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
-        let msg = Message::from_slice(&CosmosSigner::sha256_digest(&message[..])).unwrap();
+        let msg = Message::from_slice(&CosmosSigner::sha256_digest(&message[..]))
+            .map_err(BundlrError::Secp256k1Error)?;
         let signature = secp256k1::Secp256k1::signing_only()
             .sign_ecdsa(&msg, &self.sec_key)
             .serialize_compact();
@@ -83,11 +89,11 @@ impl Verifier for CosmosSigner {
         signature: Bytes,
     ) -> Result<bool, crate::error::BundlrError> {
         let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
-            .unwrap_or_else(|_| panic!("Cosmos messages should have 32 bytes"));
+            .map_err(BundlrError::Secp256k1Error)?;
         let sig = secp256k1::ecdsa::Signature::from_compact(&signature)
-            .unwrap_or_else(|_| panic!("Cosmos signatures should have {} bytes", SIG_LENGTH));
-        let pk = secp256k1::PublicKey::from_slice(&public_key)
-            .unwrap_or_else(|_| panic!("Cosmos public keys should have {} bytes", PUB_LENGTH));
+            .map_err(BundlrError::Secp256k1Error)?;
+        let pk =
+            secp256k1::PublicKey::from_slice(&public_key).map_err(BundlrError::Secp256k1Error)?;
 
         secp256k1::Secp256k1::verification_only()
             .verify_ecdsa(&msg, &sig, &pk)
