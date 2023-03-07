@@ -1,6 +1,6 @@
 globalThis.crypto = require("crypto").webcrypto;
 import { AptosAccount } from "aptos";
-import { bundleAndSignData, createData } from "arbundles";
+import { bundleAndSignData, createData, DataItem } from "arbundles";
 import { AlgorandSigner, AptosSigner, ArweaveSigner, Signer } from "arbundles/src/signing";
 import EthereumSigner from "arbundles/src/signing/chains/ethereumSigner";
 import SolanaSigner from "arbundles/src/signing/chains/SolanaSigner";
@@ -40,7 +40,7 @@ const wallet = {
 
 // create signature collection function
 // this function is called whenever the client needs to collect signatures for signing
-const collectSignatures = async (message) => {
+const collectSignatures = async (message: Buffer) => {
     //Select random amount of random acccounts within our aptos accounts
     const accountAmount = Math.ceil(Math.random() * aptosAccounts.length);
     const randomAccounts = aptosAccounts
@@ -60,6 +60,7 @@ const multiAptosSigner = new Bundlr("https://devnet.bundlr.network", "multiAptos
 const signers: Signer[] = [
     new ArweaveSigner(jwk),
     //new AlgorandSigner(sk, addr),
+    // @ts-ignore
     new EthereumSigner(privateKey),
     new SolanaSigner(bs58.encode(solKeypair.secretKey)),
     new AptosSigner(aptosAccounts[0].toPrivateKeyObject().privateKeyHex, aptosAccounts[0].toPrivateKeyObject().publicKeyHex),
@@ -69,7 +70,7 @@ const signers: Signer[] = [
 
 for (let i = 1; i <= bundlesAmount; i++) {
     const dataItemsAmount = Math.floor(Math.random() * MAX_DATA_ITEMS + 1);
-    const dataItems = [];
+    const dataItems: DataItem[] = [];
     for (let j = 1; j <= dataItemsAmount; j++) {
         const signer = signers[Math.floor(Math.random() * signers.length)];
         const randomData = crypto.randomBytes(MAX_DATA_BYTES).toString('hex');

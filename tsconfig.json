@@ -1,14 +1,25 @@
 {
     "compilerOptions": {
-        "resolveJsonModule": true,
-        "module": "CommonJS",
+        "target": "es2019",
+        "module": "commonjs",
+        "moduleResolution": "nodenext",
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "allowJs": true,
+        "importHelpers": true,
+        "declaration": false,
+        "outDir": "dist",
+        "lib": [
+            "esnext",
+            "es2019",
+            "DOM"
+        ],
         "esModuleInterop": true,
-        "target": "ES6",
-        "moduleResolution": "node",
+        "alwaysStrict": true,
         "sourceMap": true,
-        "outDir": "dist"
+        "strictNullChecks": false,
+        "experimentalDecorators": true,
+        "strict": true,
+        "resolveJsonModule": true
     },
-    "lib": [
-        "es2015"
-    ]
 }
