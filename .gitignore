@@ -4,3 +4,6 @@ test_item
 wallet.json
 .wallet.json
 test_data_item*
+node_modules
+dist
+/res/gen_bundles/bundle*

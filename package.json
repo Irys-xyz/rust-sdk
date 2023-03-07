@@ -1,0 +1,36 @@
+{
+  "name": "rust-sdk",
+  "version": "1.0.0",
+  "description": "Bundlr's rust sdk",
+  "main": "bundles.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "generate-bundles": "tsc -p tsconfig.json && node dist/bundles.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bundlr-Network/rust-sdk.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bundlr-Network/rust-sdk/issues"
+  },
+  "homepage": "https://github.com/Bundlr-Network/rust-sdk#readme",
+  "dependencies": {
+    "@bundlr-network/client": "^0.10.5",
+    "@solana/web3.js": "^1.73.3",
+    "algosdk": "^2.1.0",
+    "aptos": "^1.7.1",
+    "arbundles": "^0.8.0",
+    "bs58": "^5.0.0",
+    "crypto": "^1.0.1",
+    "keythereum": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.6",
+    "typescript": "^4.9.5"
+  }
+}
