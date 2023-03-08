@@ -10,7 +10,6 @@ import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import fs from "fs";
 import crypto from "crypto";
-//import algosdk from "algosdk";
 
 const MAX_BUNDLES_AMOUNT = 100;
 const MAX_DATA_ITEMS = 100;
@@ -20,10 +19,6 @@ const MAX_APTOS_SIGNERS = 20;
 //Arweave
 import jwk from "./res/test_wallet.json";
 
-//Algorand
-//TODO: fix
-//let { sk, addr } = algosdk.generateAccount();
-
 //Ethereum
 var params = { keyBytes: 32, ivBytes: 16 };
 var { privateKey } = keythereum.create(params);
@@ -31,12 +26,15 @@ var { privateKey } = keythereum.create(params);
 //Solana
 const solKeypair = Keypair.generate();
 
+//Algorand
+const algoKeypair = Keypair.generate();
+
 //Multiaptos
 const aptosAccounts = Array.from({ length: Math.ceil(Math.random() * MAX_APTOS_SIGNERS + 1) }, () => new AptosAccount());
 const wallet = {
     participants: aptosAccounts.map(a => a.signingKey.publicKey.toString()),
     threshold: 2
-}
+};
 
 // create signature collection function
 // this function is called whenever the client needs to collect signatures for signing
@@ -47,19 +45,25 @@ const collectSignatures = async (message: Buffer) => {
         .map((account, i) => { return { account, i } }) // Store original array position
         .sort(() => Math.random() - Math.random())      // Shuffle array so we get randoms
         .slice(0, accountAmount);                       // Get sample size
-    const signatures = randomAccounts.map(el => Buffer.from(el.account.signBuffer(message).toUint8Array()))
+    const signatures = randomAccounts.map(el => Buffer.from(el.account.signBuffer(message).toUint8Array()));
     const bitmap = randomAccounts.map(el => el.i);
-    return { signatures: signatures, bitmap }
+    return { signatures: signatures, bitmap };
 }
 
 const bundlesAmount = MAX_BUNDLES_AMOUNT;
 
 //Create all signers
 //TODO: figure out how to instantiate signer directly (see below)
-const multiAptosSigner = new Bundlr("https://devnet.bundlr.network", "multiAptos", wallet, { providerUrl: "https://fullnode.devnet.aptoslabs.com", currencyOpts: { collectSignatures } }).getSigner()
+const multiAptosSigner = new Bundlr(
+    "https://devnet.bundlr.network",
+    "multiAptos",
+    wallet,
+    { providerUrl: "https://fullnode.devnet.aptoslabs.com", currencyOpts: { collectSignatures } }
+).getSigner();
+
 const signers: Signer[] = [
     new ArweaveSigner(jwk),
-    //new AlgorandSigner(sk, addr),
+    new AlgorandSigner(algoKeypair.secretKey, algoKeypair.publicKey.toBuffer()),
     // @ts-ignore
     new EthereumSigner(privateKey),
     new SolanaSigner(bs58.encode(solKeypair.secretKey)),

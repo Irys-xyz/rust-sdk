@@ -22,7 +22,6 @@
   "dependencies": {
     "@bundlr-network/client": "^0.10.5",
     "@solana/web3.js": "^1.73.3",
-    "algosdk": "^2.1.0",
     "aptos": "^1.7.1",
     "arbundles": "^0.8.0",
     "bs58": "^5.0.0",
