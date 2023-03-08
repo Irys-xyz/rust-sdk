@@ -48,3 +48,15 @@ Some functionalities are still work in progress. If you need to use one of them,
 | Withdraw        | [x]       | [ ]        | [ ]       | [ ]       | [ ]        | [ ]        |
 | Upload          | [x]       | [x]        | [x]       | [ ]       | [ ]        | [ ]        |
 | Upload Directory| [ ]       | [ ]        | [ ]       | [ ]       | [ ]        | [ ]        |
+| Verify bundle   | [x]       | [x]        | [x]       | [x]       | [x]        | [x]        |
+
+# Testing
+In order to run tests properly, you need to generate random bundles. Run:
+```
+npm install
+npm run generate-bundles
+```
+To generate random bundles in `res/gen_bundles`, and then run:
+```
+cargo test
+```
