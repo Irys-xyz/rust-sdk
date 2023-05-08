@@ -1,10 +1,13 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
+    bundlr::BundlrBuilder,
     consts::USE_JS_SDK,
-    currency::{arweave::ArweaveBuilder, Currency, CurrencyType},
+    currency::{
+        arweave::{Arweave, ArweaveBuilder},
+        CurrencyType,
+    },
     error::BundlrError,
-    Bundlr,
 };
 use num_traits::Zero;
 use reqwest::Url;
@@ -20,14 +23,20 @@ pub async fn run_fund(
     }
 
     let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
-    let currency: Box<dyn Currency> = match currency {
-        CurrencyType::Arweave => Box::new(ArweaveBuilder::new().keypair_path(wallet).build()?),
+    match currency {
+        CurrencyType::Arweave => {
+            let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
+            let bundlr = BundlrBuilder::<Arweave>::new()
+                .url(url)
+                .currency(currency)
+                .fetch_pub_info()
+                .await?
+                .build()?;
+            bundlr.fund(amount, None).await.map(|res| res.to_string())
+        }
         CurrencyType::Solana => todo!("{}", USE_JS_SDK),
         CurrencyType::Ethereum => todo!("{}", USE_JS_SDK),
         CurrencyType::Erc20 => todo!("{}", USE_JS_SDK),
         CurrencyType::Cosmos => todo!("{}", USE_JS_SDK),
-    };
-    let bundlr = Bundlr::new(url, currency.as_ref()).await?;
-
-    bundlr.fund(amount, None).await.map(|res| res.to_string())
+    }
 }

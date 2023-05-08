@@ -5,7 +5,7 @@ use reqwest::{StatusCode, Url};
 use std::{ops::Mul, path::PathBuf, str::FromStr};
 
 use crate::{
-    error::BundlrError,
+    error::{BuilderError, BundlrError},
     transaction::{Tx, TxStatus},
     ArweaveSigner, Signer, Verifier,
 };
@@ -48,7 +48,7 @@ impl Default for Arweave {
 #[derive(Default)]
 pub struct ArweaveBuilder {
     base_url: Option<Url>,
-    keypair_path: PathBuf,
+    keypair_path: Option<PathBuf>,
 }
 
 impl ArweaveBuilder {
@@ -62,18 +62,27 @@ impl ArweaveBuilder {
     }
 
     pub fn keypair_path(mut self, keypair_path: PathBuf) -> ArweaveBuilder {
-        self.keypair_path = keypair_path;
+        self.keypair_path = Some(keypair_path);
         self
     }
 
-    pub fn build(self) -> Result<Arweave, BundlrError> {
+    pub fn build(self) -> Result<Arweave, BuilderError> {
         let base_url = self
             .base_url
             .unwrap_or_else(|| Url::from_str(ARWEAVE_BASE_URL).unwrap());
+
+        let keypair_path = match self.keypair_path {
+            Some(p) => p,
+            None => return Err(BuilderError::MissingField("keypair_path".to_owned())),
+        };
+
         Ok(Arweave {
-            sdk: ArweaveSdk::from_keypair_path(self.keypair_path.clone(), base_url)
-                .map_err(BundlrError::ArweaveSdkError)?,
-            signer: Some(ArweaveSigner::from_keypair_path(self.keypair_path)?),
+            sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
+                .map_err(BuilderError::ArweaveSdkError)?,
+            signer: Some(
+                ArweaveSigner::from_keypair_path(keypair_path)
+                    .map_err(|err| BuilderError::MissingField(err.to_string()))?,
+            ),
             ..Arweave::default()
         })
     }

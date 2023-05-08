@@ -1,4 +1,4 @@
-use bundlr_sdk::{currency::CurrencyType, Bundlr};
+use bundlr_sdk::{bundlr::get_price, currency::CurrencyType};
 use reqwest::Url;
 
 #[tokio::main]
@@ -7,7 +7,7 @@ async fn main() {
     let currency = CurrencyType::Solana;
 
     let client = reqwest::Client::new();
-    let res = Bundlr::get_price_public(&url, currency, &client, 256000).await;
+    let res = get_price(&url, currency, &client, 256000).await;
     match res {
         Ok(ok) => println!("[ok] {}", ok),
         Err(err) => println!("[err] {}", err),

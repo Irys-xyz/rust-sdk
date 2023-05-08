@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use crate::{currency::CurrencyType, error::BundlrError, Bundlr};
+use crate::{bundlr::get_balance, currency::CurrencyType, error::BundlrError};
 
 pub async fn run_balance(
     url: Url,
@@ -8,7 +8,7 @@ pub async fn run_balance(
     currency: CurrencyType,
 ) -> Result<String, BundlrError> {
     let client = reqwest::Client::new();
-    Bundlr::get_balance_public(&url, currency, &address, &client)
+    get_balance(&url, currency, &address, &client)
         .await
         .map(|balance| balance.to_string())
 }

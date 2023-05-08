@@ -46,7 +46,7 @@ impl Default for Solana {
 #[derive(Default)]
 pub struct SolanaBuilder {
     base_url: Option<Url>,
-    wallet: String,
+    wallet: Option<String>,
 }
 
 impl SolanaBuilder {
@@ -60,14 +60,18 @@ impl SolanaBuilder {
     }
 
     pub fn wallet(mut self, wallet: &str) -> SolanaBuilder {
-        self.wallet = wallet.into();
+        self.wallet = Some(wallet.into());
         self
     }
 
     pub fn build(self) -> Result<Solana, BundlrError> {
-        let signer = Ed25519Signer::from_base58(&self.wallet)?;
+        let signer = if let Some(wallet) = self.wallet {
+            Some(Ed25519Signer::from_base58(&wallet)?)
+        } else {
+            None
+        };
         Ok(Solana {
-            signer: Some(signer),
+            signer,
             url: self
                 .base_url
                 .unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).unwrap()),

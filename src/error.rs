@@ -97,4 +97,25 @@ pub enum BundlrError {
 
     #[error("Io error: {0}")]
     IoError(std::io::Error),
+
+    #[error("Builder error: {0}")]
+    BuilderError(BuilderError),
+}
+
+#[derive(Debug, Error)]
+pub enum BuilderError {
+    #[error("Missing field {0}")]
+    MissingField(String),
+
+    #[error("Fetch pub info error: {0}")]
+    FetchPubInfoError(String),
+
+    #[error("Arweave Sdk error: {0}")]
+    ArweaveSdkError(arweave_rs::error::Error),
+}
+
+impl From<BuilderError> for BundlrError {
+    fn from(value: BuilderError) -> Self {
+        Self::BuilderError(value)
+    }
 }

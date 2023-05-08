@@ -1,12 +1,12 @@
 extern crate derive_builder;
 
-mod bundlr;
 mod signers;
 mod transaction;
 
 #[cfg(feature = "build-binary")]
 pub mod client;
 
+pub mod bundlr;
 pub mod consts;
 pub mod currency;
 pub mod deep_hash;
@@ -18,7 +18,7 @@ pub mod upload;
 pub mod utils;
 pub mod verify;
 
-pub use bundlr::Bundlr;
+pub use bundlr::{Bundlr, BundlrBuilder};
 pub use signers::Signer;
 pub use transaction::bundlr::BundlrTx;
 pub use verify::Verifier;

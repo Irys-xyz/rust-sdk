@@ -46,7 +46,7 @@ impl Default for Ethereum {
 #[derive(Default)]
 pub struct EthereumBuilder {
     base_url: Option<Url>,
-    wallet: String,
+    wallet: Option<String>,
 }
 
 impl EthereumBuilder {
@@ -60,17 +60,21 @@ impl EthereumBuilder {
     }
 
     pub fn wallet(mut self, wallet: &str) -> EthereumBuilder {
-        self.wallet = wallet.into();
+        self.wallet = Some(wallet.into());
         self
     }
 
     pub fn build(self) -> Result<Ethereum, BundlrError> {
-        let signer = Secp256k1Signer::from_base58(&self.wallet)?;
+        let signer = if let Some(wallet) = self.wallet {
+            Some(Secp256k1Signer::from_base58(&wallet)?)
+        } else {
+            None
+        };
         Ok(Ethereum {
             url: self
                 .base_url
                 .unwrap_or_else(|| Url::parse(ETHEREUM_BASE_URL).unwrap()),
-            signer: Some(signer),
+            signer,
             ..Ethereum::default()
         })
     }
