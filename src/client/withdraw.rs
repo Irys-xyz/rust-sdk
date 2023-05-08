@@ -2,7 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 
 use crate::{
     consts::USE_JS_SDK,
-    currency::{arweave::Arweave, Currency, CurrencyType},
+    currency::{arweave::ArweaveBuilder, Currency, CurrencyType},
     error::BundlrError,
     Bundlr,
 };
@@ -22,7 +22,7 @@ pub async fn run_withdraw(
     let currency: Box<dyn Currency> = match currency {
         CurrencyType::Arweave => {
             let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
-            Box::new(Arweave::new(wallet, None)?)
+            Box::new(ArweaveBuilder::new().keypair_path(wallet).build()?)
         }
         CurrencyType::Solana => todo!("{}", USE_JS_SDK),
         CurrencyType::Ethereum => todo!("{}", USE_JS_SDK),

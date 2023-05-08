@@ -62,13 +62,16 @@ impl Bundlr<'_> {
     /// # Examples
     ///
     /// ```
-    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::ArweaveBuilder};
     /// # use std::{path::PathBuf, str::FromStr};
     /// # use reqwest::Url;
     /// # tokio_test::block_on(async {
     /// let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// let currency = ArweaveBuilder::new()
+    ///     .keypair_path(wallet)
+    ///     .build()
+    ///     .expect("Could not create currency instance");
     /// let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// # })
     /// ```
@@ -116,13 +119,16 @@ impl Bundlr<'_> {
     /// # Examples
     ///
     /// ```
-    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::ArweaveBuilder, tags::Tag};
     /// # use std::{path::PathBuf, str::FromStr};
     /// # use reqwest::Url;
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// # let currency = Arweave::new(wallet, None).unwrap();
+    /// # let currency = ArweaveBuilder::new()
+    /// #    .keypair_path(wallet)
+    /// #    .build()
+    /// #    .expect("Could not create currency instance");
     /// # let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let data = b"Hello".to_vec();
     /// let tags = vec![Tag::new("name", "value")];
@@ -142,13 +148,16 @@ impl Bundlr<'_> {
     /// # Examples
     ///
     /// ```
-    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::ArweaveBuilder, tags::Tag};
     /// # use std::{path::PathBuf, str::FromStr};
     /// # use reqwest::Url;
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// # let currency = Arweave::new(wallet, None).unwrap();
+    /// # let currency = ArweaveBuilder::new()
+    /// #    .keypair_path(wallet)
+    /// #    .build()
+    /// #    .expect("Could not create currency instance");
     /// # let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// # let data = b"Hello".to_vec();
     /// # let tags = vec![Tag::new("name", "value")];
@@ -166,13 +175,16 @@ impl Bundlr<'_> {
     /// # Examples
     ///
     /// ```
-    /// # use bundlr_sdk::{Bundlr, currency::arweave::Arweave, tags::Tag};
+    /// # use bundlr_sdk::{Bundlr, currency::arweave::ArweaveBuilder, tags::Tag};
     /// # use std::{path::PathBuf, str::FromStr};
     /// # use reqwest::Url;
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// # let currency = Arweave::new(wallet, None).unwrap();
+    /// # let currency = ArweaveBuilder::new()
+    /// #    .keypair_path(wallet)
+    /// #    .build()
+    /// #    .expect("Could not create currency instance");
     /// # let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// # let data = b"Hello".to_vec();
     /// # let tags = vec![Tag::new("name", "value")];
@@ -245,13 +257,16 @@ impl Bundlr<'_> {
     /// # Example
     ///
     /// ```
-    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::ArweaveBuilder};
     /// # use reqwest::Url;
     /// # use std::{path::PathBuf, str::FromStr};
     /// # tokio_test::block_on(async {
     /// let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// # let currency = ArweaveBuilder::new()
+    /// #    .keypair_path(wallet)
+    /// #    .build()
+    /// #    .expect("Could not create currency instance");
     /// let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let res = bundlr.get_balance("address").await;
     /// assert!(res.is_ok());
@@ -264,13 +279,16 @@ impl Bundlr<'_> {
     /// # Example
     ///
     /// ```
-    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::ArweaveBuilder};
     /// # use reqwest::Url;
     /// # use std::{path::PathBuf, str::FromStr};
     /// # tokio_test::block_on(async {
-    /// let url = Url::parse("https://node1.bundlr.network").unwrap();
+    /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// let currency = ArweaveBuilder::new()
+    ///     .keypair_path(wallet)
+    ///     .build()
+    ///     .expect("Could not create currency instance");
     /// let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let res = bundlr.get_price(2560000).await;
     /// assert!(res.is_ok());
@@ -328,13 +346,16 @@ impl Bundlr<'_> {
     /// # Example
     ///
     /// ```
-    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::ArweaveBuilder};
     /// # use reqwest::Url;
     /// # use std::{path::PathBuf, str::FromStr};
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// let currency = ArweaveBuilder::new()
+    ///     .keypair_path(wallet)
+    ///     .build()
+    ///     .expect("Could not create currency instance");
     /// let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let res = bundlr.fund(10000, None)/*.await*/;
     /// # })
@@ -373,13 +394,16 @@ impl Bundlr<'_> {
     /// # Example
     ///
     /// ```
-    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::ArweaveBuilder};
     /// # use reqwest::Url;
     /// # use std::{path::PathBuf, str::FromStr};
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// let currency = ArweaveBuilder::new()
+    ///     .keypair_path(wallet)
+    ///     .build()
+    ///     .expect("Could not create currency instance");
     /// let bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let res = bundlr.withdraw(10000).await;
     /// # })
@@ -433,13 +457,16 @@ impl Bundlr<'_> {
     /// # Example
     ///
     /// ```
-    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::Arweave};
+    /// # use bundlr_sdk::{currency::CurrencyType, Bundlr, currency::arweave::ArweaveBuilder};
     /// # use reqwest::Url;
     /// # use std::{path::PathBuf, str::FromStr};
     /// # tokio_test::block_on(async {
     /// # let url = Url::parse("https://node1.bundlr.network").unwrap();
     /// # let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// let currency = Arweave::new(wallet, None).unwrap();
+    /// let currency = ArweaveBuilder::new()
+    ///     .keypair_path(wallet)
+    ///     .build()
+    ///     .expect("Could not create currency instance");
     /// let mut bundlr = Bundlr::new(url, &currency).await.unwrap();
     /// let file = PathBuf::from_str("res/test_image.jpg").expect("Invalid wallet path");
     /// let result = bundlr.upload_file(file).await;
@@ -472,7 +499,7 @@ impl Bundlr<'_> {
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::{currency::arweave::Arweave, Bundlr};
+    use crate::{currency::arweave::ArweaveBuilder, Bundlr};
     use httpmock::{Method::GET, MockServer};
     use num::BigUint;
     use reqwest::Url;
@@ -533,7 +560,11 @@ mod tests {
         let address = "address";
         let path = PathBuf::from_str("res/test_wallet.json").unwrap();
         println!("{:?}", &path);
-        let currency = Arweave::new(path, Some(url.clone())).unwrap();
+        let currency = ArweaveBuilder::new()
+            .keypair_path(path)
+            .base_url(url.clone())
+            .build()
+            .unwrap();
         let bundler = &Bundlr::new(url, &currency).await.unwrap();
         let balance = bundler.get_balance(address).await.unwrap();
 
@@ -561,7 +592,11 @@ mod tests {
         let url = Url::from_str(&server.url("")).unwrap();
         let path = PathBuf::from_str("res/test_wallet.json").unwrap();
         println!("{:?}", &path);
-        let currency = Arweave::new(path, Some(url.clone())).unwrap();
+        let currency = ArweaveBuilder::new()
+            .keypair_path(path)
+            .base_url(url.clone())
+            .build()
+            .unwrap();
         let bundler = &Bundlr::new(url, &currency).await.unwrap();
         let balance = bundler.get_price(123123123).await.expect("wtf");
 

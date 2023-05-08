@@ -45,14 +45,36 @@ impl Default for Arweave {
     }
 }
 
-impl Arweave {
-    pub fn new(keypair_path: PathBuf, base_url: Option<Url>) -> Result<Self, BundlrError> {
-        let base_url = base_url.unwrap_or_else(|| Url::from_str(ARWEAVE_BASE_URL).unwrap());
-        Ok(Self {
-            sdk: ArweaveSdk::from_keypair_path(keypair_path.clone(), base_url)
+#[derive(Default)]
+pub struct ArweaveBuilder {
+    base_url: Option<Url>,
+    keypair_path: PathBuf,
+}
+
+impl ArweaveBuilder {
+    pub fn new() -> ArweaveBuilder {
+        Default::default()
+    }
+
+    pub fn base_url(mut self, base_url: Url) -> ArweaveBuilder {
+        self.base_url = Some(base_url);
+        self
+    }
+
+    pub fn keypair_path(mut self, keypair_path: PathBuf) -> ArweaveBuilder {
+        self.keypair_path = keypair_path;
+        self
+    }
+
+    pub fn build(self) -> Result<Arweave, BundlrError> {
+        let base_url = self
+            .base_url
+            .unwrap_or_else(|| Url::from_str(ARWEAVE_BASE_URL).unwrap());
+        Ok(Arweave {
+            sdk: ArweaveSdk::from_keypair_path(self.keypair_path.clone(), base_url)
                 .map_err(BundlrError::ArweaveSdkError)?,
-            signer: Some(ArweaveSigner::from_keypair_path(keypair_path)?),
-            ..Self::default()
+            signer: Some(ArweaveSigner::from_keypair_path(self.keypair_path)?),
+            ..Arweave::default()
         })
     }
 }
@@ -278,7 +300,7 @@ impl Currency for Arweave {
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::currency::{arweave::Arweave, Currency};
+    use crate::currency::{arweave::ArweaveBuilder, Currency};
 
     #[test]
     fn should_sign_and_verify() {
@@ -287,8 +309,11 @@ mod tests {
             214, 54, 13, 53, 254, 179, 53, 220, 205, 129, 37, 244, 142, 230, 32, 209, 103, 68, 75,
             39, 178, 10, 186, 24, 160, 179, 143, 211, 151,
         ];
-        let path = PathBuf::from_str("res/test_wallet.json").expect("Could not load path");
-        let c = Arweave::new(path, None).unwrap();
+        let wallet = PathBuf::from_str("res/test_wallet.json").expect("Could not load path");
+        let c = ArweaveBuilder::new()
+            .keypair_path(wallet)
+            .build()
+            .expect("Could not build arweave");
 
         let sig = c.sign_message(&msg).unwrap();
         let pub_key = c.get_pub_key().unwrap();

@@ -43,13 +43,35 @@ impl Default for Solana {
     }
 }
 
-impl Solana {
-    pub fn new(wallet: &str, url: Option<Url>) -> Result<Self, BundlrError> {
-        let signer = Ed25519Signer::from_base58(wallet)?;
-        Ok(Self {
+#[derive(Default)]
+pub struct SolanaBuilder {
+    base_url: Option<Url>,
+    wallet: String,
+}
+
+impl SolanaBuilder {
+    pub fn new() -> SolanaBuilder {
+        Default::default()
+    }
+
+    pub fn base_url(mut self, base_url: Url) -> SolanaBuilder {
+        self.base_url = Some(base_url);
+        self
+    }
+
+    pub fn wallet(mut self, wallet: &str) -> SolanaBuilder {
+        self.wallet = wallet.into();
+        self
+    }
+
+    pub fn build(self) -> Result<Solana, BundlrError> {
+        let signer = Ed25519Signer::from_base58(&self.wallet)?;
+        Ok(Solana {
             signer: Some(signer),
-            url: url.unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).unwrap()),
-            ..Self::default()
+            url: self
+                .base_url
+                .unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).unwrap()),
+            ..Solana::default()
         })
     }
 }
