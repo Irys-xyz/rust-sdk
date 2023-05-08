@@ -102,8 +102,23 @@ pub enum BundlrError {
     BuilderError(BuilderError),
 }
 
+impl From<BuilderError> for BundlrError {
+    fn from(value: BuilderError) -> Self {
+        Self::BuilderError(value)
+    }
+}
+
+impl From<arweave_rs::error::Error> for BundlrError {
+    fn from(value: arweave_rs::error::Error) -> Self {
+        Self::ArweaveSdkError(value)
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum BuilderError {
+    #[error("Bundlr Error {0}")]
+    BundlrError(String),
+
     #[error("Missing field {0}")]
     MissingField(String),
 
@@ -114,8 +129,14 @@ pub enum BuilderError {
     ArweaveSdkError(arweave_rs::error::Error),
 }
 
-impl From<BuilderError> for BundlrError {
-    fn from(value: BuilderError) -> Self {
-        Self::BuilderError(value)
+impl From<arweave_rs::error::Error> for BuilderError {
+    fn from(value: arweave_rs::error::Error) -> Self {
+        Self::ArweaveSdkError(value)
+    }
+}
+
+impl From<BundlrError> for BuilderError {
+    fn from(value: BundlrError) -> Self {
+        Self::BundlrError(value.to_string())
     }
 }

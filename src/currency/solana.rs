@@ -2,7 +2,7 @@ use bytes::Bytes;
 use reqwest::{StatusCode, Url};
 
 use crate::{
-    error::BundlrError,
+    error::{BuilderError, BundlrError},
     transaction::{Tx, TxStatus},
     Ed25519Signer, Signer, Verifier,
 };
@@ -64,7 +64,7 @@ impl SolanaBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Solana, BundlrError> {
+    pub fn build(self) -> Result<Solana, BuilderError> {
         let signer = if let Some(wallet) = self.wallet {
             Some(Ed25519Signer::from_base58(&wallet)?)
         } else {

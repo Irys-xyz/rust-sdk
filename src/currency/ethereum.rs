@@ -2,7 +2,7 @@ use bytes::Bytes;
 use reqwest::{StatusCode, Url};
 
 use crate::{
-    error::BundlrError,
+    error::{BuilderError, BundlrError},
     transaction::{Tx, TxStatus},
     Ed25519Signer, Secp256k1Signer, Signer, Verifier,
 };
@@ -64,7 +64,7 @@ impl EthereumBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Ethereum, BundlrError> {
+    pub fn build(self) -> Result<Ethereum, BuilderError> {
         let signer = if let Some(wallet) = self.wallet {
             Some(Secp256k1Signer::from_base58(&wallet)?)
         } else {
