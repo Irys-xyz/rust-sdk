@@ -58,7 +58,7 @@ impl VerifierTrait for AptosSigner {
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<bool, crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlrError> {
         let public_key =
             ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
         let sig =
@@ -70,8 +70,7 @@ impl VerifierTrait for AptosSigner {
 
         public_key
             .verify(&full_msg, &sig)
-            .map(|_| true)
-            .map_err(|_| BundlrError::InvalidSignature)
+            .map_err(|_err| BundlrError::InvalidSignature)
     }
 }
 
@@ -134,7 +133,7 @@ impl VerifierTrait for MultiAptosSigner {
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<bool, crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlrError> {
         let sig_len = SIG_LENGTH_M;
         let bitmap_pos = sig_len - 4;
         let signatures = signature.slice(0..(bitmap_pos as usize));
@@ -160,7 +159,11 @@ impl VerifierTrait for MultiAptosSigner {
             }
         }
 
-        Ok(one_false)
+        if one_false {
+            Err(BundlrError::InvalidSignature)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -179,7 +182,7 @@ mod tests {
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
         println!("{:?}", pub_key.to_vec());
-        assert!(AptosSigner::verify(pub_key, msg.clone(), sig).unwrap());
+        assert!(AptosSigner::verify(pub_key, msg.clone(), sig).is_ok());
 
         let keypair = Keypair::from_bytes(&[
             237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
@@ -192,7 +195,7 @@ mod tests {
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 
-        assert!(AptosSigner::verify(pub_key, msg, sig).unwrap());
+        assert!(AptosSigner::verify(pub_key, msg, sig).is_ok());
     }
 
     #[test]

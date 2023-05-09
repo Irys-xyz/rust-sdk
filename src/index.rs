@@ -126,7 +126,7 @@ impl SignerMap {
         }
     }
 
-    pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<bool, BundlrError> {
+    pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
         match *self {
             #[cfg(feature = "arweave")]
             SignerMap::Arweave => ArweaveSigner::verify(

@@ -289,7 +289,7 @@ impl BundlrTx {
         Ok(())
     }
 
-    pub async fn verify(&mut self) -> Result<bool, BundlrError> {
+    pub async fn verify(&mut self) -> Result<(), BundlrError> {
         let message = self.get_message().await?;
         let pub_key = &self.owner;
         let signature = &self.signature;

@@ -9,5 +9,5 @@ pub trait Verifier
 where
     Self: Sized,
 {
-    fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<bool, BundlrError>;
+    fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<(), BundlrError>;
 }
