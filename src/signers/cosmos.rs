@@ -87,7 +87,7 @@ impl Verifier for CosmosSigner {
         public_key: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<bool, crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlrError> {
         let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
             .map_err(BundlrError::Secp256k1Error)?;
         let sig = secp256k1::ecdsa::Signature::from_compact(&signature)
@@ -97,7 +97,6 @@ impl Verifier for CosmosSigner {
 
         secp256k1::Secp256k1::verification_only()
             .verify_ecdsa(&msg, &sig, &pk)
-            .map(|_| true)
             .map_err(|_| BundlrError::InvalidSignature)
     }
 }
@@ -127,12 +126,12 @@ mod tests {
         let signer = CosmosSigner::new(secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(CosmosSigner::verify(pub_key, msg.clone(), sig).unwrap());
+        assert!(CosmosSigner::verify(pub_key, msg.clone(), sig).is_ok());
 
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
         let signer = CosmosSigner::from_base58(base58_secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(CosmosSigner::verify(pub_key, msg, sig).unwrap());
+        assert!(CosmosSigner::verify(pub_key, msg, sig).is_ok());
     }
 }

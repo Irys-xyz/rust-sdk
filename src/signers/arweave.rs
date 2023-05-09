@@ -52,10 +52,11 @@ impl Signer for ArweaveSigner {
 }
 
 impl Verifier for ArweaveSigner {
-    fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<bool, BundlrError> {
-        SdkSigner::verify(&pk, &message, &signature)
-            .map(|_| true)
-            .map_err(|_| BundlrError::InvalidSignature)
+    fn verify(pk: Bytes, message: Bytes, signature: Bytes) -> Result<(), BundlrError> {
+        SdkSigner::verify(&pk, &message, &signature).map_err(|err| match err {
+            arweave_rs::error::Error::InvalidSignature => BundlrError::InvalidSignature,
+            _ => BundlrError::ArweaveSdkError(err),
+        })
     }
 }
 

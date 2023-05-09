@@ -90,7 +90,7 @@ impl Verifier for Secp256k1Signer {
         public_key: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<bool, crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlrError> {
         let msg = Secp256k1Signer::eth_hash_message(&message);
 
         let recovery_address = recover(&msg, &signature[0..64], signature[64] as i32 - 27)
@@ -104,7 +104,7 @@ impl Verifier for Secp256k1Signer {
         let address = Address::from_slice(&pubkey_hash[12..]);
 
         if address.eq(&recovery_address) {
-            return Ok(true);
+            return Ok(());
         }
 
         Err(BundlrError::InvalidSignature)
@@ -136,12 +136,12 @@ mod tests {
         let signer = Secp256k1Signer::new(secret_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(Secp256k1Signer::verify(pub_key, msg.clone(), sig).unwrap());
+        assert!(Secp256k1Signer::verify(pub_key, msg.clone(), sig).is_ok());
 
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
         let signer = Secp256k1Signer::from_base58(base58_secret_key).unwrap();
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
-        assert!(Secp256k1Signer::verify(pub_key, msg, sig).unwrap());
+        assert!(Secp256k1Signer::verify(pub_key, msg, sig).is_ok());
     }
 }
