@@ -15,7 +15,7 @@ impl ArweaveSigner {
     pub fn from_keypair_path(keypair_path: PathBuf) -> Result<Self, BundlrError> {
         let sdk =
             SdkSigner::from_keypair_path(keypair_path).map_err(BundlrError::ArweaveSdkError)?;
-        let pub_key = sdk.get_public_key().0;
+        let pub_key = sdk.get_public_key()?.0;
         if pub_key.len() as u16 == PUB_LENGTH {
             Ok(Self { sdk })
         } else {
@@ -33,11 +33,14 @@ const PUB_LENGTH: u16 = 512;
 
 impl Signer for ArweaveSigner {
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError> {
-        Ok(Bytes::copy_from_slice(&self.sdk.sign(&message).0))
+        Ok(Bytes::copy_from_slice(&self.sdk.sign(&message)?.0))
     }
 
     fn pub_key(&self) -> Bytes {
-        Bytes::copy_from_slice(&self.sdk.get_public_key().0)
+        match &self.sdk.get_public_key() {
+            Ok(ok) => Bytes::copy_from_slice(&ok.0),
+            Err(_) => Bytes::new(),
+        }
     }
 
     fn sig_type(&self) -> SignerMap {
@@ -64,8 +67,26 @@ impl Verifier for ArweaveSigner {
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::{ArweaveSigner, Signer, Verifier};
+    use crate::{
+        deep_hash::DeepHashChunk, deep_hash_sync::deep_hash_sync, ArweaveSigner, Signer, Verifier,
+    };
     use bytes::Bytes;
+    use data_encoding::BASE64URL_NOPAD;
+    use serde::{Deserialize, Serialize};
+
+    //TODO: remove this when receipt included
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Receipt {
+        pub id: String,
+        pub timestamp: u64,
+        pub version: String,
+        pub public: String,
+        pub signature: String,
+        pub deadline_height: u64,
+        pub block: u64,
+        pub validator_signatures: Vec<String>,
+    }
 
     #[test]
     fn should_sign_and_verify() {
@@ -76,6 +97,33 @@ mod tests {
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 
+        println!("{:?}", sig.to_vec());
+        println!("{:?}", pub_key.to_vec());
+
         assert!(ArweaveSigner::verify(pub_key, msg, sig).is_ok());
+    }
+
+    #[test]
+    fn should_verify_receipt() {
+        let data = std::fs::read_to_string("res/test_receipt.json").expect("Unable to read file");
+        let receipt = serde_json::from_str::<Receipt>(&data).expect("Unable to parse json file");
+
+        let fields = DeepHashChunk::Chunks(vec![
+            DeepHashChunk::Chunk("Bundlr".into()),
+            DeepHashChunk::Chunk(receipt.version.into()),
+            DeepHashChunk::Chunk(receipt.id.into()),
+            DeepHashChunk::Chunk(receipt.deadline_height.to_string().into()),
+            DeepHashChunk::Chunk(receipt.timestamp.to_string().into()),
+        ]);
+
+        let pubk = BASE64URL_NOPAD
+            .decode(&receipt.public.into_bytes())
+            .unwrap();
+        let msg = deep_hash_sync(fields).unwrap();
+        let sig = BASE64URL_NOPAD
+            .decode(&receipt.signature.into_bytes())
+            .unwrap();
+
+        assert!(ArweaveSigner::verify(pubk.into(), msg, sig.into()).is_ok());
     }
 }

@@ -51,9 +51,9 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 
 [[package]]
 name = "arweave-rs"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f74d143c0816fa3831c0ff655bdcf51f7c79841d9c9bb822a6876c2a826627f8"
+checksum = "c3f16fc203578be5569d6b68d69c5f58633525750e520d92b77dc942c51c8812"
 dependencies = [
  "anyhow",
  "async-recursion",
