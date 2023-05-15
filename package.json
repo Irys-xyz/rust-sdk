@@ -8,7 +8,7 @@
     "example": "examples"
   },
   "scripts": {
-    "generate-bundles": "tsc && cp res/test_wallet.json dist/res/test_wallet.json && node dist/bundles.js"
+    "generate-bundles": "tsc && node dist/bundles.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "@solana/web3.js": "^1.73.3",
     "aptos": "^1.7.1",
     "arbundles": "^0.9.6",
+    "arweave": "^1.13.7",
     "bs58": "^5.0.0",
     "ethers": "^6.3.0"
   },

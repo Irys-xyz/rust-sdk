@@ -6,6 +6,7 @@ import fs from "fs/promises";
 import crypto from "crypto";
 import Bundlr from "@bundlr-network/client";
 import { Wallet } from "ethers/wallet";
+import Arweave from "arweave";
 
 const MAX_BUNDLES_AMOUNT = 100;
 const MAX_DATA_ITEMS = 100;
@@ -13,7 +14,7 @@ const MAX_DATA_BYTES = 1000;
 const MAX_APTOS_SIGNERS = 20;
 
 //Arweave
-const jwk = JSON.parse(await fs.readFile('./res/test_wallet.json') as unknown as string);
+const jwk = await Arweave.init({}).wallets.generate();
 
 //Ethereum
 var { privateKey } = Wallet.createRandom();
