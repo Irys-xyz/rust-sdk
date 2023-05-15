@@ -94,7 +94,7 @@ impl Verifier for Secp256k1Signer {
         let msg = Secp256k1Signer::eth_hash_message(&message);
 
         let recovery_address = recover(&msg, &signature[0..64], signature[64] as i32 - 27)
-            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            .map_err(BundlrError::RecoveryError)?;
 
         let pubkey = PublicKey::from_slice(&public_key)
             .map_err(BundlrError::Secp256k1Error)?

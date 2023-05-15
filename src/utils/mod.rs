@@ -1,3 +1,10 @@
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
+mod eip712;
+
+pub use eip712::hash_structured_data;
+pub use eip712::Eip712Error;
+pub use eip712::EIP712;
+
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},

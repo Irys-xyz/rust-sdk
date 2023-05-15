@@ -1,4 +1,7 @@
 use thiserror::Error;
+use web3::signing::RecoveryError;
+
+use crate::utils::Eip712Error;
 
 #[derive(Debug, Error)]
 pub enum BundlrError {
@@ -100,6 +103,12 @@ pub enum BundlrError {
 
     #[error("Builder error: {0}")]
     BuilderError(BuilderError),
+
+    #[error("Eip712 error: {0}")]
+    Eip712Error(Eip712Error),
+
+    #[error("RecoveryError")]
+    RecoveryError(RecoveryError),
 }
 
 impl From<BuilderError> for BundlrError {
