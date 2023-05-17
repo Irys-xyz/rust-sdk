@@ -107,7 +107,7 @@ fn encode_data(
             // check if the type definition actually matches
             // the length of items to be encoded
             if length.is_some() && Some(values.len() as u64) != *length {
-                let array_type = format!("{}[{}]", *inner, length.unwrap());
+                let array_type = format!("{}[{}]", inner.to_string(), length.unwrap());
                 return Err(Eip712Error::UnequalArrayItems(
                     length.unwrap(),
                     array_type,
@@ -204,7 +204,7 @@ fn encode_data(
         _ => {
             return Err(Eip712Error::UnknownType(
                 field_name.unwrap_or("").to_string(),
-                format!("{}", *message_type),
+                message_type.to_string(),
             ));
         }
     };

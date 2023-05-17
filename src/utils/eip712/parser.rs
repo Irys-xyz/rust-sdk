@@ -1,7 +1,6 @@
 use logos::Logos;
 
 use crate::utils::eip712::{error::Eip712Error, lexer::Token};
-use std::{fmt, result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -19,32 +18,25 @@ pub enum Type {
     },
 }
 
-impl From<Type> for String {
-    fn from(field_type: Type) -> String {
-        match field_type {
-            Type::Address => "address".into(),
-            Type::Uint => "uint".into(),
-            Type::Int => "int".into(),
-            Type::String => "string".into(),
-            Type::Bool => "bool".into(),
-            Type::Bytes => "bytes".into(),
+impl ToString for Type {
+    fn to_string(&self) -> String {
+        match self {
+            Type::Address => "address".to_owned(),
+            Type::Uint => "uint".to_owned(),
+            Type::Int => "int".to_owned(),
+            Type::String => "string".to_owned(),
+            Type::Bool => "bool".to_owned(),
+            Type::Bytes => "bytes".to_owned(),
             Type::Byte(len) => format!("bytes{}", len),
-            Type::Custom(custom) => custom,
+            Type::Custom(custom) => custom.to_string(),
             Type::Array { inner, length } => {
-                let inner: String = (*inner).into();
+                let inner: String = (*inner).to_string();
                 match length {
                     None => format!("{}[]", inner),
                     Some(length) => format!("{}[{}]", inner, length),
                 }
             }
         }
-    }
-}
-
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
-        let item: String = self.clone().into();
-        write!(f, "{}", item)
     }
 }
 
@@ -127,18 +119,52 @@ mod tests {
     #[test]
     fn test_parser() {
         let source = "byte[][][7][][][][][][][]";
-        parse_type(source).unwrap();
+        let ok = parse_type(source).unwrap();
+        println!("{:?}", ok);
+        assert!(
+            ok == Type::Array {
+                length: None,
+                inner: Box::new(Type::Array {
+                    length: None,
+                    inner: Box::new(Type::Array {
+                        length: None,
+                        inner: Box::new(Type::Array {
+                            length: None,
+                            inner: Box::new(Type::Array {
+                                length: None,
+                                inner: Box::new(Type::Array {
+                                    length: None,
+                                    inner: Box::new(Type::Array {
+                                        length: None,
+                                        inner: Box::new(Type::Array {
+                                            length: Some(7),
+                                            inner: Box::new(Type::Array {
+                                                length: None,
+                                                inner: Box::new(Type::Array {
+                                                    length: None,
+                                                    inner: Box::new(Type::Byte(1))
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                            })
+                        })
+                    })
+                })
+            }
+        );
     }
 
     #[test]
     fn test_nested_array() {
         let source = "byte[][][7][][][][][][][][]";
-        assert_eq!(parse_type(source).is_err(), true);
+        assert!(parse_type(source).is_err());
     }
 
     #[test]
     fn test_malformed_array_type() {
         let source = "byte[7[]uint][]";
-        assert_eq!(parse_type(source).is_err(), true)
+        assert!(parse_type(source).is_err())
     }
 }
