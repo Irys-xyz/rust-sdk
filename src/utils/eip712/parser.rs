@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_parser() {
-        let source = "byte[][][7][][][][][][][]";
+        let source = "bytes1[][][7][][][][][][][]";
         let ok = parse_type(source).unwrap();
         println!("{:?}", ok);
         assert!(
@@ -158,13 +158,19 @@ mod tests {
 
     #[test]
     fn test_nested_array() {
+        let source = "bytes1[][][7][][][][][][][][]";
+        assert!(parse_type(source).is_err());
+        let source = "byte1[][][7][][][][][][][][]";
+        assert!(parse_type(source).is_err());
         let source = "byte[][][7][][][][][][][][]";
         assert!(parse_type(source).is_err());
     }
 
     #[test]
     fn test_malformed_array_type() {
+        let source = "bytes1[7[]uint][]";
+        assert!(parse_type(source).is_err());
         let source = "byte[7[]uint][]";
-        assert!(parse_type(source).is_err())
+        assert!(parse_type(source).is_err());
     }
 }

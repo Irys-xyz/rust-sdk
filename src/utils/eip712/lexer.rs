@@ -27,7 +27,7 @@ pub enum Token {
     #[regex("[a-zA-Z_$][a-zA-Z0-9_$]*")]
     Identifier,
 
-    #[regex("byte|bytes[1-2][0-9]?|bytes3[0-2]?|bytes[4-9]", validate_bytes)]
+    #[regex("bytes1|bytes[1-2][0-9]?|bytes3[0-2]?|bytes[4-9]", validate_bytes)]
     TypeByte,
 
     #[token("bytes")]
@@ -36,10 +36,10 @@ pub enum Token {
     #[token("bool")]
     TypeBool,
 
-    #[regex("uint|uint256", default_size)]
+    #[regex("uint(8|16|24|32|40|48|56|64|72|80|88|96|104|112|120|128|136|144|152|160|168|176|184|192|200|208|216|224|232|240|248|256)", default_size)]
     TypeUint,
 
-    #[token("int", default_size)]
+    #[regex("int(8|16|24|32|40|48|56|64|72|80|88|96|104|112|120|128|136|144|152|160|168|176|184|192|200|208|216|224|232|240|248|256)", default_size)]
     TypeInt,
 
     #[token("string")]
