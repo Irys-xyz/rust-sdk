@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "es2019",
-        "module": "commonjs",
+        "module": "ESNext",
         "moduleResolution": "nodenext",
         "skipLibCheck": true,
         "allowSyntheticDefaultImports": true,
@@ -14,12 +14,12 @@
             "es2019",
             "DOM"
         ],
-        "esModuleInterop": true,
         "alwaysStrict": true,
         "sourceMap": true,
         "strictNullChecks": false,
         "experimentalDecorators": true,
         "strict": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
     },
 }

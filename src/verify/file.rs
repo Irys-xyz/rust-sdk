@@ -43,7 +43,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         let mut tx = BundlrTx::from_file_position(&mut file, size, offset, 4096)?;
 
         match tx.verify().await {
-            Err(_) => return Err(BundlrError::InvalidSignature),
+            Err(err) => return Err(err),
             Ok(_) => {
                 let sig = tx.get_signarure();
                 let item = Item {
@@ -82,6 +82,7 @@ mod tests {
     #[tokio::test]
     async fn should_verify_secp256k1() -> Result<(), BundlrError> {
         verify_file_bundle("./res/test_bundles/ethereum_sig".to_string()).await?;
+        verify_file_bundle("./res/test_bundles/typedethereum_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/arbitrum_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/avalanche_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/bnb_sig".to_string()).await?;

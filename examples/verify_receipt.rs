@@ -42,5 +42,5 @@ fn main() -> Result<(), bundlr_sdk::error::BundlrError> {
         .decode(&receipt.signature.into_bytes())
         .unwrap();
 
-    ArweaveSigner::verify(pubk.into(), msg.into(), sig.into())
+    ArweaveSigner::verify(pubk.into(), msg, sig.into())
 }

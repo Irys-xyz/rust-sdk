@@ -24,6 +24,7 @@ use crate::AptosSigner;
 use crate::MultiAptosSigner;
 
 use crate::error::BundlrError;
+use crate::signers::typed_ethereum::TypedEthereumSigner;
 
 #[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
 pub enum SignerMap {
@@ -34,6 +35,7 @@ pub enum SignerMap {
     Solana = 4,
     InjectedAptos = 5,
     MultiAptos = 6,
+    TypedEthereum = 7,
     Cosmos, //TODO: assign constant
 }
 
@@ -59,6 +61,7 @@ impl From<u16> for SignerMap {
             4 => SignerMap::Solana,
             5 => SignerMap::InjectedAptos,
             6 => SignerMap::MultiAptos,
+            7 => SignerMap::TypedEthereum,
             _ => SignerMap::None,
         }
     }
@@ -73,6 +76,7 @@ impl SignerMap {
             SignerMap::Solana => 4,
             SignerMap::InjectedAptos => 5,
             SignerMap::MultiAptos => 6,
+            SignerMap::TypedEthereum => 7,
             _ => u16::MAX,
         }
     }
@@ -121,6 +125,12 @@ impl SignerMap {
                 pub_length: secp256k1::constants::PUBLIC_KEY_SIZE,
                 sig_name: "cosmos".to_owned(),
             },
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
+            SignerMap::TypedEthereum => Config {
+                sig_length: secp256k1::constants::COMPACT_SIGNATURE_SIZE + 1,
+                pub_length: 42,
+                sig_name: "typedEthereum".to_owned(),
+            },
             #[allow(unreachable_patterns)]
             _ => panic!("{:?} get_config has no", self),
         }
@@ -166,6 +176,12 @@ impl SignerMap {
             ),
             #[cfg(feature = "cosmos")]
             SignerMap::Cosmos => CosmosSigner::verify(
+                Bytes::copy_from_slice(pk),
+                Bytes::copy_from_slice(message),
+                Bytes::copy_from_slice(signature),
+            ),
+            #[cfg(any(feature = "ethereum", feature = "erc20"))]
+            SignerMap::TypedEthereum => TypedEthereumSigner::verify(
                 Bytes::copy_from_slice(pk),
                 Bytes::copy_from_slice(message),
                 Bytes::copy_from_slice(signature),

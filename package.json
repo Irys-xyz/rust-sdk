@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Bundlr's rust sdk",
   "main": "bundles.js",
+  "type": "module",
   "directories": {
     "example": "examples"
   },
@@ -23,9 +24,10 @@
     "@bundlr-network/client": "^0.10.5",
     "@solana/web3.js": "^1.73.3",
     "aptos": "^1.7.1",
-    "arbundles": "^0.8.0",
+    "arbundles": "^0.9.6",
+    "arweave": "^1.13.7",
     "bs58": "^5.0.0",
-    "keythereum": "^2.0.0"
+    "ethers": "^6.3.0"
   },
   "devDependencies": {
     "@types/keythereum": "^1.2.1",

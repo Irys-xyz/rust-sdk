@@ -59,6 +59,7 @@ impl BundlrTx {
                 .map_err(|err| BundlrError::BytesError(err.to_string()))?,
         );
         let signer = SignerMap::from(signature_type);
+
         let Config {
             pub_length,
             sig_length,

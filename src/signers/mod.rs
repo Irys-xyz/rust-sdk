@@ -11,6 +11,8 @@ pub mod cosmos;
 pub mod ed25519;
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
 pub mod secp256k1;
+#[cfg(any(feature = "ethereum", feature = "erc20"))]
+pub mod typed_ethereum;
 
 pub trait ToPem {}
 
