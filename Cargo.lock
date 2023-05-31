@@ -506,7 +506,7 @@ checksum = "a3e2c3daef883ecc1b5d58c15adae93470a91d425f3532ba1695849656af3fc1"
 
 [[package]]
 name = "bundlr-sdk"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anyhow",
  "arweave-rs",
