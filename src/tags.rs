@@ -7,8 +7,8 @@ use crate::error::BundlrError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Tag {
-    name: String,
-    value: String,
+    pub name: String,
+    pub value: String,
 }
 
 impl Tag {
