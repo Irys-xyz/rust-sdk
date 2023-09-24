@@ -34,7 +34,7 @@ impl Default for Solana {
             needs_fee: true,
             is_slow: false,
             base: (SOLANA_BASE_UNIT.to_string(), 0),
-            name: CurrencyType::Arweave,
+            name: CurrencyType::Solana,
             ticker: SOLANA_TICKER.to_string(),
             min_confirm: 10,
             client: reqwest::Client::new(),
