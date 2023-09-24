@@ -33,7 +33,7 @@ pub async fn run_upload(
 
     match currency {
         CurrencyType::Arweave => {
-            let wallet = PathBuf::from_str(&wallet)
+            let wallet = PathBuf::from_str(wallet)
                 .map_err(|err| BundlrError::ParseError(err.to_string()))?;
             let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
             let bundlr = BundlrBuilder::new()
@@ -46,7 +46,7 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }
@@ -62,7 +62,7 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }
@@ -78,7 +78,7 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }

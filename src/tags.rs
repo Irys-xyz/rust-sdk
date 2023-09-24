@@ -20,7 +20,7 @@ impl Tag {
     }
 }
 
-const SCHEMA_STR: &str = r##"{
+const SCHEMA_STR: &str = r#"{
     "type": "array",
     "items": {
         "type": "record",
@@ -30,7 +30,7 @@ const SCHEMA_STR: &str = r##"{
             { "name": "value", "type": "string" }
         ]
     }
-}"##;
+}"#;
 
 lazy_static! {
     pub static ref TAGS_SCHEMA: Schema = Schema::parse_str(SCHEMA_STR).unwrap();

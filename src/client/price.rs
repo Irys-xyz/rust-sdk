@@ -13,9 +13,7 @@ pub async fn run_price(
         .map(|balance| {
             format!(
                 "{} bytes in {} is {} base units", //TODO: refactor this to show base unit name
-                byte_amount,
-                currency,
-                balance.to_string(),
+                byte_amount, currency, balance,
             )
         })
 }
