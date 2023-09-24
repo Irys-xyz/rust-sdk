@@ -3,10 +3,7 @@ use std::{path::PathBuf, str::FromStr};
 use crate::{
     bundlr::BundlrBuilder,
     consts::USE_JS_SDK,
-    currency::{
-        arweave::{Arweave, ArweaveBuilder},
-        CurrencyType,
-    },
+    currency::{arweave::ArweaveBuilder, CurrencyType},
     error::BundlrError,
 };
 use num_traits::Zero;
@@ -26,7 +23,7 @@ pub async fn run_withdraw(
         CurrencyType::Arweave => {
             let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
             let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundlr = BundlrBuilder::<Arweave>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()

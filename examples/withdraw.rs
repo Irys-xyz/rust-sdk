@@ -1,10 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use bundlr_sdk::{
-    bundlr::BundlrBuilder,
-    currency::arweave::{Arweave, ArweaveBuilder},
-    error::BundlrError,
-};
+use bundlr_sdk::{bundlr::BundlrBuilder, currency::arweave::ArweaveBuilder, error::BundlrError};
 use reqwest::Url;
 
 #[tokio::main]
@@ -15,7 +11,7 @@ async fn main() -> Result<(), BundlrError> {
         .keypair_path(wallet)
         .build()
         .expect("Could not create currency instance");
-    let bundlr = BundlrBuilder::<Arweave>::new()
+    let bundlr = BundlrBuilder::new()
         .url(url)
         .currency(currency)
         .fetch_pub_info()

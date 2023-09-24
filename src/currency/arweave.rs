@@ -29,22 +29,6 @@ pub struct Arweave {
     client: reqwest::Client,
 }
 
-impl Default for Arweave {
-    fn default() -> Self {
-        Self {
-            sdk: ArweaveSdk::default(),
-            signer: None,
-            needs_fee: true,
-            is_slow: false,
-            base: (ARWEAVE_BASE_UNIT.to_string(), 0),
-            name: CurrencyType::Arweave,
-            ticker: ARWEAVE_TICKER.to_string(),
-            min_confirm: 5,
-            client: reqwest::Client::new(),
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct ArweaveBuilder {
     base_url: Option<Url>,
@@ -91,7 +75,13 @@ impl ArweaveBuilder {
         Ok(Arweave {
             sdk,
             signer,
-            ..Arweave::default()
+            is_slow: Default::default(),
+            needs_fee: true,
+            base: (ARWEAVE_BASE_UNIT.to_string(), 0),
+            name: CurrencyType::Arweave,
+            ticker: ARWEAVE_TICKER.to_string(),
+            min_confirm: 5,
+            client: reqwest::Client::new(),
         })
     }
 }

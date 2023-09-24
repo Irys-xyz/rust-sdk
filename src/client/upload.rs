@@ -9,10 +9,7 @@ use crate::{
     bundlr::BundlrBuilder,
     consts::VERSION,
     currency::{
-        arweave::{Arweave, ArweaveBuilder},
-        ethereum::{Ethereum, EthereumBuilder},
-        solana::{Solana, SolanaBuilder},
-        CurrencyType,
+        arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, CurrencyType,
     },
     error::BundlrError,
     tags::Tag,
@@ -39,7 +36,7 @@ pub async fn run_upload(
             let wallet = PathBuf::from_str(&wallet)
                 .map_err(|err| BundlrError::ParseError(err.to_string()))?;
             let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundlr = BundlrBuilder::<Arweave>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
@@ -55,7 +52,7 @@ pub async fn run_upload(
         }
         CurrencyType::Solana => {
             let currency = SolanaBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::<Solana>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
@@ -71,7 +68,7 @@ pub async fn run_upload(
         }
         CurrencyType::Ethereum => {
             let currency = EthereumBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::<Ethereum>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
