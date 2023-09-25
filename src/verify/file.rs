@@ -45,7 +45,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
         match tx.verify().await {
             Err(err) => return Err(err),
             Ok(_) => {
-                let sig = tx.get_signarure();
+                let sig = tx.get_signature();
                 let item = Item {
                     tx_id: id,
                     signature: sig,
