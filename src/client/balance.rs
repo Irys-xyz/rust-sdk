@@ -8,7 +8,7 @@ pub async fn run_balance(
     currency: CurrencyType,
 ) -> Result<String, BundlrError> {
     let client = reqwest::Client::new();
-    get_balance(&url, currency, &address, &client)
+    get_balance(&url, currency, address, &client)
         .await
         .map(|balance| balance.to_string())
 }

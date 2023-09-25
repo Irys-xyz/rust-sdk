@@ -1,10 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use bundlr_sdk::{
-    bundlr::BundlrBuilder,
-    currency::solana::{Solana, SolanaBuilder},
-    error::BundlrError,
-};
+use bundlr_sdk::{bundlr::BundlrBuilder, currency::solana::SolanaBuilder, error::BundlrError};
 use reqwest::Url;
 
 #[tokio::main]
@@ -14,7 +10,7 @@ async fn main() -> Result<(), BundlrError> {
         "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb")
         .build()
         .expect("Could not create Solana instance");
-    let mut bundlr = BundlrBuilder::<Solana>::new()
+    let mut bundlr = BundlrBuilder::new()
         .url(url)
         .currency(currency)
         .fetch_pub_info()

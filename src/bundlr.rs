@@ -59,31 +59,22 @@ pub struct WithdrawBody {
 
 #[derive(Default)]
 
-pub struct BundlrBuilder<Currency>
-where
-    Currency: currency::Currency,
-{
+pub struct BundlrBuilder<Currency = ()> {
     url: Option<Url>,
-    currency: Option<Currency>,
+    currency: Currency,
     client: Option<reqwest::Client>,
     pub_info: Option<PubInfo>,
 }
 
-impl<Currency> BundlrBuilder<Currency>
-where
-    Currency: currency::Currency + Default,
-{
-    pub fn new() -> BundlrBuilder<Currency> {
+impl BundlrBuilder {
+    pub fn new() -> BundlrBuilder {
         Default::default()
     }
+}
 
+impl<Currency> BundlrBuilder<Currency> {
     pub fn url(mut self, url: Url) -> BundlrBuilder<Currency> {
         self.url = Some(url);
-        self
-    }
-
-    pub fn currency(mut self, currency: Currency) -> BundlrBuilder<Currency> {
-        self.currency = Some(currency);
         self
     }
 
@@ -111,13 +102,28 @@ where
         self.pub_info = Some(pub_info);
         self
     }
+}
 
+impl BundlrBuilder<()> {
+    pub fn currency<Currency>(self, currency: Currency) -> BundlrBuilder<Currency>
+    where
+        Currency: currency::Currency,
+    {
+        BundlrBuilder {
+            currency,
+            url: self.url,
+            client: self.client,
+            pub_info: self.pub_info,
+        }
+    }
+}
+
+impl<Currency> BundlrBuilder<Currency>
+where
+    Currency: currency::Currency,
+{
     pub fn build(self) -> Result<Bundlr<Currency>, BuilderError> {
         let url = self.url.unwrap_or(Url::parse(BUNDLR_DEFAULT_URL).unwrap());
-        let currency = match self.currency {
-            Some(c) => c,
-            None => return Err(BuilderError::MissingField("currency".to_owned())),
-        };
 
         let client = self.client.unwrap_or_else(reqwest::Client::new);
 
@@ -126,11 +132,11 @@ where
             None => return Err(BuilderError::MissingField("currency".to_owned())),
         };
 
-        let uploader = Uploader::new(url.clone(), client.clone(), currency.get_type());
+        let uploader = Uploader::new(url.clone(), client.clone(), self.currency.get_type());
 
         Ok(Bundlr {
             url,
-            currency,
+            currency: self.currency,
             client,
             pub_info,
             uploader,
@@ -232,10 +238,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -249,7 +252,7 @@ where
     /// #       .keypair_path(wallet)
     /// #       .build()
     /// #       .expect("Could not create currency instance");
-    /// #   let mut bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let mut bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()
@@ -277,10 +280,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -294,7 +294,7 @@ where
     /// #      .keypair_path(wallet)
     /// #      .build()
     /// #      .expect("Could not create currency instance");
-    /// #   let mut bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let mut bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()
@@ -321,10 +321,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -338,7 +335,7 @@ where
     /// #       .keypair_path(wallet)
     /// #       .build()
     /// #       .expect("Could not create currency instance");
-    /// #   let mut bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let mut bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()
@@ -379,10 +376,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -396,7 +390,7 @@ where
     /// #       .keypair_path(wallet)
     /// #       .build()
     /// #       .expect("Could not create currency instance");
-    /// #   let bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()
@@ -444,10 +438,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -461,7 +452,7 @@ where
     /// #       .keypair_path(wallet)
     /// #       .build()
     /// #       .expect("Could not create currency instance");
-    /// #   let bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()
@@ -523,10 +514,7 @@ where
     /// # use bundlr_sdk::{
     /// #   currency::CurrencyType,
     /// #   BundlrBuilder,
-    /// #   currency::arweave::{
-    /// #       Arweave,
-    /// #       ArweaveBuilder
-    /// #   },
+    /// #   currency::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -540,7 +528,7 @@ where
     /// #       .keypair_path(wallet)
     /// #       .build()
     /// #       .expect("Could not create currency instance");
-    /// #   let mut bundlr = BundlrBuilder::<Arweave>::new()
+    /// #   let mut bundlr = BundlrBuilder::new()
     /// #       .url(url)
     /// #       .currency(currency)
     /// #       .fetch_pub_info()

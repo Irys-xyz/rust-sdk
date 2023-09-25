@@ -9,10 +9,7 @@ use crate::{
     bundlr::BundlrBuilder,
     consts::VERSION,
     currency::{
-        arweave::{Arweave, ArweaveBuilder},
-        ethereum::{Ethereum, EthereumBuilder},
-        solana::{Solana, SolanaBuilder},
-        CurrencyType,
+        arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, CurrencyType,
     },
     error::BundlrError,
     tags::Tag,
@@ -36,10 +33,10 @@ pub async fn run_upload(
 
     match currency {
         CurrencyType::Arweave => {
-            let wallet = PathBuf::from_str(&wallet)
+            let wallet = PathBuf::from_str(wallet)
                 .map_err(|err| BundlrError::ParseError(err.to_string()))?;
             let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundlr = BundlrBuilder::<Arweave>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
@@ -49,13 +46,13 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }
         CurrencyType::Solana => {
             let currency = SolanaBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::<Solana>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
@@ -65,13 +62,13 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }
         CurrencyType::Ethereum => {
             let currency = EthereumBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::<Ethereum>::new()
+            let bundlr = BundlrBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
@@ -81,7 +78,7 @@ pub async fn run_upload(
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res.to_string())),
+                Ok(res) => Ok(format!("File {} uploaded: {}", file_path, res)),
                 Err(err) => Err(BundlrError::UploadError(err.to_string())),
             }
         }

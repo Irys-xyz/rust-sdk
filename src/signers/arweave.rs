@@ -15,7 +15,7 @@ impl ArweaveSigner {
     pub fn from_keypair_path(keypair_path: PathBuf) -> Result<Self, BundlrError> {
         let sdk =
             SdkSigner::from_keypair_path(keypair_path).map_err(BundlrError::ArweaveSdkError)?;
-        let pub_key = sdk.get_public_key()?.0;
+        let pub_key = sdk.get_public_key().0;
         if pub_key.len() as u16 == PUB_LENGTH {
             Ok(Self { sdk })
         } else {
@@ -37,10 +37,7 @@ impl Signer for ArweaveSigner {
     }
 
     fn pub_key(&self) -> Bytes {
-        match &self.sdk.get_public_key() {
-            Ok(ok) => Bytes::copy_from_slice(&ok.0),
-            Err(_) => Bytes::new(),
-        }
+        Bytes::copy_from_slice(&self.sdk.get_public_key().0)
     }
 
     fn sig_type(&self) -> SignerMap {

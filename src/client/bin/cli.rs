@@ -143,7 +143,7 @@ impl Command {
                         Ok(ok) => println!("[Ok] {}", ok),
                         Err(err) => println!("[Err] {}", err),
                     },
-                    Err(err) => println!("Error running task: {}", err.to_string()),
+                    Err(err) => println!("Error running task: {}", err),
                 }
             }
             Command::Fund {
@@ -160,7 +160,7 @@ impl Command {
                         Ok(ok) => println!("[Ok] {}", ok),
                         Err(err) => println!("[Err] {}", err),
                     },
-                    Err(err) => println!("Error running task: {}", err.to_string()),
+                    Err(err) => println!("Error running task: {}", err),
                 }
             }
             Command::Withdraw {
@@ -177,7 +177,7 @@ impl Command {
                         Ok(ok) => println!("[Ok] {}", ok),
                         Err(err) => println!("[Err] {}", err),
                     },
-                    Err(err) => println!("Error running task: {}", err.to_string()),
+                    Err(err) => println!("Error running task: {}", err),
                 }
             }
             Command::Upload {
@@ -194,7 +194,7 @@ impl Command {
                         Ok(ok) => println!("[Ok] {}", ok),
                         Err(err) => println!("[Err] {}", err),
                     },
-                    Err(err) => println!("Error running task: {}", err.to_string()),
+                    Err(err) => println!("Error running task: {}", err),
                 }
             }
             Command::UploadDir {} => todo!(),
@@ -212,7 +212,7 @@ impl Command {
                         Ok(ok) => println!("[Ok] {}", ok),
                         Err(err) => println!("[Err] {}", err),
                     },
-                    Err(err) => println!("Error running task: {}", err.to_string()),
+                    Err(err) => println!("Error running task: {}", err),
                 }
             }
         }
