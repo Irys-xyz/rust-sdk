@@ -53,7 +53,7 @@ pub enum BundlrError {
     #[error("Tx status not confirmed")]
     TxStatusNotConfirmed,
 
-    #[error("Chunk size out of allowed range: {0} - {0}")]
+    #[error("Chunk size out of allowed range: {0} - {1}")]
     ChunkSizeOutOfRange(u64, u64),
 
     #[error("Error posting chunk: {0}")]
