@@ -2,19 +2,19 @@ use std::array::TryFromSliceError;
 
 use crate::error::BundlrError;
 use crate::index::SignerMap;
+use crate::utils::bytes_to_fixed_array;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
 
 use bytes::Bytes;
-use ed25519_dalek::{Keypair, Signer, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
-
+use ed25519_dalek::{Signer, SigningKey, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 pub struct Ed25519Signer {
-    keypair: Keypair,
+    keypair: SigningKey,
 }
 
 //TODO: add validation for secret keys
 impl Ed25519Signer {
-    pub fn new(keypair: Keypair) -> Ed25519Signer {
+    pub fn new(keypair: SigningKey) -> Ed25519Signer {
         Ed25519Signer { keypair }
     }
 
@@ -28,7 +28,7 @@ impl Ed25519Signer {
             .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
 
         Ok(Self {
-            keypair: Keypair::from_bytes(key).map_err(BundlrError::ED25519Error)?,
+            keypair: SigningKey::from_keypair_bytes(key).map_err(BundlrError::ED25519Error)?,
         })
     }
 }
@@ -45,7 +45,7 @@ impl SignerTrait for Ed25519Signer {
     }
 
     fn pub_key(&self) -> bytes::Bytes {
-        Bytes::copy_from_slice(&self.keypair.public.to_bytes())
+        Bytes::copy_from_slice(&self.keypair.verifying_key().to_bytes())
     }
 
     fn sig_type(&self) -> SignerMap {
@@ -65,10 +65,10 @@ impl VerifierTrait for Ed25519Signer {
         message: Bytes,
         signature: Bytes,
     ) -> Result<(), crate::error::BundlrError> {
-        let public_key =
-            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
-        let sig =
-            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
+        let public_key = ed25519_dalek::VerifyingKey::from_bytes(&bytes_to_fixed_array(&pk)?)
+            .map_err(BundlrError::ED25519Error)?;
+
+        let sig = ed25519_dalek::Signature::from_bytes(&bytes_to_fixed_array(&signature)?);
         public_key
             .verify(&message, &sig)
             .map_err(|_| BundlrError::InvalidSignature)
@@ -79,7 +79,7 @@ impl VerifierTrait for Ed25519Signer {
 mod tests {
     use crate::{Ed25519Signer, Signer, Verifier};
     use bytes::Bytes;
-    use ed25519_dalek::Keypair;
+    use ed25519_dalek::SigningKey;
 
     #[test]
     fn should_sign_and_verify() {
@@ -92,7 +92,7 @@ mod tests {
         println!("{:?}", pub_key.to_vec());
         assert!(Ed25519Signer::verify(pub_key, msg.clone(), sig).is_ok());
 
-        let keypair = Keypair::from_bytes(&[
+        let keypair = SigningKey::from_keypair_bytes(&[
             237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
             8, 221, 184, 199, 62, 253, 98, 131, 33, 165, 165, 215, 14, 7, 46, 23, 221, 242, 240,
             226, 94, 79, 161, 31, 192, 163, 13, 25, 106, 53, 34, 215, 83, 124, 162, 156, 8, 97,

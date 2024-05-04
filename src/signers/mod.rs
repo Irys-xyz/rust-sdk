@@ -14,8 +14,6 @@ pub mod secp256k1;
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
 pub mod typed_ethereum;
 
-pub trait ToPem {}
-
 pub trait Signer: Send + Sync {
     fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError>;
     fn sig_type(&self) -> SignerMap;

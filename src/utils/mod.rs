@@ -16,11 +16,9 @@ use serde::Deserialize;
 
 use crate::error::BundlrError;
 
-pub async fn check_and_return<T: for<'de> Deserialize<'de>>(
-    res: Result<Response, reqwest::Error>,
-) -> Result<T, BundlrError>
+pub async fn check_and_return<T>(res: Result<Response, reqwest::Error>) -> Result<T, BundlrError>
 where
-    T: Default,
+    T: for<'de> Deserialize<'de> + Default,
 {
     match res {
         Ok(r) => {
@@ -71,4 +69,14 @@ pub fn read_offset(file: &mut File, offset: u64, length: usize) -> Result<Bytes,
 
     file.read(&mut b)?;
     Ok(b.into())
+}
+
+pub fn bytes_to_fixed_array<const SIZE: usize>(
+    input: &Bytes,
+) -> Result<[u8; SIZE], crate::utils::BundlrError> {
+    let slice = input.get(0..SIZE).ok_or_else(|| {
+        BundlrError::BytesError("Not enough bytes to get expected count".to_string())
+    })?;
+
+    Ok(slice.try_into().unwrap()) // safe to unwrap as we know that slice has enough bytes
 }
