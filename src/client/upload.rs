@@ -1,9 +1,6 @@
-use std::{
-    fs::File,
-    io::{BufReader, Read},
-    path::PathBuf,
-    str::FromStr,
-};
+use std::{path::PathBuf, str::FromStr};
+
+use tokio::fs::File;
 
 use crate::{
     bundlr::BundlrBuilder,
@@ -22,12 +19,10 @@ pub async fn run_upload(
     wallet: &str,
     currency: CurrencyType,
 ) -> Result<String, BundlrError> {
-    let f = File::open(file_path.clone()).expect("Invalid file path");
-    let mut reader = BufReader::new(f);
-    let mut buffer = Vec::new();
-
-    // Read file into vector.
-    reader.read_to_end(&mut buffer)?;
+    let mut f = File::open(file_path.clone())
+        .await
+        .expect("Invalid file path");
+    f.set_max_buf_size(8 * 1024 * 1024);
 
     let base_tag = Tag::new("User-Agent", &format!("bundlr-sdk-rs/{}", VERSION));
 
@@ -42,7 +37,7 @@ pub async fn run_upload(
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
+            let mut tx = bundlr.create_transaction(f, vec![base_tag])?;
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
@@ -58,7 +53,7 @@ pub async fn run_upload(
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
+            let mut tx = bundlr.create_transaction(f, vec![base_tag])?;
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {
@@ -74,7 +69,7 @@ pub async fn run_upload(
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
+            let mut tx = bundlr.create_transaction(f, vec![base_tag])?;
             let sig = bundlr.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundlr.send_transaction(tx).await {

@@ -266,7 +266,7 @@ where
     /// ```
     pub fn create_transaction(
         &self,
-        data: Vec<u8>,
+        data: tokio::fs::File,
         additional_tags: Vec<Tag>,
     ) -> Result<BundlrTx, BundlrError> {
         BundlrTx::new(vec![], data, additional_tags)
@@ -352,7 +352,7 @@ where
     /// # }
     /// ```
     pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
-        let tx = tx.as_bytes()?;
+        let tx = tx.as_bytes().await?;
 
         let response = self
             .client
