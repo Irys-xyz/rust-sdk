@@ -1,10 +1,13 @@
+use anyhow::Error;
 use async_stream::try_stream;
-use bytes::{BufMut, Bytes};
-use futures::Stream;
+use bytes::{BufMut, Bytes, BytesMut};
+use futures::{future, stream, Stream, StreamExt, TryStreamExt};
 use ring::rand::SecureRandom;
 use std::cmp;
 use std::fs::File;
 use std::pin::Pin;
+use tokio::io::AsyncRead;
+use tokio_util::io::ReaderStream;
 
 use crate::consts::{CHUNK_SIZE, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
 use crate::deep_hash::{deep_hash, DeepHashChunk};
@@ -15,11 +18,7 @@ use crate::signers::Signer;
 use crate::tags::{AvroDecode, AvroEncode, Tag};
 use crate::utils::read_offset;
 
-enum Data {
-    None,
-    Bytes(Vec<u8>),
-    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
-}
+type Data = Option<Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>>;
 
 pub struct BundlrTx {
     signature_type: SignerMap,
@@ -32,7 +31,10 @@ pub struct BundlrTx {
 }
 
 impl BundlrTx {
-    pub fn new(target: Vec<u8>, data: Vec<u8>, tags: Vec<Tag>) -> Result<Self, BundlrError> {
+    pub fn new<A>(target: Vec<u8>, data: A, tags: Vec<Tag>) -> Result<Self, BundlrError>
+    where
+        A: AsyncRead + Send + 'static,
+    {
         let mut randoms: [u8; 32] = [0; 32];
         let sr = ring::rand::SystemRandom::new();
         match sr.fill(&mut randoms) {
@@ -48,7 +50,7 @@ impl BundlrTx {
             target,
             anchor,
             tags,
-            data: Data::Bytes(data),
+            data: Some(ReaderStream::new(data).map_err(Error::from).boxed()),
         })
     }
 
@@ -130,10 +132,10 @@ impl BundlrTx {
 
     pub fn from_bytes(buffer: Vec<u8>) -> Result<Self, BundlrError> {
         let (bundlr_tx, data_start) = BundlrTx::from_info_bytes(&buffer)?;
-        let data = &buffer[data_start..buffer.len()];
+        let data = stream::once(future::ready(Bytes::copy_from_slice(&buffer[data_start..])));
 
         Ok(BundlrTx {
-            data: Data::Bytes(data.to_vec()),
+            data: Some(data.map(Ok).boxed()),
             ..bundlr_tx
         })
     }
@@ -161,7 +163,7 @@ impl BundlrTx {
         };
 
         Ok(BundlrTx {
-            data: Data::Stream(Box::pin(file_stream)),
+            data: Some(Box::pin(file_stream)),
             ..bundlr_tx
         })
     }
@@ -170,22 +172,33 @@ impl BundlrTx {
         !self.signature.is_empty() && self.signature_type != SignerMap::None
     }
 
-    pub fn as_bytes(self) -> Result<Vec<u8>, BundlrError> {
+    pub async fn as_bytes(self) -> Result<Vec<u8>, BundlrError> {
         if !self.is_signed() {
             return Err(BundlrError::NoSignature);
         }
-        let data = match &self.data {
-            Data::Stream(_) => return Err(BundlrError::InvalidDataType),
-            Data::None => return Err(BundlrError::InvalidDataType),
-            Data::Bytes(data) => data,
+        let BundlrTx {
+            signature_type,
+            signature,
+            owner,
+            target,
+            anchor,
+            tags,
+            data,
+        } = self;
+        let data = match data {
+            Some(data) => data
+                .try_collect::<BytesMut>()
+                .await
+                .map_err(|_| BundlrError::InvalidDataType)?,
+            None => return Err(BundlrError::InvalidDataType),
         };
 
-        let encoded_tags = if !self.tags.is_empty() {
-            self.tags.encode()?
+        let encoded_tags = if !tags.is_empty() {
+            tags.encode()?
         } else {
             Bytes::default()
         };
-        let config = self.signature_type.get_config();
+        let config = signature_type.get_config();
         let length = 2u64
             + config.sig_length as u64
             + config.pub_length as u64
@@ -199,25 +212,17 @@ impl BundlrTx {
                 .map_err(|err| BundlrError::TypeParseError(err.to_string()))?,
         );
 
-        let sig_type: [u8; 2] = (self.signature_type as u16).to_le_bytes();
-        let target_presence_byte = if self.target.is_empty() {
-            &[0u8]
-        } else {
-            &[1u8]
-        };
-        let anchor_presence_byte = if self.anchor.is_empty() {
-            &[0u8]
-        } else {
-            &[1u8]
-        };
+        let sig_type: [u8; 2] = (signature_type as u16).to_le_bytes();
+        let target_presence_byte = if target.is_empty() { &[0u8] } else { &[1u8] };
+        let anchor_presence_byte = if anchor.is_empty() { &[0u8] } else { &[1u8] };
         b.put(&sig_type[..]);
-        b.put(&self.signature[..]);
-        b.put(&self.owner[..]);
+        b.put(&signature[..]);
+        b.put(&owner[..]);
         b.put(&target_presence_byte[..]);
-        b.put(&self.target[..]);
+        b.put(&target[..]);
         b.put(&anchor_presence_byte[..]);
-        b.put(&self.anchor[..]);
-        let number_of_tags = (self.tags.len() as u64).to_le_bytes();
+        b.put(&anchor[..]);
+        let number_of_tags = (tags.len() as u64).to_le_bytes();
         let number_of_tags_bytes = (encoded_tags.len() as u64).to_le_bytes();
         b.put(number_of_tags.as_slice());
         b.put(number_of_tags_bytes.as_slice());
@@ -243,23 +248,8 @@ impl BundlrTx {
         };
 
         match &mut self.data {
-            Data::None => Ok(Bytes::new()),
-            Data::Bytes(data) => {
-                let data_chunk = DeepHashChunk::Chunk(data.clone().into());
-                let sig_type = &self.signature_type;
-                let sig_type_bytes = sig_type.as_u16().to_string().as_bytes().to_vec();
-                deep_hash_sync(DeepHashChunk::Chunks(vec![
-                    DeepHashChunk::Chunk(DATAITEM_AS_BUFFER.into()),
-                    DeepHashChunk::Chunk(ONE_AS_BUFFER.into()),
-                    DeepHashChunk::Chunk(sig_type_bytes.to_vec().into()),
-                    DeepHashChunk::Chunk(self.owner.to_vec().into()),
-                    DeepHashChunk::Chunk(self.target.to_vec().into()),
-                    DeepHashChunk::Chunk(self.anchor.to_vec().into()),
-                    DeepHashChunk::Chunk(encoded_tags.clone()),
-                    data_chunk,
-                ]))
-            }
-            Data::Stream(file_stream) => {
+            None => Ok(Bytes::new()),
+            Some(file_stream) => {
                 let data_chunk = DeepHashChunk::Stream(file_stream);
                 let sig_type = &self.signature_type;
                 let sig_type_bytes = sig_type.as_u16().to_string().as_bytes().to_vec();
@@ -328,7 +318,7 @@ mod tests {
         let signer = Ed25519Signer::from_base58(secret_key).unwrap();
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
-            Vec::from("hello"),
+            &b"hello"[..],
             vec![Tag::new("name", "value")],
         )
         .unwrap();
@@ -336,14 +326,14 @@ mod tests {
         assert!(res.is_ok());
 
         let mut f = File::create(path).unwrap();
-        let data_item_1_bytes = data_item_1.as_bytes().unwrap();
+        let data_item_1_bytes = data_item_1.as_bytes().await.unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
 
-        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
+        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().await.unwrap());
     }
 
     #[tokio::test]
@@ -353,7 +343,7 @@ mod tests {
         let signer = ArweaveSigner::from_keypair_path(key_path).unwrap();
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
-            Vec::from("hello"),
+            &b"hello"[..],
             vec![Tag::new("name", "value")],
         )
         .unwrap();
@@ -361,13 +351,13 @@ mod tests {
         assert!(res.is_ok());
 
         let mut f = File::create(path).unwrap();
-        let data_item_1_bytes = data_item_1.as_bytes().unwrap();
+        let data_item_1_bytes = data_item_1.as_bytes().await.unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
-        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
+        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().await.unwrap());
     }
 
     #[tokio::test]
@@ -403,19 +393,19 @@ mod tests {
         let signer = Secp256k1Signer::new(secret_key);
         let mut data_item_1 = BundlrTx::new(
             Vec::from(""),
-            Vec::from("hello"),
+            &b"hello"[..],
             vec![Tag::new("name", "value")],
         )
         .unwrap();
         let res = data_item_1.sign(&signer).await;
         assert!(res.is_ok());
         let mut f = File::create(path).unwrap();
-        let data_item_1_bytes = data_item_1.as_bytes().unwrap();
+        let data_item_1_bytes = data_item_1.as_bytes().await.unwrap();
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
         let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
-        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
+        assert_eq!(data_item_1_bytes, data_item_2.as_bytes().await.unwrap());
     }
 }
