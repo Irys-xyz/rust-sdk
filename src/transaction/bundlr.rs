@@ -18,7 +18,7 @@ use crate::utils::read_offset;
 enum Data {
     None,
     Bytes(Vec<u8>),
-    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
+    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>> + Send>>),
 }
 
 pub struct BundlrTx {
@@ -281,12 +281,9 @@ impl BundlrTx {
     pub async fn sign(&mut self, signer: &dyn Signer) -> Result<(), BundlrError> {
         self.signature_type = signer.sig_type();
         self.owner = signer.pub_key().to_vec();
-
         let message = self.get_message().await?;
-
         let sig = signer.sign(message)?;
         self.signature = sig.to_vec();
-
         Ok(())
     }
 
@@ -321,6 +318,7 @@ mod tests {
             tokio_test::block_on($e)
         };
     }
+
     #[tokio::test]
     async fn test_create_sign_verify_load_ed25519() {
         let path = "./res/test_bundles/test_data_item_ed25519";
