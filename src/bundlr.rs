@@ -694,7 +694,7 @@ mod tests {
             .await
             .unwrap()
             .build()?; // <- method not found
-        
+
         let _dir = std::path::PathBuf::from_str("res").expect("Invalid dir path");
         let _result = todo!();
         bundlr.upload_dir(dir).await;
