@@ -13,7 +13,7 @@ pub mod ed25519;
 pub mod secp256k1;
 #[cfg(any(feature = "ethereum", feature = "erc20"))]
 pub mod typed_ethereum;
-
+#[allow(unused)]
 pub trait ToPem {}
 
 pub trait Signer: Send + Sync {

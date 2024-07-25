@@ -7,7 +7,7 @@ use crate::{
     error::BundlrError,
 };
 use futures::{Stream, TryStream};
-
+#[allow(unused)]
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
 pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {

@@ -15,7 +15,7 @@ pub enum DeepHashChunk<'a> {
     Stream(&'a mut Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
     Chunks(Vec<DeepHashChunk<'a>>),
 }
-
+#[allow(unused)]
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
 pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlrError> {

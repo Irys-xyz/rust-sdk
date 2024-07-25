@@ -18,6 +18,7 @@
 //!
 
 use logos::{Lexer, Logos};
+#[allow(unused)]
 #[derive(Default, Clone, Copy)]
 pub struct TypeSize(pub u8, pub u8);
 

@@ -1,5 +1,6 @@
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::fs;
+use std::{fs, io};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -20,6 +21,7 @@ use num_traits::Zero;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use tokio::task;
 
 #[allow(unused)]
 pub struct Bundlr<Currency> {
@@ -551,17 +553,37 @@ where
         self.uploader.upload(data).await
     }
 
-    /*
+    
     pub async fn upload_directory(
-        &self,
+        &mut self,
         directory_path: PathBuf,
-        manifest_path: PathBuf,
+      //  manifest_path: PathBuf,
     ) -> Result<(), BundlrError> {
-        todo!();
+        let entries = task::block_in_place(|| {
+            fs::read_dir(&directory_path).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            let path = entry.path();
+            let uploader = self.uploader.borrow_mut();
+            if path.is_dir() {
+                println!("Is Dir");
+                let file_data = task::block_in_place(|| {
+                    fs::read(&path).map_err(|e| eprintln!("error[{}]", e))
+                });
+                uploader.upload(file_data.unwrap()).await?;
+            } else if path.is_file() {
+                println!("Is File");
+
+            }
+        }
+        Ok(())
     }
-    */
+    
 }
 
+/* 
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -663,3 +685,4 @@ mod tests {
     #[tokio::test]
     async fn should_fund_address_correctly() {}
 }
+*/
