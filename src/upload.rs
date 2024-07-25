@@ -15,7 +15,7 @@ struct IdRes {
     max: u64,
     min: u64,
 }
-
+#[derive(Debug, Clone)]
 pub struct Uploader {
     url: Url,
     client: reqwest::Client,

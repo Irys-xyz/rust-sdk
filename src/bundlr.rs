@@ -1,8 +1,7 @@
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::{fs, io};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::{fs, io};
 
 use crate::consts::BUNDLR_DEFAULT_URL;
 use crate::currency;
@@ -553,11 +552,10 @@ where
         self.uploader.upload(data).await
     }
 
-    
     pub async fn upload_directory(
         &mut self,
         directory_path: PathBuf,
-      //  manifest_path: PathBuf,
+        //  manifest_path: PathBuf,
     ) -> Result<(), BundlrError> {
         let entries = task::block_in_place(|| {
             fs::read_dir(&directory_path).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
@@ -566,25 +564,23 @@ where
         for entry in entries {
             let entry = entry.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
             let path = entry.path();
-            let uploader = self.uploader.borrow_mut();
+            let mut uploader = self.uploader.clone();
             if path.is_dir() {
                 println!("Is Dir");
-                let file_data = task::block_in_place(|| {
-                    fs::read(&path).map_err(|e| eprintln!("error[{}]", e))
-                });
+                let file_data =
+                    task::block_in_place(|| fs::read(&path).map_err(|e| eprintln!("error[{}]", e)));
                 uploader.upload(file_data.unwrap()).await?;
             } else if path.is_file() {
                 println!("Is File");
-
             }
         }
         Ok(())
     }
-    
 }
 
-/* 
 #[cfg(test)]
+#[cfg(feature = "skip_for_now")]
+
 mod tests {
     use std::str::FromStr;
 
@@ -683,6 +679,27 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn should_upload_dir() {
+        let url = Url::parse("https://node1.bundlr.network").unwrap();
+        let wallet =
+            std::path::PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
+        let _currency = arweave_rs::ArweaveBuilder::new()
+            .keypair_path(wallet)
+            .build()
+            .expect("Could not create currency instance");
+        let mut _bundlr = crate::BundlrBuilder::new()
+            .url(url)
+            .currency(currency) // <- issue with trait Currency::currency
+            .fetch_pub_info()
+            .await
+            .unwrap()
+            .build()?; // <- method not found
+        
+        let _dir = std::path::PathBuf::from_str("res").expect("Invalid dir path");
+        let _result = todo!();
+        bundlr.upload_dir(dir).await;
+    }
+
+    #[tokio::test]
     async fn should_fund_address_correctly() {}
 }
-*/
