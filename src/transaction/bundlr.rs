@@ -15,6 +15,19 @@ use crate::signers::Signer;
 use crate::tags::{AvroDecode, AvroEncode, Tag};
 use crate::utils::read_offset;
 
+#[derive(Debug)]
+pub struct DataItem {
+    pub signature_type: u8,
+    pub signature: Vec<u8>,
+    pub owner: Vec<u8>,
+    pub target: Option<Vec<u8>>,
+    pub anchor: Option<Vec<u8>>,
+    pub number_of_tags: u64,
+    pub number_of_tag_bytes: u64,
+    pub tags: Vec<Tag>,
+    pub data: Vec<u8>,
+}
+
 enum Data {
     None,
     Bytes(Vec<u8>),
@@ -29,6 +42,28 @@ pub struct BundlrTx {
     anchor: Vec<u8>,
     tags: Vec<Tag>,
     data: Data,
+}
+
+impl From<BundlrTx> for DataItem {
+    fn from(tx: BundlrTx) -> Self {
+        let data = match tx.data {
+            Data::Bytes(b) => b,
+            _ => vec![],
+        };
+        let target = (!tx.target.is_empty()).then(|| tx.target.clone());
+        let anchor = (!tx.anchor.is_empty()).then(|| tx.anchor.clone());
+        DataItem {
+            signature_type: tx.signature_type as u8,
+            signature: tx.signature,
+            owner: tx.owner,
+            target,
+            anchor,
+            number_of_tags: tx.tags.len() as u64,
+            number_of_tag_bytes: tx.tags.encode().unwrap().len() as u64,
+            tags: tx.tags,
+            data,
+        }
+    }
 }
 
 impl BundlrTx {
