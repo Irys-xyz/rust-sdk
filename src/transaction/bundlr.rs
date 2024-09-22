@@ -14,6 +14,11 @@ use crate::index::{Config, SignerMap};
 use crate::signers::Signer;
 use crate::tags::{AvroDecode, AvroEncode, Tag};
 use crate::utils::read_offset;
+#[derive(Debug)]
+pub struct TagBytes {
+    pub name: Vec<u8>,
+    pub value: Vec<u8>,
+}
 
 #[derive(Debug)]
 pub struct DataItem {
@@ -24,7 +29,7 @@ pub struct DataItem {
     pub anchor: Option<Vec<u8>>,
     pub number_of_tags: u64,
     pub number_of_tag_bytes: u64,
-    pub tags: Vec<Tag>,
+    pub tags: Vec<TagBytes>,
     pub data: Vec<u8>,
 }
 
@@ -52,6 +57,11 @@ impl From<BundlrTx> for DataItem {
         };
         let target = (!tx.target.is_empty()).then(|| tx.target.clone());
         let anchor = (!tx.anchor.is_empty()).then(|| tx.anchor.clone());
+        let tags = tx.tags.iter().map(|t| TagBytes {
+            name: t.name.clone().into_bytes(),
+            value: t.value.clone().into_bytes(),
+        }).collect();
+
         DataItem {
             signature_type: tx.signature_type as u8,
             signature: tx.signature,
@@ -60,7 +70,7 @@ impl From<BundlrTx> for DataItem {
             anchor,
             number_of_tags: tx.tags.len() as u64,
             number_of_tag_bytes: tx.tags.encode().unwrap().len() as u64,
-            tags: tx.tags,
+            tags,
             data,
         }
     }

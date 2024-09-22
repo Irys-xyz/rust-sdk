@@ -20,7 +20,7 @@ pub mod verify;
 
 pub use bundlr::{Bundlr, BundlrBuilder};
 pub use signers::Signer;
-pub use transaction::bundlr::BundlrTx;
+pub use transaction::bundlr::{BundlrTx, DataItem};
 pub use verify::Verifier;
 
 #[cfg(feature = "arweave")]
