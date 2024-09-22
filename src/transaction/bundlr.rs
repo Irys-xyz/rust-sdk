@@ -1,11 +1,3 @@
-use async_stream::try_stream;
-use bytes::{BufMut, Bytes};
-use futures::Stream;
-use ring::rand::SecureRandom;
-use std::cmp;
-use std::fs::File;
-use std::pin::Pin;
-
 use crate::consts::{CHUNK_SIZE, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::deep_hash_sync::deep_hash_sync;
@@ -14,13 +6,21 @@ use crate::index::{Config, SignerMap};
 use crate::signers::Signer;
 use crate::tags::{AvroDecode, AvroEncode, Tag};
 use crate::utils::read_offset;
-#[derive(Debug)]
+use async_stream::try_stream;
+use bytes::{BufMut, Bytes};
+use futures::Stream;
+use ring::rand::SecureRandom;
+use serde::{Deserialize, Serialize};
+use std::cmp;
+use std::fs::File;
+use std::pin::Pin;
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TagBytes {
     pub name: Vec<u8>,
     pub value: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DataItem {
     pub signature_type: u8,
     pub signature: Vec<u8>,
@@ -57,10 +57,14 @@ impl From<BundlrTx> for DataItem {
         };
         let target = (!tx.target.is_empty()).then(|| tx.target.clone());
         let anchor = (!tx.anchor.is_empty()).then(|| tx.anchor.clone());
-        let tags = tx.tags.iter().map(|t| TagBytes {
-            name: t.name.clone().into_bytes(),
-            value: t.value.clone().into_bytes(),
-        }).collect();
+        let tags = tx
+            .tags
+            .iter()
+            .map(|t| TagBytes {
+                name: t.name.clone().into_bytes(),
+                value: t.value.clone().into_bytes(),
+            })
+            .collect();
 
         DataItem {
             signature_type: tx.signature_type as u8,
