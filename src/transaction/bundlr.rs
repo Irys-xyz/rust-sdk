@@ -14,13 +14,13 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::fs::File;
 use std::pin::Pin;
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct TagBytes {
     pub name: Vec<u8>,
     pub value: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct DataItem {
     pub signature_type: u8,
     pub signature: Vec<u8>,
