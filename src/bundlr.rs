@@ -46,6 +46,17 @@ pub struct FundBody {
     tx_id: String,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadReponse {
+    pub block: u64,
+    pub id: String,
+    pub public: String,
+    pub signature: String,
+    pub timestamp: u64,
+    pub version: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawBody {
@@ -351,7 +362,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn send_transaction(&self, tx: BundlrTx) -> Result<Value, BundlrError> {
+    pub async fn send_transaction(&self, tx: BundlrTx) -> Result<UploadReponse, BundlrError> {
         let tx = tx.as_bytes()?;
 
         let response = self
@@ -366,7 +377,8 @@ where
             .send()
             .await;
 
-        check_and_return::<Value>(response).await
+        let checked_res = check_and_return::<Value>(response).await?;
+        serde_json::from_value(checked_res).map_err(|e| BundlrError::Unknown(e.to_string()))
     }
 
     /// Sends determined amount to fund an account in the Bundlr node
@@ -539,7 +551,7 @@ where
     /// #   Ok(())
     /// # }
     /// ```
-    pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<(), BundlrError> {
+    pub async fn upload_file(&mut self, file_path: PathBuf) -> Result<UploadReponse, BundlrError> {
         let mut tags = vec![];
         if let Some(content_type) = mime_guess::from_path(file_path.clone()).first() {
             let content_tag: Tag = Tag::new("Content-Type", content_type.as_ref());
@@ -548,7 +560,11 @@ where
 
         let data = fs::read(&file_path)?;
 
-        self.uploader.upload(data).await
+        // self.uploader.upload(data).await
+        let mut tx = self.create_transaction(data, tags)?;
+        self.sign_transaction(&mut tx).await?;
+
+        self.send_transaction(tx).await
     }
 
     /*
