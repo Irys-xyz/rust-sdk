@@ -1,7 +1,7 @@
 [package]
 name = "irys-sdk"
 description = "Irys Network Rust SDK"
-homepage = "https:/irys.xyz"
+homepage = "https://irys.xyz"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Irys-xyz/rust-sdk"
