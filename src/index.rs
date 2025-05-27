@@ -23,7 +23,7 @@ use crate::AptosSigner;
 #[cfg(feature = "aptos")]
 use crate::MultiAptosSigner;
 
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 use crate::signers::typed_ethereum::TypedEthereumSigner;
 
 #[derive(FromPrimitive, Display, PartialEq, Eq, Debug, Clone)]
@@ -136,7 +136,7 @@ impl SignerMap {
         }
     }
 
-    pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
+    pub fn verify(&self, pk: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlerError> {
         match *self {
             #[cfg(feature = "arweave")]
             SignerMap::Arweave => ArweaveSigner::verify(

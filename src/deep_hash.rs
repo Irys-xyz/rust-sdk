@@ -6,7 +6,7 @@ use sha2::{Digest, Sha384};
 
 use crate::{
     consts::{BLOB_AS_BUFFER, LIST_AS_BUFFER},
-    error::BundlrError,
+    error::BundlerError,
 };
 use futures::{Stream, TryStream, TryStreamExt};
 
@@ -18,7 +18,7 @@ pub enum DeepHashChunk<'a> {
 
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
-pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlrError> {
+pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlerError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
             let tag = [BLOB_AS_BUFFER, b.len().to_string().as_bytes()].concat();
@@ -32,7 +32,7 @@ pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlrError> {
                 .as_mut()
                 .try_next()
                 .await
-                .map_err(|_| BundlrError::NoBytesLeft)?
+                .map_err(|_| BundlerError::NoBytesLeft)?
             {
                 length += chunk.len();
                 hasher.update(&chunk);
@@ -64,7 +64,7 @@ pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlrError> {
 pub async fn deep_hash_chunks(
     chunks: &mut Vec<DeepHashChunk<'_>>,
     acc: Bytes,
-) -> Result<Bytes, BundlrError> {
+) -> Result<Bytes, BundlerError> {
     if chunks.is_empty() {
         return Ok(acc);
     };

@@ -4,13 +4,13 @@ use sha2::{Digest, Sha384};
 use crate::{
     consts::{BLOB_AS_BUFFER, LIST_AS_BUFFER},
     deep_hash::DeepHashChunk,
-    error::BundlrError,
+    error::BundlerError,
 };
 use futures::{Stream, TryStream};
 
 trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
-pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
+pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlerError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
             let tag = [BLOB_AS_BUFFER, b.len().to_string().as_bytes()].concat();
@@ -26,7 +26,7 @@ pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 
             deep_hash_chunks_sync(chunks, acc)
         }
-        _ => Err(BundlrError::Unsupported(
+        _ => Err(BundlerError::Unsupported(
             "Streaming is not supported for sync".to_owned(),
         )),
     }
@@ -35,7 +35,7 @@ pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlrError> {
 pub fn deep_hash_chunks_sync(
     mut chunks: Vec<DeepHashChunk>,
     acc: Bytes,
-) -> Result<Bytes, BundlrError> {
+) -> Result<Bytes, BundlerError> {
     if chunks.is_empty() {
         return Ok(acc);
     };

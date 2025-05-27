@@ -14,11 +14,11 @@ use bytes::Bytes;
 use reqwest::{Response, Url};
 use serde::Deserialize;
 
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 
 pub async fn check_and_return<T: for<'de> Deserialize<'de>>(
     res: Result<Response, reqwest::Error>,
-) -> Result<T, BundlrError>
+) -> Result<T, BundlerError>
 where
     T: Default,
 {
@@ -29,14 +29,14 @@ where
                 let text = r
                     .text()
                     .await
-                    .map_err(|err| BundlrError::ParseError(err.to_string()))?
+                    .map_err(|err| BundlerError::ParseError(err.to_string()))?
                     .replace('\"', "");
                 let msg = format!("Status: {}:{:?}", status, text);
-                return Err(BundlrError::ResponseError(msg));
+                return Err(BundlerError::ResponseError(msg));
             };
             Ok(r.json::<T>().await.unwrap_or_default())
         }
-        Err(err) => Err(BundlrError::ResponseError(err.to_string())),
+        Err(err) => Err(BundlerError::ResponseError(err.to_string())),
     }
 }
 
@@ -44,15 +44,15 @@ pub async fn get_nonce(
     client: &reqwest::Client,
     url: &Url,
     address: String,
-    currency: String,
-) -> Result<u64, BundlrError> {
+    token: String,
+) -> Result<u64, BundlerError> {
     let res = client
         .get(
             url.join(&format!(
                 "/account/withdrawals/{}?address={}",
-                currency, address
+                token, address
             ))
-            .map_err(|err| BundlrError::ParseError(err.to_string()))?,
+            .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
         .send()
         .await;

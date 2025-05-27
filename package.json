@@ -1,7 +1,7 @@
 {
   "name": "rust-sdk",
   "version": "1.0.0",
-  "description": "Bundlr's rust sdk",
+  "description": "Irys's rust sdk",
   "main": "bundles.js",
   "type": "module",
   "directories": {
@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bundlr-Network/rust-sdk.git"
+    "url": "git+https://github.com/Irys-xyz/rust-sdk.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Bundlr-Network/rust-sdk/issues"
+    "url": "https://github.com/Irys-xyz/rust-sdk/issues"
   },
-  "homepage": "https://github.com/Bundlr-Network/rust-sdk#readme",
+  "homepage": "https://github.com/Irys-xyz/rust-sdk#readme",
   "dependencies": {
     "@bundlr-network/client": "^0.10.5",
     "@solana/web3.js": "^1.73.3",

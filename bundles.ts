@@ -50,14 +50,14 @@ const bundlesAmount = MAX_BUNDLES_AMOUNT;
 
 //Create all signers
 //TODO: figure out how to instantiate signer directly (see below)
-const bundlr = new Bundlr.default(
-    "https://devnet.bundlr.network",
+const bundlerClient = new Bundlr.default(
+    "https://devnet.irys.xyz",
     "multiAptos",
     wallet,
     { providerUrl: "https://fullnode.devnet.aptoslabs.com", currencyOpts: { collectSignatures } }
 );
-await bundlr.ready();
-let multiAptosSigner = bundlr.getSigner();
+await bundlerClient.ready();
+let multiAptosSigner = bundlerClient.getSigner();
 
 const signers: Signer[] = [
     new ArweaveSigner(jwk),

@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use bundlr_sdk::{
+use clap::{Parser, Subcommand};
+use irys_sdk::{
     client::{
         balance::run_balance, fund::run_fund, price::run_price, upload::run_upload,
         withdraw::run_withdraw,
     },
-    currency::CurrencyType,
+    token::TokenType,
 };
-use clap::{Parser, Subcommand};
 use reqwest::Url;
 
 const DEFAULT_BYTE_AMOUNT: u64 = 1;
@@ -21,7 +21,7 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
-    ///Gets the specified user's balance for the current Bundlr node
+    ///Gets the specified user's balance for the current Irys bundler node
     Balance {
         //Address to query balance
         #[clap(value_parser)]
@@ -35,9 +35,9 @@ enum Command {
         #[clap(long = "host")]
         host: Url,
 
-        //Currency type
-        #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        //Token type
+        #[clap(short = 't', long = "token")]
+        token: TokenType,
     },
     ///Funds your account with the specified amount of atomic units
     Fund {
@@ -57,9 +57,9 @@ enum Command {
         #[clap(long = "host")]
         host: Url,
 
-        //Currency type
-        #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        //Token type
+        #[clap(short = 't', long = "token")]
+        token: TokenType,
     },
     ///Sends a fund withdrawal request
     Withdraw {
@@ -79,9 +79,9 @@ enum Command {
         #[clap(long = "host")]
         host: Url,
 
-        //Currency type
-        #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        //Token type
+        #[clap(short = 't', long = "token")]
+        token: TokenType,
     },
     ///Uploads a specified file
     Upload {
@@ -101,13 +101,13 @@ enum Command {
         #[clap(long = "host")]
         host: Url,
 
-        //Currency type
-        #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        //Token type
+        #[clap(short = 't', long = "token")]
+        token: TokenType,
     },
     ///Uploads a folder (with a manifest)
     UploadDir {},
-    ///Check how much of a specific currency is required for an upload of <amount> bytes
+    ///Check how much of a specific token is required for an upload of <amount> bytes
     Price {
         //Amounts of bytes to calculate pricing
         #[clap(value_parser)]
@@ -121,9 +121,9 @@ enum Command {
         #[clap(long = "host")]
         host: Url,
 
-        //Currency type
-        #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        //Token type
+        #[clap(short = 't', long = "token")]
+        token: TokenType,
     },
 }
 
@@ -134,9 +134,9 @@ impl Command {
                 address,
                 timeout,
                 host,
-                currency,
+                token,
             } => {
-                let work = run_balance(host, &address, currency);
+                let work = run_balance(host, &address, token);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
@@ -151,9 +151,9 @@ impl Command {
                 timeout,
                 wallet,
                 host,
-                currency,
+                token,
             } => {
-                let work = run_fund(amount, host, &wallet, currency);
+                let work = run_fund(amount, host, &wallet, token);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT_FUND);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
@@ -168,9 +168,9 @@ impl Command {
                 timeout,
                 wallet,
                 host,
-                currency,
+                token,
             } => {
-                let work = run_withdraw(amount, host, &wallet, currency);
+                let work = run_withdraw(amount, host, &wallet, token);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
@@ -185,9 +185,9 @@ impl Command {
                 timeout,
                 wallet,
                 host,
-                currency,
+                token,
             } => {
-                let work = run_upload(file_path, host, &wallet, currency);
+                let work = run_upload(file_path, host, &wallet, token);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
@@ -202,10 +202,10 @@ impl Command {
                 byte_amount,
                 timeout,
                 host,
-                currency,
+                token,
             } => {
                 let byte_amount = byte_amount.unwrap_or(DEFAULT_BYTE_AMOUNT);
-                let work = run_price(host, currency, byte_amount);
+                let work = run_price(host, token, byte_amount);
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {

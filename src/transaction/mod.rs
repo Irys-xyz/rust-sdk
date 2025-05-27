@@ -1,4 +1,4 @@
-pub mod bundlr;
+pub mod irys;
 pub mod poll;
 
 #[derive(Debug)]

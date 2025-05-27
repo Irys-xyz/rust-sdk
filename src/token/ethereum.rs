@@ -2,40 +2,40 @@ use bytes::Bytes;
 use reqwest::{StatusCode, Url};
 
 use crate::{
-    error::{BuilderError, BundlrError},
+    error::{BuilderError, BundlerError},
     transaction::{Tx, TxStatus},
-    Ed25519Signer, Signer, Verifier,
+    Ed25519Signer, Secp256k1Signer, Signer, Verifier,
 };
 
-use super::{Currency, CurrencyType, TxResponse};
+use super::{Token, TokenType, TxResponse};
 
-const SOLANA_TICKER: &str = "SOL";
-const SOLANA_BASE_UNIT: &str = "lamport";
-const SOLANA_BASE_URL: &str = "https://explorer.solana.com/";
+const ETHEREUM_TICKER: &str = "ETH";
+const ETHEREUM_BASE_UNIT: &str = "wei";
+const ETHEREUM_BASE_URL: &str = "https://etherscan.io/";
 
 #[allow(unused)]
-pub struct Solana {
-    signer: Option<Ed25519Signer>,
+pub struct Ethereum {
+    signer: Option<Secp256k1Signer>,
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
-    name: CurrencyType,
+    name: TokenType,
     ticker: String,
     min_confirm: i16,
     client: reqwest::Client,
     url: Url,
 }
 
-impl Default for Solana {
+impl Default for Ethereum {
     fn default() -> Self {
-        let url = Url::parse(SOLANA_BASE_URL).unwrap();
+        let url = Url::parse(ETHEREUM_BASE_URL).unwrap();
         Self {
             signer: None,
             needs_fee: true,
             is_slow: false,
-            base: (SOLANA_BASE_UNIT.to_string(), 0),
-            name: CurrencyType::Solana,
-            ticker: SOLANA_TICKER.to_string(),
+            base: (ETHEREUM_BASE_UNIT.to_string(), 0),
+            name: TokenType::Ethereum,
+            ticker: ETHEREUM_TICKER.to_string(),
             min_confirm: 10,
             client: reqwest::Client::new(),
             url,
@@ -44,50 +44,50 @@ impl Default for Solana {
 }
 
 #[derive(Default)]
-pub struct SolanaBuilder {
+pub struct EthereumBuilder {
     base_url: Option<Url>,
     wallet: Option<String>,
 }
 
-impl SolanaBuilder {
-    pub fn new() -> SolanaBuilder {
+impl EthereumBuilder {
+    pub fn new() -> EthereumBuilder {
         Default::default()
     }
 
-    pub fn base_url(mut self, base_url: Url) -> SolanaBuilder {
+    pub fn base_url(mut self, base_url: Url) -> EthereumBuilder {
         self.base_url = Some(base_url);
         self
     }
 
-    pub fn wallet(mut self, wallet: &str) -> SolanaBuilder {
+    pub fn wallet(mut self, wallet: &str) -> EthereumBuilder {
         self.wallet = Some(wallet.into());
         self
     }
 
-    pub fn build(self) -> Result<Solana, BuilderError> {
+    pub fn build(self) -> Result<Ethereum, BuilderError> {
         let signer = if let Some(wallet) = self.wallet {
-            Some(Ed25519Signer::from_base58(&wallet)?)
+            Some(Secp256k1Signer::from_base58(&wallet)?)
         } else {
             None
         };
-        Ok(Solana {
-            signer,
+        Ok(Ethereum {
             url: self
                 .base_url
-                .unwrap_or_else(|| Url::parse(SOLANA_BASE_URL).unwrap()),
-            ..Solana::default()
+                .unwrap_or_else(|| Url::parse(ETHEREUM_BASE_URL).unwrap()),
+            signer,
+            ..Ethereum::default()
         })
     }
 }
 
 #[allow(unused)]
 #[async_trait::async_trait]
-impl Currency for Solana {
+impl Token for Ethereum {
     fn get_min_unit_name(&self) -> String {
-        SOLANA_BASE_UNIT.to_string()
+        ETHEREUM_BASE_UNIT.to_string()
     }
 
-    fn get_type(&self) -> CurrencyType {
+    fn get_type(&self) -> TokenType {
         self.name
     }
 
@@ -95,27 +95,27 @@ impl Currency for Solana {
         self.needs_fee
     }
 
-    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError> {
+    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlerError> {
         todo!()
     }
 
     async fn get_tx_status(
         &self,
         tx_id: String,
-    ) -> Result<(StatusCode, Option<TxStatus>), BundlrError> {
+    ) -> Result<(StatusCode, Option<TxStatus>), BundlerError> {
         todo!()
     }
 
-    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlrError> {
+    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.sign(Bytes::copy_from_slice(message))?.to_vec()),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
     }
 
-    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
+    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlerError> {
         Ed25519Signer::verify(
             Bytes::copy_from_slice(pub_key),
             Bytes::copy_from_slice(message),
@@ -124,23 +124,23 @@ impl Currency for Solana {
         .map(|_| ())
     }
 
-    fn get_pub_key(&self) -> Result<Bytes, BundlrError> {
+    fn get_pub_key(&self) -> Result<Bytes, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.pub_key()),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
     }
 
-    fn wallet_address(&self) -> Result<String, BundlrError> {
+    fn wallet_address(&self) -> Result<String, BundlerError> {
         todo!();
     }
 
-    fn get_signer(&self) -> Result<&dyn Signer, BundlrError> {
+    fn get_signer(&self) -> Result<&dyn Signer, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
@@ -158,15 +158,15 @@ impl Currency for Solana {
         todo!();
     }
 
-    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlrError> {
+    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlerError> {
         todo!();
     }
 
-    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlrError> {
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlerError> {
         todo!();
     }
 
-    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError> {
+    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlerError> {
         todo!()
     }
 }

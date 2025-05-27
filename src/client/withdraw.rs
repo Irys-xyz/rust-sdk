@@ -1,10 +1,10 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
-    bundlr::BundlrBuilder,
+    bundler::BundlerClientBuilder,
     consts::USE_JS_SDK,
-    currency::{arweave::ArweaveBuilder, CurrencyType},
-    error::BundlrError,
+    error::BundlerError,
+    token::{arweave::ArweaveBuilder, TokenType},
 };
 use num_traits::Zero;
 use reqwest::Url;
@@ -13,27 +13,30 @@ pub async fn run_withdraw(
     amount: u64,
     url: Url,
     wallet: &str,
-    currency: CurrencyType,
-) -> Result<String, BundlrError> {
+    token: TokenType,
+) -> Result<String, BundlerError> {
     if amount.is_zero() {
-        return Err(BundlrError::InvalidAmount);
+        return Err(BundlerError::InvalidAmount);
     }
 
-    match currency {
-        CurrencyType::Arweave => {
+    match token {
+        TokenType::Arweave => {
             let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
-            let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundlr = BundlrBuilder::new()
+            let token = ArweaveBuilder::new().keypair_path(wallet).build()?;
+            let bundler_client = BundlerClientBuilder::new()
                 .url(url)
-                .currency(currency)
+                .token(token)
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            bundlr.withdraw(amount).await.map(|res| res.to_string())
+            bundler_client
+                .withdraw(amount)
+                .await
+                .map(|res| res.to_string())
         }
-        CurrencyType::Solana => todo!("{}", USE_JS_SDK),
-        CurrencyType::Ethereum => todo!("{}", USE_JS_SDK),
-        CurrencyType::Erc20 => todo!("{}", USE_JS_SDK),
-        CurrencyType::Cosmos => todo!("{}", USE_JS_SDK),
+        TokenType::Solana => todo!("{}", USE_JS_SDK),
+        TokenType::Ethereum => todo!("{}", USE_JS_SDK),
+        TokenType::Erc20 => todo!("{}", USE_JS_SDK),
+        TokenType::Cosmos => todo!("{}", USE_JS_SDK),
     }
 }

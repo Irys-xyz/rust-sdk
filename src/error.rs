@@ -4,7 +4,7 @@ use web3::signing::RecoveryError;
 use crate::utils::Eip712Error;
 
 #[derive(Debug, Error)]
-pub enum BundlrError {
+pub enum BundlerError {
     #[error("Invalid headers provided.")]
     InvalidHeaders,
 
@@ -35,8 +35,8 @@ pub enum BundlrError {
     #[error("Invalid wallet {0}")]
     InvalidKey(String),
 
-    #[error("Invalid currency: {0}")]
-    InvalidCurrency(String),
+    #[error("Invalid token: {0}")]
+    InvalidToken(String),
 
     #[error("Response failed with the following error: {0}")]
     ResponseError(String),
@@ -68,8 +68,8 @@ pub enum BundlrError {
     #[error("Arweave Sdk error: {0}")]
     ArweaveSdkError(arweave_rs::error::Error),
 
-    #[error("Currency error: {0}")]
-    CurrencyError(String),
+    #[error("Token error: {0}")]
+    TokenError(String),
 
     #[error("Error reading/writting bytes: {0}")]
     BytesError(String),
@@ -111,13 +111,13 @@ pub enum BundlrError {
     RecoveryError(RecoveryError),
 }
 
-impl From<BuilderError> for BundlrError {
+impl From<BuilderError> for BundlerError {
     fn from(value: BuilderError) -> Self {
         Self::BuilderError(value)
     }
 }
 
-impl From<arweave_rs::error::Error> for BundlrError {
+impl From<arweave_rs::error::Error> for BundlerError {
     fn from(value: arweave_rs::error::Error) -> Self {
         Self::ArweaveSdkError(value)
     }
@@ -125,8 +125,8 @@ impl From<arweave_rs::error::Error> for BundlrError {
 
 #[derive(Debug, Error)]
 pub enum BuilderError {
-    #[error("Bundlr Error {0}")]
-    BundlrError(String),
+    #[error("Bundler Error {0}")]
+    BundlerError(String),
 
     #[error("Missing field {0}")]
     MissingField(String),
@@ -144,8 +144,8 @@ impl From<arweave_rs::error::Error> for BuilderError {
     }
 }
 
-impl From<BundlrError> for BuilderError {
-    fn from(value: BundlrError) -> Self {
-        Self::BundlrError(value.to_string())
+impl From<BundlerError> for BuilderError {
+    fn from(value: BundlerError) -> Self {
+        Self::BundlerError(value.to_string())
     }
 }

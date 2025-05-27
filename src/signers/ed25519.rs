@@ -1,6 +1,6 @@
 use std::array::TryFromSliceError;
 
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 use crate::index::SignerMap;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
@@ -18,17 +18,17 @@ impl Ed25519Signer {
         Ed25519Signer { keypair }
     }
 
-    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+    pub fn from_base58(s: &str) -> Result<Self, BundlerError> {
         let k = bs58::decode(s)
             .into_vec()
-            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            .map_err(|err| BundlerError::ParseError(err.to_string()))?;
         let key: &[u8; 64] = k
             .as_slice()
             .try_into()
-            .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
+            .map_err(|err: TryFromSliceError| BundlerError::ParseError(err.to_string()))?;
 
         Ok(Self {
-            keypair: Keypair::from_bytes(key).map_err(BundlrError::ED25519Error)?,
+            keypair: Keypair::from_bytes(key).map_err(BundlerError::ED25519Error)?,
         })
     }
 }
@@ -38,7 +38,7 @@ const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
 impl SignerTrait for Ed25519Signer {
-    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
+    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlerError> {
         Ok(Bytes::copy_from_slice(
             &self.keypair.sign(&message).to_bytes(),
         ))
@@ -64,14 +64,14 @@ impl VerifierTrait for Ed25519Signer {
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<(), crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlerError> {
         let public_key =
-            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
+            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlerError::ED25519Error)?;
         let sig =
-            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
+            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlerError::ED25519Error)?;
         public_key
             .verify(&message, &sig)
-            .map_err(|_| BundlrError::InvalidSignature)
+            .map_err(|_| BundlerError::InvalidSignature)
     }
 }
 

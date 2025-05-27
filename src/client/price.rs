@@ -1,19 +1,19 @@
 use reqwest::Url;
 
-use crate::{bundlr::get_price, currency::CurrencyType, error::BundlrError};
+use crate::{bundler::get_price, error::BundlerError, token::TokenType};
 
 pub async fn run_price(
     url: Url,
-    currency: CurrencyType,
+    token: TokenType,
     byte_amount: u64,
-) -> Result<String, BundlrError> {
+) -> Result<String, BundlerError> {
     let client = reqwest::Client::new();
-    get_price(&url, currency, &client, byte_amount)
+    get_price(&url, token, &client, byte_amount)
         .await
         .map(|balance| {
             format!(
                 "{} bytes in {} is {} base units", //TODO: refactor this to show base unit name
-                byte_amount, currency, balance,
+                byte_amount, token, balance,
             )
         })
 }

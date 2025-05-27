@@ -9,7 +9,7 @@ use std::pin::Pin;
 use crate::consts::{CHUNK_SIZE, DATAITEM_AS_BUFFER, ONE_AS_BUFFER};
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::deep_hash_sync::deep_hash_sync;
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 use crate::index::{Config, SignerMap};
 use crate::signers::Signer;
 use crate::tags::{AvroDecode, AvroEncode, Tag};
@@ -21,7 +21,7 @@ enum Data {
     Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
 }
 
-pub struct BundlrTx {
+pub struct BundlerTx {
     signature_type: SignerMap,
     signature: Vec<u8>,
     owner: Vec<u8>,
@@ -31,17 +31,17 @@ pub struct BundlrTx {
     data: Data,
 }
 
-impl BundlrTx {
-    pub fn new(target: Vec<u8>, data: Vec<u8>, tags: Vec<Tag>) -> Result<Self, BundlrError> {
+impl BundlerTx {
+    pub fn new(target: Vec<u8>, data: Vec<u8>, tags: Vec<Tag>) -> Result<Self, BundlerError> {
         let mut randoms: [u8; 32] = [0; 32];
         let sr = ring::rand::SystemRandom::new();
         match sr.fill(&mut randoms) {
             Ok(()) => (),
-            Err(err) => return Err(BundlrError::Unknown(err.to_string())),
+            Err(err) => return Err(BundlerError::Unknown(err.to_string())),
         }
         let anchor = randoms.to_vec();
 
-        Ok(BundlrTx {
+        Ok(BundlerTx {
             signature_type: SignerMap::None,
             signature: vec![],
             owner: vec![],
@@ -52,11 +52,11 @@ impl BundlrTx {
         })
     }
 
-    fn from_info_bytes(buffer: &[u8]) -> Result<(Self, usize), BundlrError> {
+    fn from_info_bytes(buffer: &[u8]) -> Result<(Self, usize), BundlerError> {
         let sig_type_b = &buffer[0..2];
         let signature_type = u16::from_le_bytes(
             <[u8; 2]>::try_from(sig_type_b)
-                .map_err(|err| BundlrError::BytesError(err.to_string()))?,
+                .map_err(|err| BundlerError::BytesError(err.to_string()))?,
         );
         let signer = SignerMap::from(signature_type);
 
@@ -72,33 +72,33 @@ impl BundlrTx {
         let target_start = 2 + sig_length + pub_length;
         let target_present = u8::from_le_bytes(
             <[u8; 1]>::try_from(&buffer[target_start..target_start + 1])
-                .map_err(|err| BundlrError::BytesError(err.to_string()))?,
+                .map_err(|err| BundlerError::BytesError(err.to_string()))?,
         );
         let target = match target_present {
             0 => &[],
             1 => &buffer[target_start + 1..target_start + 33],
-            b => return Err(BundlrError::InvalidPresenceByte(b.to_string())),
+            b => return Err(BundlerError::InvalidPresenceByte(b.to_string())),
         };
         let anchor_start = target_start + 1 + target.len();
         let anchor_present = u8::from_le_bytes(
             <[u8; 1]>::try_from(&buffer[anchor_start..anchor_start + 1])
-                .map_err(|err| BundlrError::BytesError(err.to_string()))?,
+                .map_err(|err| BundlerError::BytesError(err.to_string()))?,
         );
         let anchor = match anchor_present {
             0 => &[],
             1 => &buffer[anchor_start + 1..anchor_start + 33],
-            b => return Err(BundlrError::InvalidPresenceByte(b.to_string())),
+            b => return Err(BundlerError::InvalidPresenceByte(b.to_string())),
         };
 
         let tags_start = anchor_start + 1 + anchor.len();
         let number_of_tags = u64::from_le_bytes(
             <[u8; 8]>::try_from(&buffer[tags_start..tags_start + 8])
-                .map_err(|err| BundlrError::BytesError(err.to_string()))?,
+                .map_err(|err| BundlerError::BytesError(err.to_string()))?,
         );
 
         let number_of_tags_bytes = u64::from_le_bytes(
             <[u8; 8]>::try_from(&buffer[tags_start + 8..tags_start + 16])
-                .map_err(|err| BundlrError::BytesError(err.to_string()))?,
+                .map_err(|err| BundlerError::BytesError(err.to_string()))?,
         );
 
         let mut b = buffer.to_vec();
@@ -112,10 +112,10 @@ impl BundlrTx {
         };
 
         if number_of_tags != tags.len() as u64 {
-            return Err(BundlrError::InvalidTagEncoding);
+            return Err(BundlerError::InvalidTagEncoding);
         }
 
-        let bundlr_tx = BundlrTx {
+        let bundler_tx = BundlerTx {
             signature_type: signer,
             signature: signature.to_vec(),
             owner: owner.to_vec(),
@@ -125,16 +125,16 @@ impl BundlrTx {
             data: Data::None,
         };
 
-        Ok((bundlr_tx, tags_start + 16 + number_of_tags_bytes as usize))
+        Ok((bundler_tx, tags_start + 16 + number_of_tags_bytes as usize))
     }
 
-    pub fn from_bytes(buffer: Vec<u8>) -> Result<Self, BundlrError> {
-        let (bundlr_tx, data_start) = BundlrTx::from_info_bytes(&buffer)?;
+    pub fn from_bytes(buffer: Vec<u8>) -> Result<Self, BundlerError> {
+        let (bundler_tx, data_start) = BundlerTx::from_info_bytes(&buffer)?;
         let data = &buffer[data_start..buffer.len()];
 
-        Ok(BundlrTx {
+        Ok(BundlerTx {
             data: Data::Bytes(data.to_vec()),
-            ..bundlr_tx
+            ..bundler_tx
         })
     }
 
@@ -143,9 +143,9 @@ impl BundlrTx {
         size: u64,
         offset: u64,
         length: usize,
-    ) -> Result<Self, BundlrError> {
-        let buffer = read_offset(file, offset, length).map_err(BundlrError::IoError)?;
-        let (bundlr_tx, data_start) = BundlrTx::from_info_bytes(&buffer)?;
+    ) -> Result<Self, BundlerError> {
+        let buffer = read_offset(file, offset, length).map_err(BundlerError::IoError)?;
+        let (bundler_tx, data_start) = BundlerTx::from_info_bytes(&buffer)?;
 
         let data_start = data_start as u64;
         let data_size = size - data_start;
@@ -160,9 +160,9 @@ impl BundlrTx {
             };
         };
 
-        Ok(BundlrTx {
+        Ok(BundlerTx {
             data: Data::Stream(Box::pin(file_stream)),
-            ..bundlr_tx
+            ..bundler_tx
         })
     }
 
@@ -170,13 +170,13 @@ impl BundlrTx {
         !self.signature.is_empty() && self.signature_type != SignerMap::None
     }
 
-    pub fn as_bytes(self) -> Result<Vec<u8>, BundlrError> {
+    pub fn as_bytes(self) -> Result<Vec<u8>, BundlerError> {
         if !self.is_signed() {
-            return Err(BundlrError::NoSignature);
+            return Err(BundlerError::NoSignature);
         }
         let data = match &self.data {
-            Data::Stream(_) => return Err(BundlrError::InvalidDataType),
-            Data::None => return Err(BundlrError::InvalidDataType),
+            Data::Stream(_) => return Err(BundlerError::InvalidDataType),
+            Data::None => return Err(BundlerError::InvalidDataType),
             Data::Bytes(data) => data,
         };
 
@@ -196,7 +196,7 @@ impl BundlrTx {
 
         let mut b = Vec::with_capacity(
             TryInto::<usize>::try_into(length)
-                .map_err(|err| BundlrError::TypeParseError(err.to_string()))?,
+                .map_err(|err| BundlerError::TypeParseError(err.to_string()))?,
         );
 
         let sig_type: [u8; 2] = (self.signature_type as u16).to_le_bytes();
@@ -231,11 +231,11 @@ impl BundlrTx {
 
     pub fn as_byte_stream(
         self,
-    ) -> Result<Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>, BundlrError> {
+    ) -> Result<Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>, BundlerError> {
         todo!();
     }
 
-    async fn get_message(&mut self) -> Result<Bytes, BundlrError> {
+    async fn get_message(&mut self) -> Result<Bytes, BundlerError> {
         let encoded_tags = if !self.tags.is_empty() {
             self.tags.encode()?
         } else {
@@ -278,7 +278,7 @@ impl BundlrTx {
         }
     }
 
-    pub async fn sign(&mut self, signer: &dyn Signer) -> Result<(), BundlrError> {
+    pub async fn sign(&mut self, signer: &dyn Signer) -> Result<(), BundlerError> {
         self.signature_type = signer.sig_type();
         self.owner = signer.pub_key().to_vec();
 
@@ -290,7 +290,7 @@ impl BundlrTx {
         Ok(())
     }
 
-    pub async fn verify(&mut self) -> Result<(), BundlrError> {
+    pub async fn verify(&mut self) -> Result<(), BundlerError> {
         let message = self.get_message().await?;
         let pub_key = &self.owner;
         let signature = &self.signature;
@@ -308,7 +308,7 @@ impl BundlrTx {
 mod tests {
     use crate::tags::Tag;
     #[cfg(feature = "solana")]
-    use crate::transaction::bundlr::BundlrTx;
+    use crate::transaction::irys::BundlerTx;
     use crate::{ArweaveSigner, Ed25519Signer, Secp256k1Signer};
     use secp256k1::SecretKey;
     use std::path::PathBuf;
@@ -326,7 +326,7 @@ mod tests {
         let path = "./res/test_bundles/test_data_item_ed25519";
         let secret_key = "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb";
         let signer = Ed25519Signer::from_base58(secret_key).unwrap();
-        let mut data_item_1 = BundlrTx::new(
+        let mut data_item_1 = BundlerTx::new(
             Vec::from(""),
             Vec::from("hello"),
             vec![Tag::new("name", "value")],
@@ -340,7 +340,7 @@ mod tests {
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
-        let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
+        let data_item_2 = BundlerTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
 
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
@@ -351,7 +351,7 @@ mod tests {
         let path = "./res/test_bundles/test_data_item_rsa4096";
         let key_path = PathBuf::from_str("res/test_wallet.json").unwrap();
         let signer = ArweaveSigner::from_keypair_path(key_path).unwrap();
-        let mut data_item_1 = BundlrTx::new(
+        let mut data_item_1 = BundlerTx::new(
             Vec::from(""),
             Vec::from("hello"),
             vec![Tag::new("name", "value")],
@@ -365,7 +365,7 @@ mod tests {
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
-        let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
+        let data_item_2 = BundlerTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
     }
@@ -377,7 +377,7 @@ mod tests {
         let path = "./res/test_bundles/test_data_item_cosmos";
         let base58_secret_key = "28PmkjeZqLyfRQogb3FU4E1vJh68dXpbojvS2tcPwezZmVQp8zs8ebGmYg1hNRcjX4DkUALf3SkZtytGWPG3vYhs";
         let signer = CosmosSigner::from_base58(base58_secret_key).unwrap();
-        let mut data_item_1 = BundlrTx::new(
+        let mut data_item_1 = BundlerTx::new(
             Vec::from(""),
             Vec::from("hello"),
             vec![Tag::new("name", "value")],
@@ -390,7 +390,7 @@ mod tests {
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
-        let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
+        let data_item_2 = BundlerTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
          */
@@ -401,7 +401,7 @@ mod tests {
         let path = "./res/test_bundles/test_data_item_secp256k1";
         let secret_key = SecretKey::from_slice(b"00000000000000000000000000000000").unwrap();
         let signer = Secp256k1Signer::new(secret_key);
-        let mut data_item_1 = BundlrTx::new(
+        let mut data_item_1 = BundlerTx::new(
             Vec::from(""),
             Vec::from("hello"),
             vec![Tag::new("name", "value")],
@@ -414,7 +414,7 @@ mod tests {
         f.write_all(&data_item_1_bytes).unwrap();
 
         let buffer = fs::read(path).expect("Could not read file");
-        let data_item_2 = BundlrTx::from_bytes(buffer).expect("Invalid bytes");
+        let data_item_2 = BundlerTx::from_bytes(buffer).expect("Invalid bytes");
         assert!(&data_item_2.is_signed());
         assert_eq!(data_item_1_bytes, data_item_2.as_bytes().unwrap());
     }

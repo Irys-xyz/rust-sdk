@@ -1,6 +1,6 @@
 use std::array::TryFromSliceError;
 
-use crate::{error::BundlrError, index::SignerMap, Signer, Verifier};
+use crate::{error::BundlerError, index::SignerMap, Signer, Verifier};
 use bytes::Bytes;
 use secp256k1::{
     constants::{COMPACT_SIGNATURE_SIZE, PUBLIC_KEY_SIZE},
@@ -14,30 +14,30 @@ pub struct CosmosSigner {
 }
 
 impl CosmosSigner {
-    pub fn new(sec_key: SecretKey) -> Result<CosmosSigner, BundlrError> {
+    pub fn new(sec_key: SecretKey) -> Result<CosmosSigner, BundlerError> {
         let secp = Secp256k1::new();
         let pub_key = PublicKey::from_secret_key(&secp, &sec_key);
         if pub_key.serialize().len() == PUBLIC_KEY_SIZE {
             Ok(Self { sec_key, pub_key })
         } else {
-            Err(BundlrError::InvalidKey(format!(
+            Err(BundlerError::InvalidKey(format!(
                 "Public key length should be of {}",
                 PUB_LENGTH
             )))
         }
     }
 
-    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+    pub fn from_base58(s: &str) -> Result<Self, BundlerError> {
         let k = bs58::decode(s)
             .into_vec()
-            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            .map_err(|err| BundlerError::ParseError(err.to_string()))?;
         let key: &[u8; 64] = k
             .as_slice()
             .try_into()
-            .map_err(|err: TryFromSliceError| BundlrError::ParseError(err.to_string()))?;
+            .map_err(|err: TryFromSliceError| BundlerError::ParseError(err.to_string()))?;
 
         let sec_key = SecretKey::from_slice(&key[..32])
-            .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            .map_err(|err| BundlerError::ParseError(err.to_string()))?;
 
         Self::new(sec_key)
     }
@@ -61,9 +61,9 @@ impl Signer for CosmosSigner {
         Bytes::copy_from_slice(pub_key)
     }
 
-    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
+    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlerError> {
         let msg = Message::from_slice(&CosmosSigner::sha256_digest(&message[..]))
-            .map_err(BundlrError::Secp256k1Error)?;
+            .map_err(BundlerError::Secp256k1Error)?;
         let signature = secp256k1::Secp256k1::signing_only()
             .sign_ecdsa(&msg, &self.sec_key)
             .serialize_compact();
@@ -87,17 +87,17 @@ impl Verifier for CosmosSigner {
         public_key: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<(), crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlerError> {
         let msg = secp256k1::Message::from_slice(&CosmosSigner::sha256_digest(&message))
-            .map_err(BundlrError::Secp256k1Error)?;
+            .map_err(BundlerError::Secp256k1Error)?;
         let sig = secp256k1::ecdsa::Signature::from_compact(&signature)
-            .map_err(BundlrError::Secp256k1Error)?;
+            .map_err(BundlerError::Secp256k1Error)?;
         let pk =
-            secp256k1::PublicKey::from_slice(&public_key).map_err(BundlrError::Secp256k1Error)?;
+            secp256k1::PublicKey::from_slice(&public_key).map_err(BundlerError::Secp256k1Error)?;
 
         secp256k1::Secp256k1::verification_only()
             .verify_ecdsa(&msg, &sig, &pk)
-            .map_err(|_| BundlrError::InvalidSignature)
+            .map_err(|_| BundlerError::InvalidSignature)
     }
 }
 
