@@ -54,7 +54,7 @@ const bundlerClient = new Bundlr.default(
     "https://devnet.irys.xyz",
     "multiAptos",
     wallet,
-    { providerUrl: "https://fullnode.devnet.aptoslabs.com", tokenOpts: { collectSignatures } }
+    { providerUrl: "https://fullnode.devnet.aptoslabs.com", currencyOpts: { collectSignatures } }
 );
 await bundlerClient.ready();
 let multiAptosSigner = bundlerClient.getSigner();
