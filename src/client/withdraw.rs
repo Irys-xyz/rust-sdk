@@ -1,9 +1,9 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
-    bundler::ClientBuilder,
+    bundler::BundlerClientBuilder,
     consts::USE_JS_SDK,
-    currency::{arweave::ArweaveBuilder, TokenType},
+    token::{arweave::ArweaveBuilder, TokenType},
     error::BundlerError,
 };
 use num_traits::Zero;
@@ -13,19 +13,19 @@ pub async fn run_withdraw(
     amount: u64,
     url: Url,
     wallet: &str,
-    currency: TokenType,
+    token: TokenType,
 ) -> Result<String, BundlerError> {
     if amount.is_zero() {
         return Err(BundlerError::InvalidAmount);
     }
 
-    match currency {
+    match token {
         TokenType::Arweave => {
             let wallet = PathBuf::from_str(wallet).expect("Invalid wallet path");
-            let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundler_client = ClientBuilder::new()
+            let token = ArweaveBuilder::new().keypair_path(wallet).build()?;
+            let bundler_client = BundlerClientBuilder::new()
                 .url(url)
-                .currency(currency)
+                .token(token)
                 .fetch_pub_info()
                 .await?
                 .build()?;

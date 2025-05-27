@@ -6,9 +6,9 @@ use std::{
 };
 
 use crate::{
-    bundler::ClientBuilder,
+    bundler::BundlerClientBuilder,
     consts::VERSION,
-    currency::{
+    token::{
         arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, TokenType,
     },
     error::BundlerError,
@@ -20,7 +20,7 @@ pub async fn run_upload(
     file_path: String,
     url: Url,
     wallet: &str,
-    currency: TokenType,
+    token: TokenType,
 ) -> Result<String, BundlerError> {
     let f = File::open(file_path.clone()).expect("Invalid file path");
     let mut reader = BufReader::new(f);
@@ -31,14 +31,14 @@ pub async fn run_upload(
 
     let base_tag = Tag::new("User-Agent", &format!("irys-bundler-sdk-rs/{}", VERSION));
 
-    match currency {
+    match token {
         TokenType::Arweave => {
             let wallet = PathBuf::from_str(wallet)
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?;
-            let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundler_client = ClientBuilder::new()
+            let token = ArweaveBuilder::new().keypair_path(wallet).build()?;
+            let bundler_client = BundlerClientBuilder::new()
                 .url(url)
-                .currency(currency)
+                .token(token)
                 .fetch_pub_info()
                 .await?
                 .build()?;
@@ -51,10 +51,10 @@ pub async fn run_upload(
             }
         }
         TokenType::Solana => {
-            let currency = SolanaBuilder::new().wallet(wallet).build()?;
-            let bundler_client = ClientBuilder::new()
+            let token = SolanaBuilder::new().wallet(wallet).build()?;
+            let bundler_client = BundlerClientBuilder::new()
                 .url(url)
-                .currency(currency)
+                .token(token)
                 .fetch_pub_info()
                 .await?
                 .build()?;
@@ -67,10 +67,10 @@ pub async fn run_upload(
             }
         }
         TokenType::Ethereum => {
-            let currency = EthereumBuilder::new().wallet(wallet).build()?;
-            let bundler_client = ClientBuilder::new()
+            let token = EthereumBuilder::new().wallet(wallet).build()?;
+            let bundler_client = BundlerClientBuilder::new()
                 .url(url)
-                .currency(currency)
+                .token(token)
                 .fetch_pub_info()
                 .await?
                 .build()?;

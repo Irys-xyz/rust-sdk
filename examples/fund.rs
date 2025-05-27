@@ -1,19 +1,21 @@
 use std::{path::PathBuf, str::FromStr};
 
-use irys_sdk::{bundler::ClientBuilder, currency::arweave::ArweaveBuilder, error::BundlerError};
+use irys_sdk::{
+    bundler::BundlerClientBuilder, error::BundlerError, token::arweave::ArweaveBuilder,
+};
 use reqwest::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), BundlerError> {
     let url = Url::parse("https://uploader.irys.xyz").unwrap();
     let wallet = PathBuf::from_str("res/test_wallet.json").unwrap();
-    let currency = ArweaveBuilder::new()
+    let token = ArweaveBuilder::new()
         .keypair_path(wallet)
         .build()
-        .expect("Could not create currency instance");
-    let bundler_client = ClientBuilder::new()
+        .expect("Could not create token instance");
+    let bundler_client = BundlerClientBuilder::new()
         .url(url)
-        .currency(currency)
+        .token(token)
         .fetch_pub_info()
         .await?
         .build()?;

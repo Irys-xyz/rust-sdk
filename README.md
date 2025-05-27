@@ -23,7 +23,7 @@ SUBCOMMANDS:
     balance       Gets the specified user's balance for the current Irys bundler node
     fund          Funds your account with the specified amount of atomic units
     help          Print this message or the help of the given subcommand(s)
-    price         Check how much of a specific currency is required for an upload of <amount>
+    price         Check how much of a specific token is required for an upload of <amount>
                       bytes
     upload        Uploads a specified file
     upload-dir    Uploads a folder (with a manifest)
@@ -31,11 +31,11 @@ SUBCOMMANDS:
 ```
 ### Examples
 ```
-./cli balance   <address>   --host <host> --currency <currency>
-./cli price     <bytes>     --host <host> --currency <currency>
-./cli fund      <amount>    --host <host> --currency <currency> --wallet <path | private_key>
-./cli withdraw  <amount>    --host <host> --currency <currency> --wallet <path | private_key>
-./cli upload    <file>      --host <host> --currency <currency> --wallet <path | private_key>
+./cli balance   <address>   --host <host> --token <token>
+./cli price     <bytes>     --host <host> --token <token>
+./cli fund      <amount>    --host <host> --token <token> --wallet <path | private_key>
+./cli withdraw  <amount>    --host <host> --token <token> --wallet <path | private_key>
+./cli upload    <file>      --host <host> --token <token> --wallet <path | private_key>
 ```
 
 # Roadmap

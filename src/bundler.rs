@@ -4,11 +4,11 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::consts::DEFAULT_BUNDLER_URL;
-use crate::currency;
-use crate::currency::TokenType;
 use crate::deep_hash::{deep_hash, DeepHashChunk};
 use crate::error::{BuilderError, BundlerError};
 use crate::tags::Tag;
+use crate::token;
+use crate::token::TokenType;
 use crate::upload::Uploader;
 use crate::utils::{check_and_return, get_nonce};
 use crate::BundlerTx;
@@ -22,9 +22,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[allow(unused)]
-pub struct IrysBundlerClient<Currency> {
+pub struct BundlerClient<Token> {
     url: Url,
-    currency: Currency,
+    token: Token,
     client: reqwest::Client,
     pub_info: PubInfo,
     uploader: Uploader,
@@ -61,7 +61,7 @@ pub struct UploadReponse {
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawBody {
     public_key: Base64,
-    currency: String,
+    token: String,
     amount: String,
     nonce: u64,
     signature: Base64,
@@ -70,31 +70,31 @@ pub struct WithdrawBody {
 
 #[derive(Default)]
 
-pub struct ClientBuilder<Currency = ()> {
+pub struct BundlerClientBuilder<Token = ()> {
     url: Option<Url>,
-    currency: Currency,
+    token: Token,
     client: Option<reqwest::Client>,
     pub_info: Option<PubInfo>,
 }
 
-impl ClientBuilder {
-    pub fn new() -> ClientBuilder {
+impl BundlerClientBuilder {
+    pub fn new() -> BundlerClientBuilder {
         Default::default()
     }
 }
 
-impl<Currency> ClientBuilder<Currency> {
-    pub fn url(mut self, url: Url) -> ClientBuilder<Currency> {
+impl<Token> BundlerClientBuilder<Token> {
+    pub fn url(mut self, url: Url) -> BundlerClientBuilder<Token> {
         self.url = Some(url);
         self
     }
 
-    pub fn client(mut self, client: reqwest::Client) -> ClientBuilder<Currency> {
+    pub fn client(mut self, client: reqwest::Client) -> BundlerClientBuilder<Token> {
         self.client = Some(client);
         self
     }
 
-    pub async fn fetch_pub_info(mut self) -> Result<ClientBuilder<Currency>, BuilderError> {
+    pub async fn fetch_pub_info(mut self) -> Result<BundlerClientBuilder<Token>, BuilderError> {
         if let Some(url) = &self.url {
             let pub_info = match get_pub_info(url).await {
                 Ok(info) => info,
@@ -109,19 +109,19 @@ impl<Currency> ClientBuilder<Currency> {
         }
     }
 
-    pub fn pub_info(mut self, pub_info: PubInfo) -> ClientBuilder<Currency> {
+    pub fn pub_info(mut self, pub_info: PubInfo) -> BundlerClientBuilder<Token> {
         self.pub_info = Some(pub_info);
         self
     }
 }
 
-impl ClientBuilder<()> {
-    pub fn currency<Currency>(self, currency: Currency) -> ClientBuilder<Currency>
+impl BundlerClientBuilder<()> {
+    pub fn token<Token>(self, token: Token) -> BundlerClientBuilder<Token>
     where
-        Currency: currency::Currency,
+        Token: token::Token,
     {
-        ClientBuilder {
-            currency,
+        BundlerClientBuilder {
+            token,
             url: self.url,
             client: self.client,
             pub_info: self.pub_info,
@@ -129,25 +129,25 @@ impl ClientBuilder<()> {
     }
 }
 
-impl<Currency> ClientBuilder<Currency>
+impl<Token> BundlerClientBuilder<Token>
 where
-    Currency: currency::Currency,
+    Token: token::Token,
 {
-    pub fn build(self) -> Result<IrysBundlerClient<Currency>, BuilderError> {
+    pub fn build(self) -> Result<BundlerClient<Token>, BuilderError> {
         let url = self.url.unwrap_or(Url::parse(DEFAULT_BUNDLER_URL).unwrap());
 
         let client = self.client.unwrap_or_else(reqwest::Client::new);
 
         let pub_info = match self.pub_info {
             Some(p) => p,
-            None => return Err(BuilderError::MissingField("currency".to_owned())),
+            None => return Err(BuilderError::MissingField("token".to_owned())),
         };
 
-        let uploader = Uploader::new(url.clone(), client.clone(), self.currency.get_type());
+        let uploader = Uploader::new(url.clone(), client.clone(), self.token.get_type());
 
-        Ok(IrysBundlerClient {
+        Ok(BundlerClient {
             url,
-            currency: self.currency,
+            token: self.token,
             client,
             pub_info,
             uploader,
@@ -184,7 +184,7 @@ pub async fn get_pub_info(url: &Url) -> Result<PubInfo, BundlerError> {
 /// Get balance from address in a Irys bundler node
 pub async fn get_balance(
     url: &Url,
-    currency: TokenType,
+    token: TokenType,
     address: &str,
     client: &reqwest::Client,
 ) -> Result<BigUint, BundlerError> {
@@ -192,7 +192,7 @@ pub async fn get_balance(
         .get(
             url.join(&format!(
                 "account/balance/{}",
-                currency.to_string().to_lowercase()
+                token.to_string().to_lowercase()
             ))
             .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
@@ -210,16 +210,16 @@ pub async fn get_balance(
     }
 }
 
-/// Get the cost for determined amount of bytes, measured in the currency's base units (i.e Winston for Arweave, or Lamport for Solana)
+/// Get the cost for determined amount of bytes, measured in the token's base units (i.e Winston for Arweave, or Lamport for Solana)
 pub async fn get_price(
     url: &Url,
-    currency: TokenType,
+    token: TokenType,
     client: &reqwest::Client,
     byte_amount: u64,
 ) -> Result<BigUint, BundlerError> {
     let response = client
         .get(
-            url.join(&format!("/price/{}/{}", currency, byte_amount))
+            url.join(&format!("/price/{}/{}", token, byte_amount))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
         .header("Content-Type", "application/json")
@@ -237,9 +237,9 @@ pub async fn get_price(
     }
 }
 
-impl<Currency> IrysBundlerClient<Currency>
+impl<Token> BundlerClient<Token>
 where
-    Currency: currency::Currency,
+    Token: token::Token,
 {
     /// Creates an unsigned transaction for posting.
     ///
@@ -247,9 +247,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -259,13 +259,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #       .keypair_path(wallet)
     /// #       .build()
-    /// #       .expect("Could not create currency instance");
-    /// #   let mut bundler_client = ClientBuilder::new()
+    /// #       .expect("Could not create token instance");
+    /// #   let mut bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -289,9 +289,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -301,13 +301,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #      .keypair_path(wallet)
     /// #      .build()
-    /// #      .expect("Could not create currency instance");
-    /// #   let mut bundler_client = ClientBuilder::new()
+    /// #      .expect("Could not create token instance");
+    /// #   let mut bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -321,7 +321,7 @@ where
     /// # }
     /// ```
     pub async fn sign_transaction(&self, tx: &mut BundlerTx) -> Result<(), BundlerError> {
-        tx.sign(self.currency.get_signer()?).await
+        tx.sign(self.token.get_signer()?).await
     }
 
     /// Sends a signed transaction
@@ -330,9 +330,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -342,13 +342,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #       .keypair_path(wallet)
     /// #       .build()
-    /// #       .expect("Could not create currency instance");
-    /// #   let mut bundler_client = ClientBuilder::new()
+    /// #       .expect("Could not create token instance");
+    /// #   let mut bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -369,7 +369,7 @@ where
             .client
             .post(
                 self.url
-                    .join(&format!("tx/{}", self.currency.get_type()))
+                    .join(&format!("tx/{}", self.token.get_type()))
                     .map_err(|err| BundlerError::ParseError(err.to_string()))?,
             )
             .header("Content-Type", "application/octet-stream")
@@ -386,9 +386,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -398,13 +398,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #       .keypair_path(wallet)
     /// #       .build()
-    /// #       .expect("Could not create currency instance");
-    /// #   let bundler_client = ClientBuilder::new()
+    /// #       .expect("Could not create token instance");
+    /// #   let bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -414,24 +414,24 @@ where
     /// # }
     pub async fn fund(&self, amount: u64, multiplier: Option<f64>) -> Result<bool, BundlerError> {
         let multiplier = multiplier.unwrap_or(1.0);
-        let curr_str = &self.currency.get_type().to_string().to_lowercase();
+        let curr_str = &self.token.get_type().to_string().to_lowercase();
         let to = match self.pub_info.addresses.get(curr_str) {
             Some(ok) => ok,
             None => return Err(BundlerError::InvalidKey("No address found".to_owned())),
         };
-        let fee: u64 = match self.currency.needs_fee() {
-            true => self.currency.get_fee(amount, to, multiplier).await?,
+        let fee: u64 = match self.token.needs_fee() {
+            true => self.token.get_fee(amount, to, multiplier).await?,
             false => Zero::zero(),
         };
 
-        let tx = self.currency.create_tx(amount, to, fee).await?;
-        let tx_res = self.currency.send_tx(tx).await?;
+        let tx = self.token.create_tx(amount, to, fee).await?;
+        let tx_res = self.token.send_tx(tx).await?;
 
         let post_tx_res = self
             .client
             .post(
                 self.url
-                    .join(&format!("account/balance/{}", self.currency.get_type()))
+                    .join(&format!("account/balance/{}", self.token.get_type()))
                     .map_err(|err| BundlerError::ParseError(err.to_string()))?,
             )
             .json(&FundBody {
@@ -448,9 +448,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -460,13 +460,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #       .keypair_path(wallet)
     /// #       .build()
-    /// #       .expect("Could not create currency instance");
-    /// #   let bundler_client = ClientBuilder::new()
+    /// #       .expect("Could not create token instance");
+    /// #   let bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -474,34 +474,28 @@ where
     /// # Ok(())
     /// # }
     pub async fn withdraw(&self, amount: u64) -> Result<bool, BundlerError> {
-        let currency_type = self.currency.get_type().to_string().to_lowercase();
-        let public_key = Base64(self.currency.get_pub_key()?.to_vec());
-        let wallet_address = self.currency.wallet_address()?;
-        let nonce = get_nonce(
-            &self.client,
-            &self.url,
-            wallet_address,
-            currency_type.clone(),
-        )
-        .await?;
+        let token_type = self.token.get_type().to_string().to_lowercase();
+        let public_key = Base64(self.token.get_pub_key()?.to_vec());
+        let wallet_address = self.token.wallet_address()?;
+        let nonce = get_nonce(&self.client, &self.url, wallet_address, token_type.clone()).await?;
 
         let data = DeepHashChunk::Chunks(vec![
-            DeepHashChunk::Chunk(Bytes::copy_from_slice(currency_type.as_bytes())),
+            DeepHashChunk::Chunk(Bytes::copy_from_slice(token_type.as_bytes())),
             DeepHashChunk::Chunk(Bytes::copy_from_slice(amount.to_string().as_bytes())),
             DeepHashChunk::Chunk(Bytes::copy_from_slice(nonce.to_string().as_bytes())),
         ]);
 
         let dh = deep_hash(data).await?;
-        let signature = Base64(self.currency.sign_message(&dh)?);
-        self.currency.verify(&public_key.0, &dh, &signature.0)?;
+        let signature = Base64(self.token.sign_message(&dh)?);
+        self.token.verify(&public_key.0, &dh, &signature.0)?;
 
         let data = WithdrawBody {
             public_key: Base64(public_key.to_string().into_bytes()),
-            currency: self.currency.get_type().to_string().to_lowercase(),
+            token: self.token.get_type().to_string().to_lowercase(),
             amount: amount.to_string(),
             nonce,
             signature: Base64(signature.to_string().into_bytes()),
-            sig_type: self.currency.get_type() as u16,
+            sig_type: self.token.get_type() as u16,
         };
 
         let res = self
@@ -524,9 +518,9 @@ where
     ///
     /// ```
     /// # use irys_sdk::{
-    /// #   currency::TokenType,
-    /// #   ClientBuilder,
-    /// #   currency::arweave::ArweaveBuilder,
+    /// #   token::TokenType,
+    /// #   BundlerClientBuilder,
+    /// #   token::arweave::ArweaveBuilder,
     /// #   tags::Tag,
     /// #   error::BuilderError
     /// # };
@@ -536,13 +530,13 @@ where
     /// # async fn main() -> Result<(), BuilderError> {
     /// #   let url = Url::parse("https://uploader.irys.xyz").unwrap();
     /// #   let wallet = PathBuf::from_str("res/test_wallet.json").expect("Invalid wallet path");
-    /// #   let currency = ArweaveBuilder::new()
+    /// #   let token = ArweaveBuilder::new()
     /// #       .keypair_path(wallet)
     /// #       .build()
-    /// #       .expect("Could not create currency instance");
-    /// #   let mut bundler_client = ClientBuilder::new()
+    /// #       .expect("Could not create token instance");
+    /// #   let mut bundler_client = BundlerClientBuilder::new()
     /// #       .url(url)
-    /// #       .currency(currency)
+    /// #       .token(token)
     /// #       .fetch_pub_info()
     /// #       .await?
     /// #       .build()?;
@@ -584,7 +578,7 @@ mod tests {
 
     use crate::{
         bundler::{get_balance, get_price},
-        currency::TokenType,
+        token::TokenType,
     };
     use httpmock::{Method::GET, MockServer};
     use num::BigUint;
@@ -610,8 +604,8 @@ mod tests {
 
         let url = Url::from_str(&server.url("")).unwrap();
         let path = PathBuf::from_str("res/test_wallet.json").unwrap();
-        let currency = Arweave::new(path, url.clone());
-        let bundler = &bundler::new(url, &currency).await;
+        let token = Arweave::new(path, url.clone());
+        let bundler = &bundler::new(url, &token).await;
         let tx = bundler.create_transaction_with_tags(
             Vec::from("hello"),
             vec![Tag::new("name".to_string(), "value".to_string())],

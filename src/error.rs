@@ -35,8 +35,8 @@ pub enum BundlerError {
     #[error("Invalid wallet {0}")]
     InvalidKey(String),
 
-    #[error("Invalid currency: {0}")]
-    InvalidCurrency(String),
+    #[error("Invalid token: {0}")]
+    InvalidToken(String),
 
     #[error("Response failed with the following error: {0}")]
     ResponseError(String),
@@ -68,8 +68,8 @@ pub enum BundlerError {
     #[error("Arweave Sdk error: {0}")]
     ArweaveSdkError(arweave_rs::error::Error),
 
-    #[error("Currency error: {0}")]
-    CurrencyError(String),
+    #[error("Token error: {0}")]
+    TokenError(String),
 
     #[error("Error reading/writting bytes: {0}")]
     BytesError(String),

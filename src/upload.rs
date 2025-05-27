@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     consts::{CHUNKS_RETRIES, CHUNKS_RETRY_SLEEP, CHUNK_SIZE, DEFAULT_BUNDLER_URL},
-    currency::TokenType,
+    token::TokenType,
     error::BundlerError,
 };
 
@@ -20,7 +20,7 @@ pub struct Uploader {
     url: Url,
     client: reqwest::Client,
     pub upload_id: Option<String>,
-    currency: TokenType,
+    token: TokenType,
     chunk_size: u64,
 }
 
@@ -32,19 +32,19 @@ impl Default for Uploader {
             url,
             client,
             upload_id: None,
-            currency: TokenType::Arweave,
+            token: TokenType::Arweave,
             chunk_size: CHUNK_SIZE,
         }
     }
 }
 
 impl Uploader {
-    pub fn new(url: Url, client: reqwest::Client, currency: TokenType) -> Self {
+    pub fn new(url: Url, client: reqwest::Client, token: TokenType) -> Self {
         Uploader {
             url,
             client,
             upload_id: None,
-            currency,
+            token,
             chunk_size: CHUNK_SIZE,
         }
     }
@@ -53,7 +53,7 @@ impl Uploader {
         let (max, min) = if let Some(upload_id) = self.upload_id.clone() {
             let url = self
                 .url
-                .join(&format!("/chunks/{}/{}/-1", self.currency, upload_id))
+                .join(&format!("/chunks/{}/{}/-1", self.token, upload_id))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?;
             let res = self
                 .client
@@ -70,7 +70,7 @@ impl Uploader {
         } else {
             let url = self
                 .url
-                .join(&format!("/chunks/{}/-1/-1", self.currency))
+                .join(&format!("/chunks/{}/-1/-1", self.token))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?;
             let res = self
                 .client
@@ -147,7 +147,7 @@ impl Uploader {
             .url
             .join(&format!(
                 "/chunks/{}/{}/{}",
-                self.currency, upload_id, offset
+                self.token, upload_id, offset
             ))
             .map_err(|err| BundlerError::ParseError(err.to_string()))?;
 

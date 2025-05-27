@@ -53,20 +53,20 @@ impl FromStr for TokenType {
             "ethereum" => Ok(TokenType::Ethereum),
             "erc20" => Ok(TokenType::Erc20),
             "cosmos" => Ok(TokenType::Cosmos),
-            _ => Err(anyhow::Error::msg("Invalid or unsupported currency")),
+            _ => Err(anyhow::Error::msg("Invalid or unsupported token")),
         }
     }
 }
 
 #[async_trait::async_trait]
-pub trait Currency {
+pub trait Token {
     /// Gets the base unit name, such as "winston" for Arweave
     fn get_min_unit_name(&self) -> String;
 
-    /// Gets currency type
+    /// Gets token type
     fn get_type(&self) -> TokenType;
 
-    /// Returns if the currency needs fee for transacting
+    /// Returns if the token needs fee for transacting
     fn needs_fee(&self) -> bool;
 
     /// Gets transaction based on transaction id
@@ -93,13 +93,13 @@ pub trait Currency {
     /// Gets signer for more specific operations
     fn get_signer(&self) -> Result<&dyn Signer, BundlerError>;
 
-    /// Gets currency Id
+    /// Gets token Id
     async fn get_id(&self, item: ()) -> String;
 
-    /// Get price of currency in USD
+    /// Get price of token in USD
     async fn price(&self) -> String;
 
-    /// Get given currency network's block height
+    /// Get given token network's block height
     async fn get_current_height(&self) -> u128;
 
     /// Get fee for transaction

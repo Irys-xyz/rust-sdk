@@ -10,7 +10,7 @@ use crate::{
     ArweaveSigner, Signer, Verifier,
 };
 
-use super::{Currency, TokenType, TxResponse};
+use super::{Token, TokenType, TxResponse};
 
 const ARWEAVE_TICKER: &str = "AR";
 const ARWEAVE_BASE_UNIT: &str = "winston";
@@ -87,7 +87,7 @@ impl ArweaveBuilder {
 }
 
 #[async_trait::async_trait]
-impl Currency for Arweave {
+impl Token for Arweave {
     fn get_min_unit_name(&self) -> String {
         ARWEAVE_BASE_UNIT.to_string()
     }
@@ -167,7 +167,7 @@ impl Currency for Arweave {
     fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.sign(Bytes::copy_from_slice(message))?.to_vec()),
-            None => Err(BundlerError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
@@ -185,7 +185,7 @@ impl Currency for Arweave {
     fn get_pub_key(&self) -> Result<Bytes, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.pub_key()),
-            None => Err(BundlerError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
@@ -193,7 +193,7 @@ impl Currency for Arweave {
 
     fn wallet_address(&self) -> Result<String, BundlerError> {
         if self.signer.is_none() {
-            return Err(BundlerError::CurrencyError(
+            return Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             ));
         }
@@ -203,7 +203,7 @@ impl Currency for Arweave {
     fn get_signer(&self) -> Result<&dyn Signer, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer),
-            None => Err(BundlerError::CurrencyError(
+            None => Err(BundlerError::TokenError(
                 "No private key present".to_string(),
             )),
         }
@@ -309,7 +309,7 @@ impl Currency for Arweave {
 mod tests {
     use std::{path::PathBuf, str::FromStr};
 
-    use crate::currency::{arweave::ArweaveBuilder, Currency};
+    use crate::token::{arweave::ArweaveBuilder, Token};
 
     #[test]
     fn should_sign_and_verify() {

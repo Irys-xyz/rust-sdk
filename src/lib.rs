@@ -8,17 +8,17 @@ pub mod client;
 
 pub mod bundler;
 pub mod consts;
-pub mod currency;
 pub mod deep_hash;
 pub mod deep_hash_sync;
 pub mod error;
 pub mod index;
 pub mod tags;
+pub mod token;
 pub mod upload;
 pub mod utils;
 pub mod verify;
 
-pub use bundler::{ClientBuilder, IrysBundlerClient};
+pub use bundler::{BundlerClient, BundlerClientBuilder};
 pub use signers::Signer;
 pub use transaction::irys::BundlerTx;
 pub use verify::Verifier;

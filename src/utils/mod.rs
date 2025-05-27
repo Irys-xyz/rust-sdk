@@ -44,13 +44,13 @@ pub async fn get_nonce(
     client: &reqwest::Client,
     url: &Url,
     address: String,
-    currency: String,
+    token: String,
 ) -> Result<u64, BundlerError> {
     let res = client
         .get(
             url.join(&format!(
                 "/account/withdrawals/{}?address={}",
-                currency, address
+                token, address
             ))
             .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )

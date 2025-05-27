@@ -1,17 +1,17 @@
-use irys_sdk::{bundler::ClientBuilder, currency::solana::SolanaBuilder, error::BundlerError};
+use irys_sdk::{bundler::BundlerClientBuilder, error::BundlerError, token::solana::SolanaBuilder};
 use reqwest::Url;
 use std::{path::PathBuf, str::FromStr};
 
 #[tokio::main]
 async fn main() -> Result<(), BundlerError> {
     let url = Url::parse("https://uploader.irys.xyz").unwrap();
-    let currency = SolanaBuilder::new().wallet(
+    let token = SolanaBuilder::new().wallet(
         "kNykCXNxgePDjFbDWjPNvXQRa8U12Ywc19dFVaQ7tebUj3m7H4sF4KKdJwM7yxxb3rqxchdjezX9Szh8bLcQAjb")
         .build()
         .expect("Could not create Solana instance");
-    let mut bundler_client = ClientBuilder::new()
+    let mut bundler_client = BundlerClientBuilder::new()
         .url(url)
-        .currency(currency)
+        .token(token)
         .fetch_pub_info()
         .await?
         .build()?;
