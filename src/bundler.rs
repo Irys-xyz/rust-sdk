@@ -427,6 +427,10 @@ where
         let tx = self.token.create_tx(amount, to, fee).await?;
         let tx_res = self.token.send_tx(tx).await?;
 
+        self.submit_fund_tx(tx_res.tx_id).await
+    }
+
+    pub async fn submit_fund_tx(&self, tx_id: String) -> Result<bool, BundlerError> {
         let post_tx_res = self
             .client
             .post(
@@ -434,9 +438,7 @@ where
                     .join(&format!("account/balance/{}", self.token.get_type()))
                     .map_err(|err| BundlerError::ParseError(err.to_string()))?,
             )
-            .json(&FundBody {
-                tx_id: tx_res.tx_id,
-            })
+            .json(&FundBody { tx_id })
             .send()
             .await;
 
