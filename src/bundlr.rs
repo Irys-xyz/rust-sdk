@@ -136,7 +136,7 @@ where
     pub fn build(self) -> Result<Bundlr<Currency>, BuilderError> {
         let url = self.url.unwrap_or(Url::parse(BUNDLR_DEFAULT_URL).unwrap());
 
-        let client = self.client.unwrap_or_else(reqwest::Client::new);
+        let client = self.client.unwrap_or_default();
 
         let pub_info = match self.pub_info {
             Some(p) => p,

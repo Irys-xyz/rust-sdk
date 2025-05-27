@@ -1,10 +1,13 @@
 use crate::error::BundlrError;
+use crate::utils::bytes_to_fixed_array;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
 use crate::{index::SignerMap, Ed25519Signer};
 
 use bytes::Bytes;
-use ed25519_dalek::{Keypair, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
+use ed25519_dalek::Verifier;
+use ed25519_dalek::VerifyingKey;
+use ed25519_dalek::{SigningKey, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use num::Integer;
 
 pub struct AptosSigner {
@@ -12,7 +15,7 @@ pub struct AptosSigner {
 }
 
 impl AptosSigner {
-    pub fn new(keypair: Keypair) -> Self {
+    pub fn new(keypair: SigningKey) -> Self {
         Self {
             signer: Ed25519Signer::new(keypair),
         }
@@ -59,17 +62,15 @@ impl VerifierTrait for AptosSigner {
         message: Bytes,
         signature: Bytes,
     ) -> Result<(), crate::error::BundlrError> {
-        let public_key =
-            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
-        let sig =
-            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
+        let public_key = ed25519_dalek::VerifyingKey::from_bytes(&bytes_to_fixed_array(&pk)?)
+            .map_err(BundlrError::ED25519Error)?;
+        let sig = ed25519_dalek::Signature::from_bytes(&bytes_to_fixed_array(&signature)?);
         let aptos_message =
             Bytes::copy_from_slice(&[b"APTOS\nmessage: ".as_ref(), &message[..]].concat());
         let nonce = Bytes::from(b"\nnonce: bundlr".to_vec());
         let full_msg = Bytes::from([aptos_message, nonce].concat());
 
-        public_key
-            .verify(&full_msg, &sig)
+        VerifyingKey::verify(&public_key, &full_msg, &sig)
             .map_err(|_err| BundlrError::InvalidSignature)
     }
 }
@@ -93,7 +94,7 @@ impl MultiAptosSigner {
 }
 
 impl MultiAptosSigner {
-    pub fn new(keypair: Keypair) -> Self {
+    pub fn new(keypair: SigningKey) -> Self {
         Self {
             signer: Ed25519Signer::new(keypair),
         }
@@ -148,10 +149,10 @@ impl VerifierTrait for MultiAptosSigner {
             if sig_included {
                 let signature = signatures.slice((i * 64)..((i + 1) * 64));
                 let pub_key_slc = pk.slice((i * 32)..((i + 1) * 32));
-                let public_key = ed25519_dalek::PublicKey::from_bytes(&pub_key_slc)
-                    .map_err(BundlrError::ED25519Error)?;
-                let sig = ed25519_dalek::Signature::from_bytes(&signature)
-                    .map_err(BundlrError::ED25519Error)?;
+                let public_key =
+                    ed25519_dalek::VerifyingKey::from_bytes(&bytes_to_fixed_array(&pub_key_slc)?)
+                        .map_err(BundlrError::ED25519Error)?;
+                let sig = ed25519_dalek::Signature::from_bytes(&bytes_to_fixed_array(&signature)?);
                 match public_key.verify(&message, &sig) {
                     Ok(()) => (),
                     Err(_err) => one_false = false,
@@ -171,7 +172,7 @@ impl VerifierTrait for MultiAptosSigner {
 mod tests {
     use crate::{AptosSigner, Signer, Verifier};
     use bytes::Bytes;
-    use ed25519_dalek::Keypair;
+    use ed25519_dalek::SigningKey;
 
     #[test]
     fn should_sign_and_verify() {
@@ -184,7 +185,7 @@ mod tests {
         println!("{:?}", pub_key.to_vec());
         assert!(AptosSigner::verify(pub_key, msg.clone(), sig).is_ok());
 
-        let keypair = Keypair::from_bytes(&[
+        let keypair = SigningKey::from_keypair_bytes(&[
             237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
             8, 221, 184, 199, 62, 253, 98, 131, 33, 165, 165, 215, 14, 7, 46, 23, 221, 242, 240,
             226, 94, 79, 161, 31, 192, 163, 13, 25, 106, 53, 34, 215, 83, 124, 162, 156, 8, 97,

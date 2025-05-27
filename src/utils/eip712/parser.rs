@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use logos::Logos;
 
 use crate::utils::eip712::{error::Eip712Error, lexer::Token};
@@ -18,9 +20,9 @@ pub enum Type {
     },
 }
 
-impl ToString for Type {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let data = match self {
             Type::Address => "address".to_owned(),
             Type::Uint => "uint".to_owned(),
             Type::Int => "int".to_owned(),
@@ -36,9 +38,32 @@ impl ToString for Type {
                     Some(length) => format!("{}[{}]", inner, length),
                 }
             }
-        }
+        };
+        write!(f, "{}", data)
     }
 }
+
+// impl ToString for Type {
+//     fn to_string(&self) -> String {
+//         match self {
+//             Type::Address => "address".to_owned(),
+//             Type::Uint => "uint".to_owned(),
+//             Type::Int => "int".to_owned(),
+//             Type::String => "string".to_owned(),
+//             Type::Bool => "bool".to_owned(),
+//             Type::Bytes => "bytes".to_owned(),
+//             Type::Byte(len) => format!("bytes{}", len),
+//             Type::Custom(custom) => custom.to_string(),
+//             Type::Array { inner, length } => {
+//                 let inner: String = (*inner).to_string();
+//                 match length {
+//                     None => format!("{}[]", inner),
+//                     Some(length) => format!("{}[{}]", inner, length),
+//                 }
+//             }
+//         }
+//     }
+// }
 
 /// the type string is being validated before it's parsed.
 pub fn parse_type(field_type: &str) -> Result<Type, Eip712Error> {
