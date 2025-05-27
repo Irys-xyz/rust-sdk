@@ -299,7 +299,7 @@ impl BundlrTx {
         verifier.verify(pub_key, &message, signature)
     }
 
-    pub fn get_signarure(&self) -> Vec<u8> {
+    pub fn get_signature(&self) -> Vec<u8> {
         self.signature.clone()
     }
 }
