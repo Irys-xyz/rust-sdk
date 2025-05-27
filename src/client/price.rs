@@ -1,12 +1,12 @@
 use reqwest::Url;
 
-use crate::{bundlr::get_price, currency::CurrencyType, error::BundlrError};
+use crate::{bundler::get_price, currency::TokenType, error::BundlerError};
 
 pub async fn run_price(
     url: Url,
-    currency: CurrencyType,
+    currency: TokenType,
     byte_amount: u64,
-) -> Result<String, BundlrError> {
+) -> Result<String, BundlerError> {
     let client = reqwest::Client::new();
     get_price(&url, currency, &client, byte_amount)
         .await

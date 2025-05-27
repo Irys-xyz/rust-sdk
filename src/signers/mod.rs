@@ -1,4 +1,4 @@
-use crate::{error::BundlrError, index::SignerMap};
+use crate::{error::BundlerError, index::SignerMap};
 use bytes::Bytes;
 
 #[cfg(feature = "aptos")]
@@ -17,7 +17,7 @@ pub mod typed_ethereum;
 pub trait ToPem {}
 
 pub trait Signer: Send + Sync {
-    fn sign(&self, message: Bytes) -> Result<Bytes, BundlrError>;
+    fn sign(&self, message: Bytes) -> Result<Bytes, BundlerError>;
     fn sig_type(&self) -> SignerMap;
     fn get_sig_length(&self) -> u16;
     fn get_pub_length(&self) -> u16;

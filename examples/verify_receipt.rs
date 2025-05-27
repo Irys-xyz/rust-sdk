@@ -1,7 +1,5 @@
-use bundlr_sdk::{
-    deep_hash::DeepHashChunk, deep_hash_sync::deep_hash_sync, ArweaveSigner, Verifier,
-};
 use data_encoding::BASE64URL_NOPAD;
+use irys_sdk::{deep_hash::DeepHashChunk, deep_hash_sync::deep_hash_sync, ArweaveSigner, Verifier};
 use serde::{Deserialize, Serialize};
 
 // ===============================================================================================
@@ -22,7 +20,7 @@ pub struct Receipt {
     pub validator_signatures: Vec<String>,
 }
 
-fn main() -> Result<(), bundlr_sdk::error::BundlrError> {
+fn main() -> Result<(), irys_sdk::error::BundlerError> {
     let data = std::fs::read_to_string("res/test_receipt.json").expect("Unable to read file");
     let receipt = serde_json::from_str::<Receipt>(&data).expect("Unable to parse json file");
 

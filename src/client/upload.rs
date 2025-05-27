@@ -6,12 +6,12 @@ use std::{
 };
 
 use crate::{
-    bundlr::BundlrBuilder,
+    bundler::ClientBuilder,
     consts::VERSION,
     currency::{
-        arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, CurrencyType,
+        arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, TokenType,
     },
-    error::BundlrError,
+    error::BundlerError,
     tags::Tag,
 };
 use reqwest::Url;
@@ -20,8 +20,8 @@ pub async fn run_upload(
     file_path: String,
     url: Url,
     wallet: &str,
-    currency: CurrencyType,
-) -> Result<String, BundlrError> {
+    currency: TokenType,
+) -> Result<String, BundlerError> {
     let f = File::open(file_path.clone()).expect("Invalid file path");
     let mut reader = BufReader::new(f);
     let mut buffer = Vec::new();
@@ -29,60 +29,60 @@ pub async fn run_upload(
     // Read file into vector.
     reader.read_to_end(&mut buffer)?;
 
-    let base_tag = Tag::new("User-Agent", &format!("bundlr-sdk-rs/{}", VERSION));
+    let base_tag = Tag::new("User-Agent", &format!("irys-bundler-sdk-rs/{}", VERSION));
 
     match currency {
-        CurrencyType::Arweave => {
+        TokenType::Arweave => {
             let wallet = PathBuf::from_str(wallet)
-                .map_err(|err| BundlrError::ParseError(err.to_string()))?;
+                .map_err(|err| BundlerError::ParseError(err.to_string()))?;
             let currency = ArweaveBuilder::new().keypair_path(wallet).build()?;
-            let bundlr = BundlrBuilder::new()
+            let bundler_client = ClientBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
-            let sig = bundlr.sign_transaction(&mut tx).await;
+            let mut tx = bundler_client.create_transaction(buffer, vec![base_tag])?;
+            let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
-            match bundlr.send_transaction(tx).await {
+            match bundler_client.send_transaction(tx).await {
                 Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
-                Err(err) => Err(BundlrError::UploadError(err.to_string())),
+                Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }
-        CurrencyType::Solana => {
+        TokenType::Solana => {
             let currency = SolanaBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::new()
+            let bundler_client = ClientBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
-            let sig = bundlr.sign_transaction(&mut tx).await;
+            let mut tx = bundler_client.create_transaction(buffer, vec![base_tag])?;
+            let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
-            match bundlr.send_transaction(tx).await {
+            match bundler_client.send_transaction(tx).await {
                 Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
-                Err(err) => Err(BundlrError::UploadError(err.to_string())),
+                Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }
-        CurrencyType::Ethereum => {
+        TokenType::Ethereum => {
             let currency = EthereumBuilder::new().wallet(wallet).build()?;
-            let bundlr = BundlrBuilder::new()
+            let bundler_client = ClientBuilder::new()
                 .url(url)
                 .currency(currency)
                 .fetch_pub_info()
                 .await?
                 .build()?;
-            let mut tx = bundlr.create_transaction(buffer, vec![base_tag])?;
-            let sig = bundlr.sign_transaction(&mut tx).await;
+            let mut tx = bundler_client.create_transaction(buffer, vec![base_tag])?;
+            let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
-            match bundlr.send_transaction(tx).await {
+            match bundler_client.send_transaction(tx).await {
                 Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
-                Err(err) => Err(BundlrError::UploadError(err.to_string())),
+                Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }
-        CurrencyType::Erc20 => todo!(),
-        CurrencyType::Cosmos => todo!(),
+        TokenType::Erc20 => todo!(),
+        TokenType::Cosmos => todo!(),
     }
 }

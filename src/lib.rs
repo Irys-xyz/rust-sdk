@@ -6,7 +6,7 @@ mod transaction;
 #[cfg(feature = "build-binary")]
 pub mod client;
 
-pub mod bundlr;
+pub mod bundler;
 pub mod consts;
 pub mod currency;
 pub mod deep_hash;
@@ -18,9 +18,9 @@ pub mod upload;
 pub mod utils;
 pub mod verify;
 
-pub use bundlr::{Bundlr, BundlrBuilder};
+pub use bundler::{ClientBuilder, IrysBundlerClient};
 pub use signers::Signer;
-pub use transaction::bundlr::BundlrTx;
+pub use transaction::irys::BundlerTx;
 pub use verify::Verifier;
 
 #[cfg(feature = "arweave")]

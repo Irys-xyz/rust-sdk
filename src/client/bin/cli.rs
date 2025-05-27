@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use bundlr_sdk::{
+use clap::{Parser, Subcommand};
+use irys_sdk::{
     client::{
         balance::run_balance, fund::run_fund, price::run_price, upload::run_upload,
         withdraw::run_withdraw,
     },
-    currency::CurrencyType,
+    currency::TokenType,
 };
-use clap::{Parser, Subcommand};
 use reqwest::Url;
 
 const DEFAULT_BYTE_AMOUNT: u64 = 1;
@@ -21,7 +21,7 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
-    ///Gets the specified user's balance for the current Bundlr node
+    ///Gets the specified user's balance for the current Irys bundler node
     Balance {
         //Address to query balance
         #[clap(value_parser)]
@@ -37,7 +37,7 @@ enum Command {
 
         //Currency type
         #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        currency: TokenType,
     },
     ///Funds your account with the specified amount of atomic units
     Fund {
@@ -59,7 +59,7 @@ enum Command {
 
         //Currency type
         #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        currency: TokenType,
     },
     ///Sends a fund withdrawal request
     Withdraw {
@@ -81,7 +81,7 @@ enum Command {
 
         //Currency type
         #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        currency: TokenType,
     },
     ///Uploads a specified file
     Upload {
@@ -103,7 +103,7 @@ enum Command {
 
         //Currency type
         #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        currency: TokenType,
     },
     ///Uploads a folder (with a manifest)
     UploadDir {},
@@ -123,7 +123,7 @@ enum Command {
 
         //Currency type
         #[clap(short = 'c', long = "currency")]
-        currency: CurrencyType,
+        currency: TokenType,
     },
 }
 

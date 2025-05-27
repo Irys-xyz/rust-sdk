@@ -1,18 +1,18 @@
 use super::types::{Header, Item};
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 use crate::utils::read_offset;
-use crate::BundlrTx;
+use crate::BundlerTx;
 use data_encoding::BASE64URL;
 use primitive_types::U256;
 use std::{cmp, fs::File};
 
-impl From<std::io::Error> for BundlrError {
+impl From<std::io::Error> for BundlerError {
     fn from(e: std::io::Error) -> Self {
-        BundlrError::FsError(e.to_string())
+        BundlerError::FsError(e.to_string())
     }
 }
 
-pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrError> {
+pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlerError> {
     let mut file = File::open(&filename)?;
 
     let bundle_length = U256::from_little_endian(&read_offset(&mut file, 0, 32)?).as_u64();
@@ -24,7 +24,7 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
     for i in (0..(64
         * usize::try_from(bundle_length)
-            .map_err(|err| BundlrError::TypeParseError(err.to_string()))?))
+            .map_err(|err| BundlerError::TypeParseError(err.to_string()))?))
         .step_by(64)
     {
         let h = Header(
@@ -38,9 +38,9 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
     let mut items = Vec::with_capacity(cmp::min(bundle_length as usize, 1000));
 
     for Header(size, id) in headers {
-        // Read 4 KiB - max data-less Bundlr tx
+        // Read 4 KiB - max data-less bundler tx
         // We do it all at once to improve performance - by lowering fs ops and doing ops in memory
-        let mut tx = BundlrTx::from_file_position(&mut file, size, offset, 4096)?;
+        let mut tx = BundlerTx::from_file_position(&mut file, size, offset, 4096)?;
 
         match tx.verify().await {
             Err(err) => return Err(err),
@@ -61,26 +61,26 @@ pub async fn verify_file_bundle(filename: String) -> Result<Vec<Item>, BundlrErr
 
 #[cfg(test)]
 mod tests {
-    use crate::error::BundlrError;
+    use crate::error::BundlerError;
 
     use super::verify_file_bundle;
 
     #[tokio::test]
-    async fn should_verify_test_bundle() -> Result<(), BundlrError> {
+    async fn should_verify_test_bundle() -> Result<(), BundlerError> {
         verify_file_bundle("./res/test_bundles/test_bundle".to_string())
             .await
             .map(|_| ())
     }
 
     #[tokio::test]
-    async fn should_verify_arweave() -> Result<(), BundlrError> {
+    async fn should_verify_arweave() -> Result<(), BundlerError> {
         verify_file_bundle("./res/test_bundles/arweave_sig".to_string())
             .await
             .map(|_| ())
     }
 
     #[tokio::test]
-    async fn should_verify_secp256k1() -> Result<(), BundlrError> {
+    async fn should_verify_secp256k1() -> Result<(), BundlerError> {
         verify_file_bundle("./res/test_bundles/ethereum_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/typedethereum_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/arbitrum_sig".to_string()).await?;
@@ -107,7 +107,7 @@ mod tests {
     */
 
     #[tokio::test]
-    async fn should_verify_ed25519() -> Result<(), BundlrError> {
+    async fn should_verify_ed25519() -> Result<(), BundlerError> {
         verify_file_bundle("./res/test_bundles/solana_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/algorand_sig".to_string()).await?;
         verify_file_bundle("./res/test_bundles/near_sig".to_string()).await?;
@@ -117,7 +117,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_verify_random_bundles() -> Result<(), BundlrError> {
+    async fn should_verify_random_bundles() -> Result<(), BundlerError> {
         for i in 1..100 {
             verify_file_bundle(format!("./res/gen_bundles/bundle_{}", i).to_string()).await?;
         }

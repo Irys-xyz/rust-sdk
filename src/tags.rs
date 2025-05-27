@@ -3,7 +3,7 @@ use bytes::Bytes;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Tag {
@@ -40,34 +40,34 @@ lazy_static! {
 // const TAGS_WRITER: Writer<'static, Vec<Tag>> = Writer::new(&TAGS_SCHEMA, Vec::new());
 
 pub trait AvroEncode {
-    fn encode(&self) -> Result<Bytes, BundlrError>;
+    fn encode(&self) -> Result<Bytes, BundlerError>;
 }
 
 pub trait AvroDecode {
-    fn decode(&mut self) -> Result<Vec<Tag>, BundlrError>;
+    fn decode(&mut self) -> Result<Vec<Tag>, BundlerError>;
 }
 
 impl AvroEncode for Vec<Tag> {
-    fn encode(&self) -> Result<Bytes, BundlrError> {
+    fn encode(&self) -> Result<Bytes, BundlerError> {
         let v = avro_rs::to_value(self)?;
         to_avro_datum(&TAGS_SCHEMA, v)
             .map(|v| v.into())
-            .map_err(|_| BundlrError::NoBytesLeft)
+            .map_err(|_| BundlerError::NoBytesLeft)
     }
 }
 
 impl AvroDecode for &mut [u8] {
-    fn decode(&mut self) -> Result<Vec<Tag>, BundlrError> {
+    fn decode(&mut self) -> Result<Vec<Tag>, BundlerError> {
         let x = self.to_vec();
         let v = from_avro_datum(&TAGS_SCHEMA, &mut x.as_slice(), Some(&TAGS_SCHEMA))
-            .map_err(|_| BundlrError::InvalidTagEncoding)?;
-        avro_rs::from_value(&v).map_err(|_| BundlrError::InvalidTagEncoding)
+            .map_err(|_| BundlerError::InvalidTagEncoding)?;
+        avro_rs::from_value(&v).map_err(|_| BundlerError::InvalidTagEncoding)
     }
 }
 
-impl From<avro_rs::DeError> for BundlrError {
+impl From<avro_rs::DeError> for BundlerError {
     fn from(_: avro_rs::DeError) -> Self {
-        BundlrError::InvalidTagEncoding
+        BundlerError::InvalidTagEncoding
     }
 }
 

@@ -1,6 +1,6 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const BUNDLR_DEFAULT_URL: &str = "https://node1.bundlr.network/";
+pub const DEFAULT_BUNDLER_URL: &str = "https://uploader.irys.xyz/";
 pub const CHUNK_SIZE: u64 = 256u64 * 1024;
 /// Multiplier applied to the buffer argument from the cli to determine the maximum number
 /// of simultaneous request to the `chunk/ endpoint`.
@@ -18,7 +18,7 @@ pub const RETRY_SLEEP: u64 = 10;
 /// Number of confirmations needed to consider a transaction funded
 pub const CONFIRMATIONS_NEEDED: u64 = 5;
 
-pub const USE_JS_SDK: &str = "Use js-sdk to perform this operation";
+pub const USE_JS_SDK: &str = "Currently unsupported, please use the js-sdk (https://github.com/Irys-xyz/js-sdk) to perform this operation (PRs welcome!)";
 
 pub const LIST_AS_BUFFER: &[u8] = "list".as_bytes();
 pub const BLOB_AS_BUFFER: &[u8] = "blob".as_bytes();

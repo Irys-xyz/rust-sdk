@@ -1,4 +1,4 @@
-use crate::error::BundlrError;
+use crate::error::BundlerError;
 use crate::Signer as SignerTrait;
 use crate::Verifier as VerifierTrait;
 use crate::{index::SignerMap, Ed25519Signer};
@@ -18,7 +18,7 @@ impl AptosSigner {
         }
     }
 
-    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+    pub fn from_base58(s: &str) -> Result<Self, BundlerError> {
         Ok(Self {
             signer: Ed25519Signer::from_base58(s)?,
         })
@@ -30,7 +30,7 @@ const SIG_LENGTH: u16 = SIGNATURE_LENGTH as u16;
 const PUB_LENGTH: u16 = PUBLIC_KEY_LENGTH as u16;
 
 impl SignerTrait for AptosSigner {
-    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
+    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlerError> {
         let aptos_message =
             Bytes::copy_from_slice(&[b"APTOS\nmessage: ".as_ref(), &message[..]].concat());
         let nonce = Bytes::from(b"\nnonce: bundlr".to_vec());
@@ -58,11 +58,11 @@ impl VerifierTrait for AptosSigner {
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<(), crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlerError> {
         let public_key =
-            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlrError::ED25519Error)?;
+            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlerError::ED25519Error)?;
         let sig =
-            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlrError::ED25519Error)?;
+            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlerError::ED25519Error)?;
         let aptos_message =
             Bytes::copy_from_slice(&[b"APTOS\nmessage: ".as_ref(), &message[..]].concat());
         let nonce = Bytes::from(b"\nnonce: bundlr".to_vec());
@@ -70,7 +70,7 @@ impl VerifierTrait for AptosSigner {
 
         public_key
             .verify(&full_msg, &sig)
-            .map_err(|_err| BundlrError::InvalidSignature)
+            .map_err(|_err| BundlerError::InvalidSignature)
     }
 }
 
@@ -86,7 +86,7 @@ impl MultiAptosSigner {
     pub fn collect_signatures(
         &self,
         _eamessage: bytes::Bytes,
-    ) -> Result<(Vec<bytes::Bytes>, Vec<u64>), crate::error::BundlrError> {
+    ) -> Result<(Vec<bytes::Bytes>, Vec<u64>), crate::error::BundlerError> {
         //TODO: implement
         todo!()
     }
@@ -99,7 +99,7 @@ impl MultiAptosSigner {
         }
     }
 
-    pub fn from_base58(s: &str) -> Result<Self, BundlrError> {
+    pub fn from_base58(s: &str) -> Result<Self, BundlerError> {
         Ok(Self {
             signer: Ed25519Signer::from_base58(s)?,
         })
@@ -107,7 +107,7 @@ impl MultiAptosSigner {
 }
 
 impl SignerTrait for MultiAptosSigner {
-    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlrError> {
+    fn sign(&self, message: bytes::Bytes) -> Result<bytes::Bytes, crate::error::BundlerError> {
         //TODO: implement
         let (_signatures, _bitmap) = self.collect_signatures(message)?;
         todo!()
@@ -133,7 +133,7 @@ impl VerifierTrait for MultiAptosSigner {
         pk: Bytes,
         message: Bytes,
         signature: Bytes,
-    ) -> Result<(), crate::error::BundlrError> {
+    ) -> Result<(), crate::error::BundlerError> {
         let sig_len = SIG_LENGTH_M;
         let bitmap_pos = sig_len - 4;
         let signatures = signature.slice(0..(bitmap_pos as usize));
@@ -149,9 +149,9 @@ impl VerifierTrait for MultiAptosSigner {
                 let signature = signatures.slice((i * 64)..((i + 1) * 64));
                 let pub_key_slc = pk.slice((i * 32)..((i + 1) * 32));
                 let public_key = ed25519_dalek::PublicKey::from_bytes(&pub_key_slc)
-                    .map_err(BundlrError::ED25519Error)?;
+                    .map_err(BundlerError::ED25519Error)?;
                 let sig = ed25519_dalek::Signature::from_bytes(&signature)
-                    .map_err(BundlrError::ED25519Error)?;
+                    .map_err(BundlerError::ED25519Error)?;
                 match public_key.verify(&message, &sig) {
                     Ok(()) => (),
                     Err(_err) => one_false = false,
@@ -160,7 +160,7 @@ impl VerifierTrait for MultiAptosSigner {
         }
 
         if one_false {
-            Err(BundlrError::InvalidSignature)
+            Err(BundlerError::InvalidSignature)
         } else {
             Ok(())
         }

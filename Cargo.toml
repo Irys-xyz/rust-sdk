@@ -1,10 +1,10 @@
 [package]
-name = "bundlr-sdk"
-description = "Bundlr Network Rust sdk"
-homepage = "https://bundlr.network"
+name = "irys-sdk"
+description = "Irys Network Rust SDK"
+homepage = "https:/irys.xyz"
 version = "0.5.0"
 edition = "2021"
-repository = "https://github.com/Bundlr-Network/rust-sdk"
+repository = "https://github.com/Irys-xyz/rust-sdk"
 readme = "README.md"
 license = "Apache-2.0"
 
@@ -34,20 +34,26 @@ pipe = "0.4.0"
 primitive-types = "0.11.1"
 rand = "0.8.5"
 regex = "1.8.1"
-reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.11.20", default-features = false, features = [
+    "rustls-tls",
+    "json",
+] }
 ring = "0.16.20"
 rustc-hex = "2.1.0"
-secp256k1 = { version = "0.22.1", optional = true, features = [ "recovery" ] }
+secp256k1 = { version = "0.22.1", optional = true, features = ["recovery"] }
 serde = "1.0.132"
 serde_json = "1.0.73"
 sha2 = "0.10.2"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 thiserror = "1.0.30"
-tokio = { version = "1.14.0", features = [ "fs" ]}
+tokio = { version = "1.14.0", features = ["fs"] }
 tokio-util = "0.6.9"
 validator = { version = "0.16", features = ["derive"] }
-web3 = { version = "0.19.0", optional = true, default-features = false, features = ["http-rustls-tls", "signing"]}
+web3 = { version = "0.19.0", optional = true, default-features = false, features = [
+    "http-rustls-tls",
+    "signing",
+] }
 
 [dev-dependencies]
 tokio-test = "0.4.2"
@@ -59,7 +65,15 @@ default-features = false
 features = ["user-hooks"]
 
 [features]
-default = ["solana", "ethereum", "erc20", "cosmos", "arweave", "algorand", "aptos"]
+default = [
+    "solana",
+    "ethereum",
+    "erc20",
+    "cosmos",
+    "arweave",
+    "algorand",
+    "aptos",
+]
 arweave = ["arweave-rs"]
 cosmos = ["secp256k1"]
 erc20 = ["secp256k1", "web3"]

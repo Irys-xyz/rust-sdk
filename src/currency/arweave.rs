@@ -5,12 +5,12 @@ use reqwest::{StatusCode, Url};
 use std::{ops::Mul, path::PathBuf, str::FromStr};
 
 use crate::{
-    error::{BuilderError, BundlrError},
+    error::{BuilderError, BundlerError},
     transaction::{Tx, TxStatus},
     ArweaveSigner, Signer, Verifier,
 };
 
-use super::{Currency, CurrencyType, TxResponse};
+use super::{Currency, TokenType, TxResponse};
 
 const ARWEAVE_TICKER: &str = "AR";
 const ARWEAVE_BASE_UNIT: &str = "winston";
@@ -23,7 +23,7 @@ pub struct Arweave {
     is_slow: bool,
     needs_fee: bool,
     base: (String, i64),
-    name: CurrencyType,
+    name: TokenType,
     ticker: String,
     min_confirm: i16,
     client: reqwest::Client,
@@ -78,7 +78,7 @@ impl ArweaveBuilder {
             is_slow: Default::default(),
             needs_fee: true,
             base: (ARWEAVE_BASE_UNIT.to_string(), 0),
-            name: CurrencyType::Arweave,
+            name: TokenType::Arweave,
             ticker: ARWEAVE_TICKER.to_string(),
             min_confirm: 5,
             client: reqwest::Client::new(),
@@ -92,7 +92,7 @@ impl Currency for Arweave {
         ARWEAVE_BASE_UNIT.to_string()
     }
 
-    fn get_type(&self) -> CurrencyType {
+    fn get_type(&self) -> TokenType {
         self.name
     }
 
@@ -100,14 +100,15 @@ impl Currency for Arweave {
         self.needs_fee
     }
 
-    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlrError> {
+    async fn get_tx(&self, tx_id: String) -> Result<Tx, BundlerError> {
         let (status, tx) = self
             .sdk
             .get_tx(
-                Base64::from_str(&tx_id).map_err(|err| BundlrError::ParseError(err.to_string()))?,
+                Base64::from_str(&tx_id)
+                    .map_err(|err| BundlerError::ParseError(err.to_string()))?,
             )
             .await
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
 
         if status == 200 {
             match tx {
@@ -116,27 +117,28 @@ impl Currency for Arweave {
                     from: tx.owner.to_string(),
                     to: tx.target.to_string(),
                     amount: u64::from_str(&tx.quantity.to_string())
-                        .map_err(|err| BundlrError::ParseError(err.to_string()))?,
+                        .map_err(|err| BundlerError::ParseError(err.to_string()))?,
                     fee: tx.reward,
                     block_height: 1,
                     pending: false,
                     confirmed: true,
                 }),
-                None => Err(BundlrError::TxNotFound),
+                None => Err(BundlerError::TxNotFound),
             }
         } else {
-            Err(BundlrError::TxNotFound)
+            Err(BundlerError::TxNotFound)
         }
     }
 
     async fn get_tx_status(
         &self,
         tx_id: String,
-    ) -> Result<(StatusCode, Option<TxStatus>), BundlrError> {
+    ) -> Result<(StatusCode, Option<TxStatus>), BundlerError> {
         let res = self
             .sdk
             .get_tx_status(
-                Base64::from_str(&tx_id).map_err(|err| BundlrError::ParseError(err.to_string()))?,
+                Base64::from_str(&tx_id)
+                    .map_err(|err| BundlerError::ParseError(err.to_string()))?,
             )
             .await;
 
@@ -158,20 +160,20 @@ impl Currency for Arweave {
                 Ok((status, None))
             }
         } else {
-            Err(BundlrError::TxStatusNotConfirmed)
+            Err(BundlerError::TxStatusNotConfirmed)
         }
     }
 
-    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlrError> {
+    fn sign_message(&self, message: &[u8]) -> Result<Vec<u8>, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.sign(Bytes::copy_from_slice(message))?.to_vec()),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::CurrencyError(
                 "No private key present".to_string(),
             )),
         }
     }
 
-    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlrError> {
+    fn verify(&self, pub_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), BundlerError> {
         ArweaveSigner::verify(
             Bytes::copy_from_slice(pub_key),
             Bytes::copy_from_slice(message),
@@ -180,28 +182,28 @@ impl Currency for Arweave {
         .map(|_| ())
     }
 
-    fn get_pub_key(&self) -> Result<Bytes, BundlrError> {
+    fn get_pub_key(&self) -> Result<Bytes, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer.pub_key()),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::CurrencyError(
                 "No private key present".to_string(),
             )),
         }
     }
 
-    fn wallet_address(&self) -> Result<String, BundlrError> {
+    fn wallet_address(&self) -> Result<String, BundlerError> {
         if self.signer.is_none() {
-            return Err(BundlrError::CurrencyError(
+            return Err(BundlerError::CurrencyError(
                 "No private key present".to_string(),
             ));
         }
         Ok(self.sdk.get_wallet_address()?)
     }
 
-    fn get_signer(&self) -> Result<&dyn Signer, BundlrError> {
+    fn get_signer(&self) -> Result<&dyn Signer, BundlerError> {
         match &self.signer {
             Some(signer) => Ok(signer),
-            None => Err(BundlrError::CurrencyError(
+            None => Err(BundlerError::CurrencyError(
                 "No private key present".to_string(),
             )),
         }
@@ -219,19 +221,19 @@ impl Currency for Arweave {
         todo!();
     }
 
-    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlrError> {
+    async fn get_fee(&self, _amount: u64, to: &str, multiplier: f64) -> Result<u64, BundlerError> {
         let base64_address =
-            Base64::from_str(to).map_err(|err| BundlrError::ParseError(err.to_string()))?;
+            Base64::from_str(to).map_err(|err| BundlerError::ParseError(err.to_string()))?;
         let base_fee = self
             .sdk
             .get_fee(base64_address, vec![])
             .await
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
 
         let fee = match base_fee.to_f64() {
             Some(ok) => ok,
             None => {
-                return Err(BundlrError::TypeParseError(
+                return Err(BundlerError::TypeParseError(
                     "Could not convert to f64".to_string(),
                 ))
             }
@@ -239,7 +241,7 @@ impl Currency for Arweave {
         let final_fee = match multiplier.mul(fee).ceil().to_u64() {
             Some(fee) => fee,
             None => {
-                return Err(BundlrError::TypeParseError(
+                return Err(BundlerError::TypeParseError(
                     "Could not convert fee to u64".to_string(),
                 ))
             }
@@ -247,11 +249,11 @@ impl Currency for Arweave {
         Ok(final_fee)
     }
 
-    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlrError> {
+    async fn create_tx(&self, amount: u64, to: &str, fee: u64) -> Result<Tx, BundlerError> {
         let tx = self
             .sdk
             .create_transaction(
-                Base64::from_str(to).map_err(|err| BundlrError::Base64Error(err.to_string()))?,
+                Base64::from_str(to).map_err(|err| BundlerError::Base64Error(err.to_string()))?,
                 vec![],
                 vec![],
                 amount.into(),
@@ -259,14 +261,14 @@ impl Currency for Arweave {
                 false,
             )
             .await
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
 
         Ok(Tx {
             id: tx.id.to_string(),
             from: tx.owner.to_string(),
             to: tx.target.to_string(),
             amount: u64::from_str(&tx.quantity.to_string())
-                .map_err(|err| BundlrError::Base64Error(err.to_string()))?,
+                .map_err(|err| BundlerError::Base64Error(err.to_string()))?,
             fee: tx.reward,
             block_height: Default::default(),
             pending: true,
@@ -274,12 +276,12 @@ impl Currency for Arweave {
         })
     }
 
-    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlrError> {
+    async fn send_tx(&self, data: Tx) -> Result<TxResponse, BundlerError> {
         let tx = self
             .sdk
             .create_transaction(
                 Base64::from_str(&data.to)
-                    .map_err(|err| BundlrError::Base64Error(err.to_string()))?,
+                    .map_err(|err| BundlerError::Base64Error(err.to_string()))?,
                 vec![],
                 vec![],
                 data.amount.into(),
@@ -287,17 +289,17 @@ impl Currency for Arweave {
                 false,
             )
             .await
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
 
         let signed_tx = self
             .sdk
             .sign_transaction(tx)
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
         let (tx_id, _r) = self
             .sdk
             .post_transaction(&signed_tx)
             .await
-            .map_err(BundlrError::ArweaveSdkError)?;
+            .map_err(BundlerError::ArweaveSdkError)?;
 
         Ok(TxResponse { tx_id })
     }
