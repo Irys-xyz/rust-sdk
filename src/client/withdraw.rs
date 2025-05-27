@@ -3,8 +3,8 @@ use std::{path::PathBuf, str::FromStr};
 use crate::{
     bundler::BundlerClientBuilder,
     consts::USE_JS_SDK,
-    token::{arweave::ArweaveBuilder, TokenType},
     error::BundlerError,
+    token::{arweave::ArweaveBuilder, TokenType},
 };
 use num_traits::Zero;
 use reqwest::Url;

@@ -19,7 +19,7 @@ async fn main() -> Result<(), BundlerError> {
     let file = PathBuf::from_str("res/test_image.jpg").unwrap();
     let res = bundler_client.upload_file(file).await;
     match res {
-        Ok(res) => println!("Uploaded to  https://uploader.irys.xyz/tx/{}", &res.id),
+        Ok(res) => println!("Uploaded to  https://uploader.irys.xyz/{}", &res.id),
         Err(err) => println!("[err] {}", err),
     }
     Ok(())

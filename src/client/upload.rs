@@ -8,11 +8,9 @@ use std::{
 use crate::{
     bundler::BundlerClientBuilder,
     consts::VERSION,
-    token::{
-        arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, TokenType,
-    },
     error::BundlerError,
     tags::Tag,
+    token::{arweave::ArweaveBuilder, ethereum::EthereumBuilder, solana::SolanaBuilder, TokenType},
 };
 use reqwest::Url;
 

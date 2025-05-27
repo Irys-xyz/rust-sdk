@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use crate::{bundler::get_balance, token::TokenType, error::BundlerError};
+use crate::{bundler::get_balance, error::BundlerError, token::TokenType};
 
 pub async fn run_balance(
     url: Url,

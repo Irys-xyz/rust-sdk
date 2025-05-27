@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use crate::{bundler::get_price, token::TokenType, error::BundlerError};
+use crate::{bundler::get_price, error::BundlerError, token::TokenType};
 
 pub async fn run_price(
     url: Url,

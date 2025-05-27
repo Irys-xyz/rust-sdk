@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     consts::{CHUNKS_RETRIES, CHUNKS_RETRY_SLEEP, CHUNK_SIZE, DEFAULT_BUNDLER_URL},
-    token::TokenType,
     error::BundlerError,
+    token::TokenType,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -145,10 +145,7 @@ impl Uploader {
         };
         let url = self
             .url
-            .join(&format!(
-                "/chunks/{}/{}/{}",
-                self.token, upload_id, offset
-            ))
+            .join(&format!("/chunks/{}/{}/{}", self.token, upload_id, offset))
             .map_err(|err| BundlerError::ParseError(err.to_string()))?;
 
         let mut req = self
