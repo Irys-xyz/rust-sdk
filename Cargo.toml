@@ -2,11 +2,20 @@
 name = "irys-sdk"
 description = "Irys Network Rust SDK"
 homepage = "https:/irys.xyz"
-version = "0.5.0"
+version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Irys-xyz/rust-sdk"
 readme = "README.md"
 license = "Apache-2.0"
+
+exclude = [
+    ".cargo-husky",
+    "res",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "bundles.ts",
+]
 
 [dependencies]
 anyhow = "1.0.52"
