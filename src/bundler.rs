@@ -239,7 +239,7 @@ pub async fn get_price(
 
 impl<Token> BundlerClient<Token>
 where
-    Token: token::Token,
+    Token: token::Token + Send + Sync,
 {
     /// Creates an unsigned transaction for posting.
     ///

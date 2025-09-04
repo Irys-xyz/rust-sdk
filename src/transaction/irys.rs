@@ -18,7 +18,7 @@ use crate::utils::read_offset;
 enum Data {
     None,
     Bytes(Vec<u8>),
-    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>>>>),
+    Stream(Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>> + Send>>),
 }
 
 pub struct BundlerTx {
