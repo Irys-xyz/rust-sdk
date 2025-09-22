@@ -33,7 +33,7 @@ pub struct BundlerClient<Token> {
 #[derive(Deserialize, Default)]
 pub struct PubInfo {
     version: String,
-    gateway: String,
+    // gateway: String,
     addresses: HashMap<String, String>,
 }
 #[derive(Deserialize, Default)]
