@@ -219,7 +219,7 @@ pub async fn get_price(
 ) -> Result<BigUint, BundlerError> {
     let response = client
         .get(
-            url.join(&format!("/price/{token}/{byte_amount}"))
+            url.join(&format!("price/{token}/{byte_amount}"))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
         .header("Content-Type", "application/json")

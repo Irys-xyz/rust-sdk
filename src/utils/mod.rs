@@ -45,9 +45,10 @@ pub async fn get_nonce(
 ) -> Result<u64, BundlerError> {
     let res = client
         .get(
-            url.join(&format!("/account/withdrawals/{token}?address={address}"))
+            url.join(&format!("account/withdrawals/{token}"))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
+        .query(&[("address", &address)])
         .send()
         .await;
     check_and_return::<u64>(res).await

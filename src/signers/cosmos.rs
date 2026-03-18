@@ -21,7 +21,7 @@ impl CosmosSigner {
             Ok(Self { sec_key, pub_key })
         } else {
             Err(BundlerError::InvalidKey(format!(
-                "Public key length should be of {PUB_LENGTH}"
+                "Public key length should be {PUB_LENGTH} bytes"
             )))
         }
     }
