@@ -117,6 +117,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires generated bundles: npm install && npm run generate-bundles"]
     async fn should_verify_random_bundles() -> Result<(), BundlerError> {
         for i in 1..100 {
             verify_file_bundle(format!("./res/gen_bundles/bundle_{}", i).to_string()).await?;

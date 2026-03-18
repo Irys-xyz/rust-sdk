@@ -132,7 +132,7 @@ impl SignerMap {
                 sig_name: "typedEthereum".to_owned(),
             },
             #[allow(unreachable_patterns)]
-            _ => panic!("{:?} get_config has no", self),
+            _ => panic!("{self:?} get_config has no"),
         }
     }
 
@@ -187,7 +187,7 @@ impl SignerMap {
                 Bytes::copy_from_slice(signature),
             ),
             #[allow(unreachable_patterns)]
-            _ => panic!("{:?} verify not implemented in SignerMap yet", self),
+            _ => panic!("{self:?} verify not implemented in SignerMap yet"),
         }
     }
 }

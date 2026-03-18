@@ -45,16 +45,13 @@ impl Verifier for TypedEthereumSigner {
         signature: Bytes,
     ) -> Result<(), crate::error::BundlerError> {
         let address = String::from_utf8(public_key.to_vec()).map_err(|err| {
-            BundlerError::ParseError(format!(
-                "Error parsing address from bytes to string: {}",
-                err
-            ))
+            BundlerError::ParseError(format!("Error parsing address from bytes to string: {err}"))
         })?;
 
         let mut hex_message: String = "0x".to_owned();
         for i in 0..message.len() {
             let byte = message[i];
-            hex_message += &format!("{:02X}", byte);
+            hex_message += &format!("{byte:02X}");
         }
 
         let json = json!({
@@ -80,14 +77,14 @@ impl Verifier for TypedEthereumSigner {
         });
 
         let typed_data = from_str::<EIP712>(&json.to_string()).map_err(|err| {
-            BundlerError::ParseError(format!("Error parsing EIP712 json object: {}", err))
+            BundlerError::ParseError(format!("Error parsing EIP712 json object: {err}"))
         })?;
         let data = hash_structured_data(typed_data).map_err(BundlerError::Eip712Error)?;
         let recovered_address = recover(&data, &signature[0..64], signature[64] as i32 - 27)
             .map_err(BundlerError::RecoveryError)?;
 
         // Somehow, recovered_address.to_string() returns 0x0000..0000 instead of full address ¬¬
-        let recovered_address = format!("{:?}", recovered_address);
+        let recovered_address = format!("{recovered_address:?}");
         if recovered_address == address {
             Ok(())
         } else {

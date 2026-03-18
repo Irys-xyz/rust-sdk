@@ -20,8 +20,7 @@ impl ArweaveSigner {
             Ok(Self { sdk })
         } else {
             Err(BundlerError::InvalidKey(format!(
-                "Public key length should be of {}",
-                PUB_LENGTH
+                "Public key length should be of {PUB_LENGTH}"
             )))
         }
     }

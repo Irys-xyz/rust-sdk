@@ -8,15 +8,13 @@ use crate::{
     consts::{BLOB_AS_BUFFER, LIST_AS_BUFFER},
     error::BundlerError,
 };
-use futures::{Stream, TryStream, TryStreamExt};
+use futures::{Stream, TryStreamExt};
 
 pub enum DeepHashChunk<'a> {
     Chunk(Bytes),
     Stream(&'a mut Pin<Box<dyn Stream<Item = anyhow::Result<Bytes>> + Send>>),
     Chunks(Vec<DeepHashChunk<'a>>),
 }
-
-trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
 
 pub async fn deep_hash(chunk: DeepHashChunk<'_>) -> Result<Bytes, BundlerError> {
     match chunk {

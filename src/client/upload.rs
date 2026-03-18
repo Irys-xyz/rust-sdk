@@ -27,7 +27,7 @@ pub async fn run_upload(
     // Read file into vector.
     reader.read_to_end(&mut buffer)?;
 
-    let base_tag = Tag::new("User-Agent", &format!("irys-bundler-sdk-rs/{}", VERSION));
+    let base_tag = Tag::new("User-Agent", &format!("irys-bundler-sdk-rs/{VERSION}"));
 
     match token {
         TokenType::Arweave => {
@@ -44,7 +44,7 @@ pub async fn run_upload(
             let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundler_client.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
+                Ok(res) => Ok(format!("File {file_path} uploaded: {res:?}")),
                 Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }
@@ -60,7 +60,7 @@ pub async fn run_upload(
             let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundler_client.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
+                Ok(res) => Ok(format!("File {file_path} uploaded: {res:?}")),
                 Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }
@@ -76,7 +76,7 @@ pub async fn run_upload(
             let sig = bundler_client.sign_transaction(&mut tx).await;
             assert!(sig.is_ok());
             match bundler_client.send_transaction(tx).await {
-                Ok(res) => Ok(format!("File {} uploaded: {:?}", file_path, res)),
+                Ok(res) => Ok(format!("File {file_path} uploaded: {res:?}")),
                 Err(err) => Err(BundlerError::UploadError(err.to_string())),
             }
         }

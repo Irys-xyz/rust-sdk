@@ -136,7 +136,7 @@ where
     pub fn build(self) -> Result<BundlerClient<Token>, BuilderError> {
         let url = self.url.unwrap_or(Url::parse(DEFAULT_BUNDLER_URL).unwrap());
 
-        let client = self.client.unwrap_or_else(reqwest::Client::new);
+        let client = self.client.unwrap_or_default();
 
         let pub_info = match self.pub_info {
             Some(p) => p,
@@ -219,7 +219,7 @@ pub async fn get_price(
 ) -> Result<BigUint, BundlerError> {
     let response = client
         .get(
-            url.join(&format!("/price/{}/{}", token, byte_amount))
+            url.join(&format!("/price/{token}/{byte_amount}"))
                 .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
         .header("Content-Type", "application/json")
