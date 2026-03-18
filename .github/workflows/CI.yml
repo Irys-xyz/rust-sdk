@@ -28,6 +28,10 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: -- should_verify_random_bundles --ignored
 
   fmt:
     name: Rustfmt

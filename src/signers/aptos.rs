@@ -4,7 +4,7 @@ use crate::Verifier as VerifierTrait;
 use crate::{index::SignerMap, Ed25519Signer};
 
 use bytes::Bytes;
-use ed25519_dalek::{Keypair, Verifier, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
+use ed25519_dalek::{SigningKey, Verifier, VerifyingKey, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use num::Integer;
 
 pub struct AptosSigner {
@@ -12,9 +12,9 @@ pub struct AptosSigner {
 }
 
 impl AptosSigner {
-    pub fn new(keypair: Keypair) -> Self {
+    pub fn new(signing_key: SigningKey) -> Self {
         Self {
-            signer: Ed25519Signer::new(keypair),
+            signer: Ed25519Signer::new(signing_key),
         }
     }
 
@@ -59,10 +59,16 @@ impl VerifierTrait for AptosSigner {
         message: Bytes,
         signature: Bytes,
     ) -> Result<(), crate::error::BundlerError> {
-        let public_key =
-            ed25519_dalek::PublicKey::from_bytes(&pk).map_err(BundlerError::ED25519Error)?;
-        let sig =
-            ed25519_dalek::Signature::from_bytes(&signature).map_err(BundlerError::ED25519Error)?;
+        let pk_bytes: &[u8; 32] = pk
+            .as_ref()
+            .try_into()
+            .map_err(|_| BundlerError::InvalidKey("public key must be 32 bytes".to_string()))?;
+        let public_key = VerifyingKey::from_bytes(pk_bytes).map_err(BundlerError::ED25519Error)?;
+        let sig_bytes: &[u8; 64] = signature
+            .as_ref()
+            .try_into()
+            .map_err(|_| BundlerError::InvalidKey("signature must be 64 bytes".to_string()))?;
+        let sig = ed25519_dalek::Signature::from_bytes(sig_bytes);
         let aptos_message =
             Bytes::copy_from_slice(&[b"APTOS\nmessage: ".as_ref(), &message[..]].concat());
         let nonce = Bytes::from(b"\nnonce: bundlr".to_vec());
@@ -93,9 +99,9 @@ impl MultiAptosSigner {
 }
 
 impl MultiAptosSigner {
-    pub fn new(keypair: Keypair) -> Self {
+    pub fn new(signing_key: SigningKey) -> Self {
         Self {
-            signer: Ed25519Signer::new(keypair),
+            signer: Ed25519Signer::new(signing_key),
         }
     }
 
@@ -148,10 +154,15 @@ impl VerifierTrait for MultiAptosSigner {
             if sig_included {
                 let signature = signatures.slice((i * 64)..((i + 1) * 64));
                 let pub_key_slc = pk.slice((i * 32)..((i + 1) * 32));
-                let public_key = ed25519_dalek::PublicKey::from_bytes(&pub_key_slc)
-                    .map_err(BundlerError::ED25519Error)?;
-                let sig = ed25519_dalek::Signature::from_bytes(&signature)
-                    .map_err(BundlerError::ED25519Error)?;
+                let pk_arr: &[u8; 32] = pub_key_slc.as_ref().try_into().map_err(|_| {
+                    BundlerError::InvalidKey("public key must be 32 bytes".to_string())
+                })?;
+                let public_key =
+                    VerifyingKey::from_bytes(pk_arr).map_err(BundlerError::ED25519Error)?;
+                let sig_arr: &[u8; 64] = signature.as_ref().try_into().map_err(|_| {
+                    BundlerError::InvalidKey("signature must be 64 bytes".to_string())
+                })?;
+                let sig = ed25519_dalek::Signature::from_bytes(sig_arr);
                 match public_key.verify(&message, &sig) {
                     Ok(()) => (),
                     Err(_err) => one_false = false,
@@ -171,7 +182,7 @@ impl VerifierTrait for MultiAptosSigner {
 mod tests {
     use crate::{AptosSigner, Signer, Verifier};
     use bytes::Bytes;
-    use ed25519_dalek::Keypair;
+    use ed25519_dalek::SigningKey;
 
     #[test]
     fn should_sign_and_verify() {
@@ -184,14 +195,14 @@ mod tests {
         println!("{:?}", pub_key.to_vec());
         assert!(AptosSigner::verify(pub_key, msg.clone(), sig).is_ok());
 
-        let keypair = Keypair::from_bytes(&[
+        let signing_key = SigningKey::from_keypair_bytes(&[
             237, 158, 92, 107, 132, 192, 1, 57, 8, 20, 213, 108, 29, 227, 37, 8, 3, 105, 196, 244,
             8, 221, 184, 199, 62, 253, 98, 131, 33, 165, 165, 215, 14, 7, 46, 23, 221, 242, 240,
             226, 94, 79, 161, 31, 192, 163, 13, 25, 106, 53, 34, 215, 83, 124, 162, 156, 8, 97,
             194, 180, 213, 179, 33, 68,
         ])
         .unwrap();
-        let signer = AptosSigner::new(keypair);
+        let signer = AptosSigner::new(signing_key);
         let sig = signer.sign(msg.clone()).unwrap();
         let pub_key = signer.pub_key();
 

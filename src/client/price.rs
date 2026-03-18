@@ -10,10 +10,5 @@ pub async fn run_price(
     let client = reqwest::Client::new();
     get_price(&url, token, &client, byte_amount)
         .await
-        .map(|balance| {
-            format!(
-                "{} bytes in {} is {} base units", //TODO: refactor this to show base unit name
-                byte_amount, token, balance,
-            )
-        })
+        .map(|balance| format!("{byte_amount} bytes in {token} is {balance} base units"))
 }

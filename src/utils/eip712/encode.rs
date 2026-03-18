@@ -79,7 +79,7 @@ fn encode_type(message_type: &str, message_types: &MessageTypes) -> Result<Strin
                     .map(|value| format!("{} {}", value.type_, value.name))
                     .collect::<Vec<_>>()
                     .join(",");
-                format!("{}({})", dep, types)
+                format!("{dep}({types})")
             })
         })
         .collect::<Vec<_>>()
@@ -107,8 +107,8 @@ fn encode_data(
             // check if the type definition actually matches
             // the length of items to be encoded
             if length.is_some() && Some(values.len() as u64) != *length {
-                let array_type = format!("{}[{}]", inner.to_string(), length.unwrap());
-                return Err(Eip712Error::UnequalArrayItems(
+                let array_type = format!("{inner}[{}]", length.unwrap());
+                Err(Eip712Error::UnequalArrayItems(
                     length.unwrap(),
                     array_type,
                     values.len() as u64,
@@ -147,7 +147,7 @@ fn encode_data(
 
             let bytes = (string[2..])
                 .from_hex::<Vec<u8>>()
-                .map_err(|err| Eip712Error::HexParseError(format!("{}", err)))?;
+                .map_err(|err| Eip712Error::HexParseError(format!("{err}")))?;
             let bytes = keccak256(&bytes).as_ref().to_vec();
 
             encode(&[EthAbiToken::FixedBytes(bytes)])
@@ -160,7 +160,7 @@ fn encode_data(
 
             let bytes = (string[2..])
                 .from_hex::<Vec<u8>>()
-                .map_err(|err| Eip712Error::HexParseError(format!("{}", err)))?;
+                .map_err(|err| Eip712Error::HexParseError(format!("{err}")))?;
 
             encode(&[EthAbiToken::FixedBytes(bytes)])
         }
@@ -178,10 +178,10 @@ fn encode_data(
         Type::Address => {
             let addr = value.as_str().ok_or(serde_error("string", field_name))?;
             if addr.len() != 42 {
-                return Err(Eip712Error::InvalidAddressLength(addr.len()))?;
+                Err(Eip712Error::InvalidAddressLength(addr.len()))?;
             }
             let address = EthAddress::from_str(&addr[2..])
-                .map_err(|err| Eip712Error::HexParseError(format!("{}", err)))?;
+                .map_err(|err| Eip712Error::HexParseError(format!("{err}")))?;
             encode(&[EthAbiToken::Address(address)])
         }
 
@@ -191,7 +191,7 @@ fn encode_data(
             check_hex(string)?;
 
             let uint = U256::from_str(&string[2..])
-                .map_err(|err| Eip712Error::HexParseError(format!("{}", err)))?;
+                .map_err(|err| Eip712Error::HexParseError(format!("{err}")))?;
 
             let token = if *message_type == Type::Uint {
                 EthAbiToken::Uint(uint)

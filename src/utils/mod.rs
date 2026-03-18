@@ -16,12 +16,9 @@ use serde::Deserialize;
 
 use crate::error::BundlerError;
 
-pub async fn check_and_return<T: for<'de> Deserialize<'de>>(
+pub async fn check_and_return<T: for<'de> Deserialize<'de> + Default>(
     res: Result<Response, reqwest::Error>,
-) -> Result<T, BundlerError>
-where
-    T: Default,
-{
+) -> Result<T, BundlerError> {
     match res {
         Ok(r) => {
             if !r.status().is_success() {
@@ -31,7 +28,7 @@ where
                     .await
                     .map_err(|err| BundlerError::ParseError(err.to_string()))?
                     .replace('\"', "");
-                let msg = format!("Status: {}:{:?}", status, text);
+                let msg = format!("Status: {status}:{text:?}");
                 return Err(BundlerError::ResponseError(msg));
             };
             Ok(r.json::<T>().await.unwrap_or_default())
@@ -48,12 +45,10 @@ pub async fn get_nonce(
 ) -> Result<u64, BundlerError> {
     let res = client
         .get(
-            url.join(&format!(
-                "/account/withdrawals/{}?address={}",
-                token, address
-            ))
-            .map_err(|err| BundlerError::ParseError(err.to_string()))?,
+            url.join(&format!("account/withdrawals/{token}"))
+                .map_err(|err| BundlerError::ParseError(err.to_string()))?,
         )
+        .query(&[("address", &address)])
         .send()
         .await;
     check_and_return::<u64>(res).await

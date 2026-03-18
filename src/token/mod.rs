@@ -40,7 +40,7 @@ pub struct TxResponse {
 
 impl fmt::Display for TokenType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}", format!("{:?}", self).to_lowercase())
+        write!(formatter, "{}", format!("{self:?}").to_lowercase())
     }
 }
 

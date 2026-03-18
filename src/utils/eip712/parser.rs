@@ -18,24 +18,21 @@ pub enum Type {
     },
 }
 
-impl ToString for Type {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Address => "address".to_owned(),
-            Type::Uint => "uint".to_owned(),
-            Type::Int => "int".to_owned(),
-            Type::String => "string".to_owned(),
-            Type::Bool => "bool".to_owned(),
-            Type::Bytes => "bytes".to_owned(),
-            Type::Byte(len) => format!("bytes{}", len),
-            Type::Custom(custom) => custom.to_string(),
-            Type::Array { inner, length } => {
-                let inner: String = (*inner).to_string();
-                match length {
-                    None => format!("{}[]", inner),
-                    Some(length) => format!("{}[{}]", inner, length),
-                }
-            }
+            Type::Address => f.write_str("address"),
+            Type::Uint => f.write_str("uint"),
+            Type::Int => f.write_str("int"),
+            Type::String => f.write_str("string"),
+            Type::Bool => f.write_str("bool"),
+            Type::Bytes => f.write_str("bytes"),
+            Type::Byte(len) => write!(f, "bytes{len}"),
+            Type::Custom(custom) => f.write_str(custom),
+            Type::Array { inner, length } => match length {
+                None => write!(f, "{inner}[]"),
+                Some(length) => write!(f, "{inner}[{length}]"),
+            },
         }
     }
 }

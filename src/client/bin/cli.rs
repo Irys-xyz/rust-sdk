@@ -140,10 +140,10 @@ impl Command {
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
-                        Ok(ok) => println!("[Ok] {}", ok),
-                        Err(err) => println!("[Err] {}", err),
+                        Ok(ok) => println!("[Ok] {ok}"),
+                        Err(err) => println!("[Err] {err}"),
                     },
-                    Err(err) => println!("Error running task: {}", err),
+                    Err(err) => println!("Error running task: {err}"),
                 }
             }
             Command::Fund {
@@ -157,10 +157,10 @@ impl Command {
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT_FUND);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
-                        Ok(ok) => println!("[Ok] {}", ok),
-                        Err(err) => println!("[Err] {}", err),
+                        Ok(ok) => println!("[Ok] {ok}"),
+                        Err(err) => println!("[Err] {err}"),
                     },
-                    Err(err) => println!("Error running task: {}", err),
+                    Err(err) => println!("Error running task: {err}"),
                 }
             }
             Command::Withdraw {
@@ -174,10 +174,10 @@ impl Command {
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
-                        Ok(ok) => println!("[Ok] {}", ok),
-                        Err(err) => println!("[Err] {}", err),
+                        Ok(ok) => println!("[Ok] {ok}"),
+                        Err(err) => println!("[Err] {err}"),
                     },
-                    Err(err) => println!("Error running task: {}", err),
+                    Err(err) => println!("Error running task: {err}"),
                 }
             }
             Command::Upload {
@@ -191,10 +191,10 @@ impl Command {
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
-                        Ok(ok) => println!("[Ok] {}", ok),
-                        Err(err) => println!("[Err] {}", err),
+                        Ok(ok) => println!("[Ok] {ok}"),
+                        Err(err) => println!("[Err] {err}"),
                     },
-                    Err(err) => println!("Error running task: {}", err),
+                    Err(err) => println!("Error running task: {err}"),
                 }
             }
             Command::UploadDir {} => todo!(),
@@ -209,10 +209,10 @@ impl Command {
                 let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
                 match tokio::time::timeout(Duration::from_millis(timeout), work).await {
                     Ok(res) => match res {
-                        Ok(ok) => println!("[Ok] {}", ok),
-                        Err(err) => println!("[Err] {}", err),
+                        Ok(ok) => println!("[Ok] {ok}"),
+                        Err(err) => println!("[Err] {err}"),
                     },
-                    Err(err) => println!("Error running task: {}", err),
+                    Err(err) => println!("Error running task: {err}"),
                 }
             }
         }

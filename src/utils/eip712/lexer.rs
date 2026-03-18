@@ -19,7 +19,7 @@
 
 use logos::{Lexer, Logos};
 #[derive(Default, Clone, Copy)]
-pub struct TypeSize(pub u8, pub u8);
+pub struct TypeSize(pub u8);
 
 #[derive(Debug, PartialEq, Clone, Copy, Logos)]
 #[logos(extras = TypeSize)]

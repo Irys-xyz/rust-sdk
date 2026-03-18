@@ -64,10 +64,7 @@ impl Validate for EIP712 {
         }
         for field_types in self.types.values() {
             for field_type in field_types {
-                field_type.validate().map_err(|err| {
-                    dbg!(err.to_string());
-                    err
-                })?;
+                field_type.validate()?;
             }
         }
         Ok(())

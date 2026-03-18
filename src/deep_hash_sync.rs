@@ -6,10 +6,6 @@ use crate::{
     deep_hash::DeepHashChunk,
     error::BundlerError,
 };
-use futures::{Stream, TryStream};
-
-trait Foo: Stream<Item = anyhow::Result<Bytes>> + TryStream {}
-
 pub fn deep_hash_sync(chunk: DeepHashChunk) -> Result<Bytes, BundlerError> {
     match chunk {
         DeepHashChunk::Chunk(b) => {
